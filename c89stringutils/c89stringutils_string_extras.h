@@ -9,17 +9,18 @@
 #include <string.h>
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
-    defined(__bsdi__) || defined(__DragonFly__) || defined(BSD)
-#define ANY_BSD
+        defined(__bsdi__) || defined(__DragonFly__) || defined(BSD)
+#   define ANY_BSD
 #endif
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 
 #   if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 
+        /* snprintf is implemented in VS 2015 */
 #       if _MSC_VER >= 1900
 
-/* snprintf is implemented in VS 2015 */
+
 #               define HAVE_SNPRINTF_H
 
 #       endif /* _MSC_VER >= 1900 */
@@ -44,11 +45,9 @@
 #       define HAVE_STRNCASECMP_H
 #   endif /* defined(__APPLE__) && defined(__MACH__) */
 
-#   if (defined(_POSIX_VERSION) && (_POSIX_VERSION >= 200112L) || defined(BSD) && (BSD >= 199306)) && \
-           (!defined(__linux__) && !defined(linux) && !defined(__linux))
-#      define HAVE_STRNSTR_H
-#   endif /* (defined(_POSIX_VERSION) && (_POSIX_VERSION >= 200112L) || defined(BSD) && (BSD >= 199306)) && \
-                 (!defined(__linux__) && !defined(linux) && !defined(__linux)) */
+#   if defined(BSD) && (BSD >= 199306) && !defined(__linux__) && !defined(linux) && !defined(__linux)
+#      define HAVE_STRNSTR
+#   endif /* defined(BSD) && (BSD >= 199306) && !defined(__linux__) && !defined(linux) && !defined(__linux) */
 
 #endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__) */
 
@@ -72,7 +71,7 @@
 #endif
 
 #if ANY_BSD || defined(__APPLE__) && defined(__MACH__) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
-#define HAVE_ASPRINTF
+#   define HAVE_ASPRINTF
 #endif /* ANY_BSD || defined(__APPLE__) && defined(__MACH__) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE) */
 
 #include <stdarg.h>
@@ -143,7 +142,7 @@ extern int strcasecmp(const char *, const char *);
 
 #endif /* !HAVE_STRNCASECMP_H */
 
-#ifndef HAVE_STRNSTR_H
+#ifndef HAVE_STRNSTR
 
 extern char *strnstr(const char *, const char *, size_t);
 
@@ -177,7 +176,7 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
 }
 #endif /* C89STRINGUTILS_IMPLEMENTATION */
 
-#endif /* ! HAVE_STRNSTR_H */
+#endif /* ! HAVE_STRNSTR */
 
 #ifndef HAVE_STRCASESTR_H
 extern char *strcasestr(const char *, const char *);
