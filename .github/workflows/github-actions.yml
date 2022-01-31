@@ -1,0 +1,23 @@
+name: CI for Linux, Windows, macOS
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v2
+      - name: build
+        run: |
+          mkdir cmake-build-"$RUNNER_OS"-debug && pushd "$_"
+          cmake -DCMAKE_BUILD_TYPE="Debug" ..
+          cmake --build .
+          popd
+      - name: test
+        run: cd cmake-build-"$RUNNER_OS"-debug && ctest -C"Debug" .

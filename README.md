@@ -1,6 +1,7 @@
 c89stringutils
 ==============
 [![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI for Linux, Windows, macOS](https://github.com/offscale/libacquire/workflows/CI%20for%20Linux,%20Windows,%20macOS/badge.svg)](https://github.com/offscale/c89stringutils/actions)
 [![C89](https://img.shields.io/badge/C-89-blue)](https://en.wikipedia.org/wiki/C89_(C_version))
 
 C89 is missing some nice things. As is MSVC.
@@ -12,15 +13,16 @@ Header only (to simplify including).
 
 ### String functions implemented
 
-  | Function        | Notes                |
-  |-----------------|----------------------|
-  | `strcasestr`    |                      |
-  | `strncasecmp`   |                      |
-  | `strcasecmp`    |                      |
-  | `snprintf`      | Mostly from Chromium |
-  | `vsnprintf`     | Mostly from Chromium |
-  | `strnstr`       | Mostly from Chromium |
-  | `strerrorlen_s` |                      |
+  | Function        | Notes                        |
+  |-----------------|------------------------------|
+  | `strcasestr`    | From MUSL                    |
+  | `strncasecmp`   | Alias for MSVC's `_strnicmp` |
+  | `strcasecmp`    | Alias for MSVC's `_stricmp`  |
+  | `snprintf`      | Mostly from Chromium         |
+  | `vsnprintf`     | Mostly from Chromium         |
+  | `strnstr`       | Mostly from Chromium         |
+  | `strerrorlen_s` | From Safe C Library          |
+  | `asprintf`      | From libressl-portable       |
 
 ### Dependencies
 
