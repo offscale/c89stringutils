@@ -6,6 +6,22 @@ c89stringutils
 C89 is missing some nice things. As is MSVC.
 This adds the string related functionality for Windows (particularly: MSVC), SunOS, Linux, BSD, and macOS.
 
+Everything is hidden behind `ifdef`s so if the compiler/OS supports the function, that function will be used instead of the one provided by this library.
+
+Header only (to simplify including).
+
+### String functions implemented
+
+  | Function        | Notes                |
+  |-----------------|----------------------|
+  | `strcasestr`    |                      |
+  | `strncasecmp`   |                      |
+  | `strcasecmp`    |                      |
+  | `snprintf`      | Mostly from Chromium |
+  | `vsnprintf`     | Mostly from Chromium |
+  | `strnstr`       | Mostly from Chromium |
+  | `strerrorlen_s` |                      |
+
 ### Dependencies
 
 - [CMake](https://cmake.org) (3.19 or later)
