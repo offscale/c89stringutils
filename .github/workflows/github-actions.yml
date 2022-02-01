@@ -15,11 +15,13 @@ jobs:
     steps:
       - name: ${{ matrix.os }}
         uses: actions/checkout@v2
+      - name: mkdir
+        run: mkdir build
       - name: build
+        working-directory: ./build
         run: |
-          mkdir cmake-build-"$RUNNER_OS"-debug && pushd "$_"
           cmake -DCMAKE_BUILD_TYPE="Debug" ..
           cmake --build .
-          popd
       - name: test
-        run: cd cmake-build-"$RUNNER_OS"-debug && ctest -C"Debug" .
+        working-directory: ./build
+        run: ctest -C"Debug" .

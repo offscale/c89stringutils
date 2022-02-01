@@ -5,11 +5,11 @@ c89stringutils
 [![C89](https://img.shields.io/badge/C-89-blue)](https://en.wikipedia.org/wiki/C89_(C_version))
 
 C89 is missing some nice things. As is MSVC.
-This adds the string related functionality for Windows (particularly: MSVC), SunOS, Linux, BSD, and macOS.
+This adds the string related functionality for Windows (particularly: MSVC) and is tested additionally on: SunOS, Linux, BSD, and macOS.
 
 Everything is hidden behind `ifdef`s so if the compiler/OS supports the function, that function will be used instead of the one provided by this library.
 
-Header only (to simplify including). `#define C89STRINGUTILS_IMPLEMENTATION` once-only in your program (before including the header).
+Header only (to simplify including). Just `#define C89STRINGUTILS_IMPLEMENTATION` once-only in your program (before including the header).
 
 ### String functions implemented
 
