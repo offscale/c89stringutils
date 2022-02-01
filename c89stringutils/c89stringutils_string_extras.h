@@ -35,10 +35,10 @@
 
 #   include <sys/param.h>
 
-#   if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L || ANY_BSD
+#   if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L || defined(ANY_BSD)
 #       define HAVE_SNPRINTF_H
 #       define HAVE_STRCASESTR_H
-#   endif /* _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L || ANY_BSDL */
+#   endif /* _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L || defined(ANY_BSD) */
 
 #   if defined(__APPLE__) && defined(__MACH__)
 #       define HAVE_SNPRINTF_H
@@ -70,9 +70,9 @@
 #   define HAVE_STRNCASECMP_H
 #endif
 
-#if ANY_BSD || defined(__APPLE__) && defined(__MACH__) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+#if defined(ANY_BSD) || defined(__APPLE__) && defined(__MACH__) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 #   define HAVE_ASPRINTF
-#endif /* ANY_BSD || defined(__APPLE__) && defined(__MACH__) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE) */
+#endif /* defined(ANY_BSD) || defined(__APPLE__) && defined(__MACH__) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE) */
 
 #include <stdarg.h>
 #include <stdio.h>
