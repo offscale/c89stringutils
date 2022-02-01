@@ -261,7 +261,7 @@ extern int asprintf(char **str, const char *fmt, ...);
 #include <stdlib.h>
 
 #ifndef VA_COPY
-# ifdef HAVE_VA_COPY
+# if defined(HAVE_VA_COPY) || defined(va_copy)
 #  define VA_COPY(dest, src) va_copy(dest, src)
 # else
 #  ifdef HAVE___VA_COPY
@@ -270,7 +270,7 @@ extern int asprintf(char **str, const char *fmt, ...);
 #   define VA_COPY(dest, src) (dest) = (src)
 #  endif
 # endif
-#endif
+#endif /* ! VA_COPY */
 
 #define INIT_SZ	128
 
@@ -308,7 +308,7 @@ vasprintf(char **str, const char *fmt, va_list ap)
 		}
 		*str = newstr;
 	}
-	return (ret);
+	return ret;
 
 fail:
 	*str = NULL;
