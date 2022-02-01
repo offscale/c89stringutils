@@ -11,11 +11,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-10.15]
     steps:
       - uses: actions/checkout@v2
       - name: mkdir
         run: mkdir build
+      - name: SunOS deps
+        id: build_test
+        uses: vmactions/solaris-vm@v0.0.3
+        with:
+          prepare: pkgutil -y -i cmake
+        if: matrix.os == 'macOS-10.14'
       - name: build
         working-directory: ./build
         run: |
@@ -24,19 +30,3 @@ jobs:
       - name: test
         working-directory: ./build
         run: ctest -C Debug .
-
-  testsolaris:
-    runs-on: macos-10.15
-    name: Solaris
-    steps:
-      - uses: actions/checkout@v2
-      - name: Build and test
-        id: build_test
-        uses: vmactions/solaris-vm@v0.0.3
-        with:
-          prepare: pkgutil -y -i cmake
-        run: |
-          mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE="Debug" ..
-          cmake --build .
-          ctest -C Debug .
