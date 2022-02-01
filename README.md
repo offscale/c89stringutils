@@ -9,20 +9,20 @@ This adds the string related functionality for Windows (particularly: MSVC), Sun
 
 Everything is hidden behind `ifdef`s so if the compiler/OS supports the function, that function will be used instead of the one provided by this library.
 
-Header only (to simplify including).
+Header only (to simplify including). `#define C89STRINGUTILS_IMPLEMENTATION` once-only in your program (before including the header).
 
 ### String functions implemented
 
-  | Function        | Notes                        |
-  |-----------------|------------------------------|
-  | `strcasestr`    | From MUSL                    |
-  | `strncasecmp`   | Alias for MSVC's `_strnicmp` |
-  | `strcasecmp`    | Alias for MSVC's `_stricmp`  |
-  | `snprintf`      | Mostly from Chromium         |
-  | `vsnprintf`     | Mostly from Chromium         |
-  | `strnstr`       | Mostly from Chromium         |
-  | `strerrorlen_s` | From Safe C Library          |
-  | `asprintf`      | From libressl-portable       |
+  | Function                                                                | Citation                     |
+----------------------------------------------------------------------------|------------------------------|
+  | [`strcasestr`](https://www.freebsd.org/cgi/man.cgi?query=strcasestr)    | From MUSL                    |
+  | [`strncasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strncasecmp)  | Alias for MSVC's `_strnicmp` |
+  | [`strcasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strcasecmp)    | Alias for MSVC's `_stricmp`  |
+  | [`snprintf`](https://www.freebsd.org/cgi/man.cgi?query=snprintf)        | Mostly from Chromium         |
+  | [`vsnprintf`](https://www.freebsd.org/cgi/man.cgi?query=vsnprintf)      | Mostly from Chromium         |
+  | [`strnstr`](https://www.freebsd.org/cgi/man.cgi?query=strnstr)          | Mostly from Chromium         |
+  | [`strerrorlen_s`](https://en.cppreference.com/w/c/string/byte/strerror) | From Safe C Library          |
+  | [`asprintf`](https://www.freebsd.org/cgi/man.cgi?query=asprintf)        | From libressl-portable       |
 
 ### Dependencies
 
