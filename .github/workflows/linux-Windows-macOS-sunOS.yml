@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-10.15]
 
-    name: ${{ matrix.os }}
+    name: ${{ matrix.os == 'macos-10.15' && 'SunOS' || 'macOS' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -21,15 +21,22 @@ jobs:
         run: mkdir build
       - name: SunOS deps
         id: build_test
-        uses: vmactions/solaris-vm@v0.0.3
+        uses: papertigers/illumos-vm@r38
         with:
-          prepare: pkgutil -y -i cmake
+          prepare: pkg install cmake
+        run: |
+          mkdir build && cd build
+          /opt/ooce/bin/cmake -DCMAKE_BUILD_TYPE="Debug" ..
+          /opt/ooce/bin/cmake --build .
+          /opt/ooce/bin/ctest -C Debug .
         if: matrix.os == 'macos-10.15'
       - name: build
         working-directory: ./build
         run: |
           cmake -DCMAKE_BUILD_TYPE="Debug" ..
           cmake --build .
+        if: matrix.os != 'macos-10.15'
       - name: test
         working-directory: ./build
         run: ctest -C Debug .
+        if: matrix.os != 'macos-10.15'
