@@ -1,7 +1,7 @@
 get_filename_component(LIBRARY_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
 string(REPLACE " " "_" LIBRARY_NAME "${LIBRARY_NAME}")
 
-set(Header_Files "c89stringutils_stdbool.h" "c89stringutils_string_extras.h")
+set(Header_Files "c89stringutils_string_extras.h")
 
 source_group("Header Files" FILES "${Header_Files}")
 

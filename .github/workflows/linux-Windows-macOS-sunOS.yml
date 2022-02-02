@@ -21,7 +21,7 @@ jobs:
         id: build_test
         uses: papertigers/illumos-vm@r38
         with:
-          prepare: pkg install cmake
+          prepare: pkg install cmake wget
           run: |
             mkdir build && cd build
             mkdir -p c89stringutils_tests/test_downloads
