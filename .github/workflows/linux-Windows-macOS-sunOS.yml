@@ -24,7 +24,7 @@ jobs:
           prepare: pkg install cmake
           run: |
             mkdir build && cd build
-            mkdir c89stringutils_tests/test_downloads
+            mkdir -p c89stringutils_tests/test_downloads
             /opt/ooce/bin/wget https://raw.githubusercontent.com/silentbicycle/greatest/11a6af1/greatest.h -o c89stringutils_tests/test_downloads/greatest.h
             /opt/ooce/bin/cmake -DCMAKE_BUILD_TYPE="Debug" ..
             /opt/ooce/bin/cmake --build .
