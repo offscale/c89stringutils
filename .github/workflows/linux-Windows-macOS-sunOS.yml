@@ -24,11 +24,11 @@ jobs:
         uses: papertigers/illumos-vm@r38
         with:
           prepare: pkg install cmake
-        run: |
-          mkdir build && cd build
-          /opt/ooce/bin/cmake -DCMAKE_BUILD_TYPE="Debug" ..
-          /opt/ooce/bin/cmake --build .
-          /opt/ooce/bin/ctest -C Debug .
+          run: |
+            mkdir build && cd build
+            /opt/ooce/bin/cmake -DCMAKE_BUILD_TYPE="Debug" ..
+            /opt/ooce/bin/cmake --build .
+            /opt/ooce/bin/ctest -C Debug .
         if: matrix.os == 'macos-10.15'
       - name: build
         working-directory: ./build
