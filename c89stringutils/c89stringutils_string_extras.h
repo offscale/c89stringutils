@@ -259,4 +259,91 @@ size_t strerrorlen_s(errno_t errnum)
 
 #endif /* !HAVE_STRERRORLEN_S */
 
+#ifndef HAVE_ASPRINTF
+
+extern int vasprintf(char **str, const char *fmt, va_list ap);
+
+extern int asprintf(char **str, const char *fmt, ...);
+
+#ifdef C89STRINGUTILS_IMPLEMENTATION
+
+#define HAVE_ASPRINTF
+
+#include <errno.h>
+#include <limits.h> /* for INT_MAX */
+#include <stdlib.h>
+
+#ifndef VA_COPY
+# if defined(HAVE_VA_COPY) || defined(va_copy)
+#  define VA_COPY(dest, src) va_copy(dest, src)
+# else
+#  ifdef HAVE___VA_COPY
+#   define VA_COPY(dest, src) __va_copy(dest, src)
+#  else
+#   define VA_COPY(dest, src) (dest) = (src)
+#  endif
+# endif
+#endif /* ! VA_COPY */
+
+#define INIT_SZ	128
+
+extern int
+vasprintf(char **str, const char *fmt, va_list ap)
+{
+	int ret;
+	va_list ap2;
+	char *string, *newstr;
+	size_t len;
+
+	if ((string = (char*) malloc(INIT_SZ)) == NULL)
+		goto fail;
+
+	VA_COPY(ap2, ap);
+	ret = vsnprintf(string, INIT_SZ, fmt, ap2);
+	va_end(ap2);
+	if (ret >= 0 && ret < INIT_SZ) { /* succeeded with initial alloc */
+		*str = string;
+	} else if (ret == INT_MAX || ret < 0) { /* Bad length */
+		free(string);
+		goto fail;
+	} else {	/* bigger than initial, realloc allowing for nul */
+		len = (size_t)ret + 1;
+		if ((newstr = (char*)realloc(string, len)) == NULL) {
+			free(string);
+			goto fail;
+		}
+		VA_COPY(ap2, ap);
+		ret = vsnprintf(newstr, len, fmt, ap2);
+		va_end(ap2);
+		if (ret < 0 || (size_t)ret >= len) { /* failed with realloc'ed string */
+			free(newstr);
+			goto fail;
+		}
+		*str = newstr;
+	}
+	return ret;
+
+fail:
+	*str = NULL;
+	errno = ENOMEM;
+	return -1;
+}
+
+extern int asprintf(char **str, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	*str = NULL;
+	va_start(ap, fmt);
+	ret = vasprintf(str, fmt, ap);
+	va_end(ap);
+
+	return ret;
+}
+
+#endif /* C89STRINGUTILS_IMPLEMENTATION */
+
+#endif /* !HAVE_ASPRINTF */
+
 #endif /* ! C89STRINGUTILS_STRING_EXTRAS_H */
