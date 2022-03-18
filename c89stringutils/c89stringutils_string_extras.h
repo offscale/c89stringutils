@@ -7,6 +7,8 @@
 #define C89STRINGUTILS_STRING_EXTRAS_H
 
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
         defined(__bsdi__) || defined(__DragonFly__) || defined(BSD)
@@ -35,10 +37,12 @@
 
 #   include <sys/param.h>
 
-#   if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L || defined(ANY_BSD)
+#   if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L
 #       define HAVE_SNPRINTF_H
+#   endif /* _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L */
+#   if defined(_GNU_SOURCE) || defined(ANY_BSD)
 #       define HAVE_STRCASESTR_H
-#   endif /* _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L || defined(ANY_BSD) */
+#   endif /* defined(_GNU_SOURCE) || defined(ANY_BSD) */
 
 #   if defined(__APPLE__) && defined(__MACH__)
 #       define HAVE_SNPRINTF_H
@@ -51,19 +55,22 @@
 
 #endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__) */
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && defined(__STDC_LIB_EXT1__) && \
-        __STDC_WANT_LIB_EXT1__ || defined(__APPLE__) || defined(__APPLE_CC__)
+#if defined(__STDC_LIB_EXT1__) && __STDC_WANT_LIB_EXT1__
 
 #   define HAVE_STRERRORLEN_S
 
 #else
 
 #   if !defined(__APPLE__) && !defined(__APPLE_CC__)
-        typedef int errno_t;
+typedef int errno_t;
 #   endif /* !defined(__APPLE__) && !defined(__APPLE_CC__) */
 
-#endif /* defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && defined(__STDC_LIB_EXT1__) && \
-              __STDC_WANT_LIB_EXT1__ || defined(__APPLE__) || defined(__APPLE_CC__) */
+#   if defined(__linux__) || defined(linux) || defined(__linux) || defined(ANY_BSD)
+#       define strerror_s strerror_r
+#       define HAVE_STRERRORLEN_S
+#   endif /* defined(__linux__) || defined(linux) || defined(__linux) || defined(ANY_BSD) */
+
+#endif /* defined(__STDC_LIB_EXT1__) && __STDC_WANT_LIB_EXT1__ */
 
 #ifndef _MSC_VER
 #   define HAVE_STRINGS_H
@@ -74,16 +81,12 @@
 #   define HAVE_ASPRINTF
 #endif /* defined(ANY_BSD) || defined(__APPLE__) && defined(__MACH__) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE) */
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-
 #ifdef HAVE_STRINGS_H
 #   include <strings.h>
 #endif /* HAVE_STRINGS_H */
 
 #if !defined(HAVE_SNPRINTF_H) && defined(C89STRINGUTILS_IMPLEMENTATION)
-
+#define HAVE_SNPRINTF_H
 /*
  * `snprintf`, `vsnprintf`, `strnstr` taken from:
  * https://chromium.googlesource.com/chromium/blink/+/5cedd2fd208daf119b9ea47c7c1e22d760a586eb/Source/wtf/StringExtras.h
@@ -133,7 +136,7 @@ extern int strncasecmp(const char *, const char *, size_t);
 extern int strcasecmp(const char *, const char *);
 
 #ifdef C89STRINGUTILS_IMPLEMENTATION
-
+#define HAVE_STRNCASECMP_H
 #define strncasecmp _strnicmp
 
 #define strcasecmp _stricmp
@@ -147,6 +150,7 @@ extern int strcasecmp(const char *, const char *);
 extern char *strnstr(const char *, const char *, size_t);
 
 #ifdef C89STRINGUTILS_IMPLEMENTATION
+#define HAVE_STRNSTR
 char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
     /*
        Find the first occurrence of find in s, where the search is limited to the
@@ -182,6 +186,7 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
 extern char *strcasestr(const char *, const char *);
 
 #ifdef C89STRINGUTILS_IMPLEMENTATION
+#define HAVE_STRCASESTR_H
 
 /* `strcasestr` from MUSL */
 
@@ -198,6 +203,10 @@ char *strcasestr(const char *h, const char *n)
 
 #ifndef HAVE_STRERRORLEN_S
 
+extern size_t strerrorlen_s(errno_t);
+
+#ifdef C89STRINGUTILS_IMPLEMENTATION
+#define HAVE_STRERRORLEN_S
 /* MIT licensed function from Safe C Library */
 
 size_t strerrorlen_s(errno_t errnum)
@@ -246,91 +255,8 @@ size_t strerrorlen_s(errno_t errnum)
     }
 }
 
-#endif /* !HAVE_STRERRORLEN_S */
-
-#ifndef HAVE_ASPRINTF
-
-extern int vasprintf(char **str, const char *fmt, va_list ap);
-
-extern int asprintf(char **str, const char *fmt, ...);
-
-#ifdef C89STRINGUTILS_IMPLEMENTATION
-
-#include <errno.h>
-#include <limits.h> /* for INT_MAX */
-#include <stdlib.h>
-
-#ifndef VA_COPY
-# if defined(HAVE_VA_COPY) || defined(va_copy)
-#  define VA_COPY(dest, src) va_copy(dest, src)
-# else
-#  ifdef HAVE___VA_COPY
-#   define VA_COPY(dest, src) __va_copy(dest, src)
-#  else
-#   define VA_COPY(dest, src) (dest) = (src)
-#  endif
-# endif
-#endif /* ! VA_COPY */
-
-#define INIT_SZ	128
-
-extern int
-vasprintf(char **str, const char *fmt, va_list ap)
-{
-	int ret;
-	va_list ap2;
-	char *string, *newstr;
-	size_t len;
-
-	if ((string = (char*) malloc(INIT_SZ)) == NULL)
-		goto fail;
-
-	VA_COPY(ap2, ap);
-	ret = vsnprintf(string, INIT_SZ, fmt, ap2);
-	va_end(ap2);
-	if (ret >= 0 && ret < INIT_SZ) { /* succeeded with initial alloc */
-		*str = string;
-	} else if (ret == INT_MAX || ret < 0) { /* Bad length */
-		free(string);
-		goto fail;
-	} else {	/* bigger than initial, realloc allowing for nul */
-		len = (size_t)ret + 1;
-		if ((newstr = (char*)realloc(string, len)) == NULL) {
-			free(string);
-			goto fail;
-		}
-		VA_COPY(ap2, ap);
-		ret = vsnprintf(newstr, len, fmt, ap2);
-		va_end(ap2);
-		if (ret < 0 || (size_t)ret >= len) { /* failed with realloc'ed string */
-			free(newstr);
-			goto fail;
-		}
-		*str = newstr;
-	}
-	return ret;
-
-fail:
-	*str = NULL;
-	errno = ENOMEM;
-	return -1;
-}
-
-extern int asprintf(char **str, const char *fmt, ...)
-{
-	va_list ap;
-	int ret;
-
-	*str = NULL;
-	va_start(ap, fmt);
-	ret = vasprintf(str, fmt, ap);
-	va_end(ap);
-
-	return ret;
-}
-
 #endif /* C89STRINGUTILS_IMPLEMENTATION */
 
-#endif /* !HAVE_ASPRINTF */
+#endif /* !HAVE_STRERRORLEN_S */
 
 #endif /* ! C89STRINGUTILS_STRING_EXTRAS_H */
