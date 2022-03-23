@@ -37,8 +37,9 @@ configure_file(
 add_subdirectory("${PROJECT_NAME}")
 
 include(CTest)
-enable_testing()
-add_subdirectory("c89stringutils_tests")
+if (BUILD_TESTING)
+    add_subdirectory("c89stringutils_tests")
+endif (BUILD_TESTING)
 
 # header-only so including this will pollute the `find_path` suggestion in vcpkg
 #install(

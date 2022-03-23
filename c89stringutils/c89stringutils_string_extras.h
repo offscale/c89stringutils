@@ -145,8 +145,8 @@ extern int strcasecmp(const char *, const char *);
 
 #if defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRNCASECMP_H)
 #define HAVE_STRNCASECMP_H
-#define strncasecmp _strnicmp
 
+#define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 
 #endif /* defined(C89STRINGUTILS_IMPLEMENTATION) &&                            \
