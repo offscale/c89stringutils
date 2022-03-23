@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.12)
 project(c89stringutils VERSION 0.0.1 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 90)
-cmake_policy(SET CMP0063 NEW)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 
@@ -41,10 +40,11 @@ include(CTest)
 enable_testing()
 add_subdirectory("c89stringutils_tests")
 
-install(
-        FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.h"
-        DESTINATION "include"
-)
+# header-only so including this will pollute the `find_path` suggestion in vcpkg
+#install(
+#        FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.h"
+#        DESTINATION "include"
+#)
 
 include(InstallRequiredSystemLibraries)
 set(CPACK_BUNDLE_NAME "${PROJECT_NAME}")
@@ -61,7 +61,7 @@ set(CPACK_PACKAGE_VERSION_MAJOR "${${PROJECT_NAME}_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${${PROJECT_NAME}_VERSION_MINOR}")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/cmake/README.txt")
 set(CPACK_RESOURCE_FILE_WELCOME "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Welcome.txt")
-set(CPACK_PACKAGE_CONTACT "https://github.com/offscale/c89stringutils")
+set(CPACK_PACKAGE_CONTACT "https://github.com/offscale/${PROJECT_NAME}")
 
 include(CPack)
 include(CMakePackageConfigHelpers)

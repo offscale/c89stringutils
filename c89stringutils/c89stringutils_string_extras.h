@@ -6,83 +6,90 @@
 #ifndef C89STRINGUTILS_STRING_EXTRAS_H
 #define C89STRINGUTILS_STRING_EXTRAS_H
 
-#include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
-        defined(__bsdi__) || defined(__DragonFly__) || defined(BSD)
-#   define ANY_BSD
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) ||     \
+    defined(__bsdi__) || defined(__DragonFly__) || defined(BSD)
+#define ANY_BSD
 #endif
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 
-#   if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 
-        /* snprintf is implemented in VS 2015 */
-#       if _MSC_VER >= 1900
+/* snprintf is implemented in VS 2015 */
+#if _MSC_VER >= 1900
 
+#define HAVE_SNPRINTF_H
 
-#               define HAVE_SNPRINTF_H
-
-#       endif /* _MSC_VER >= 1900 */
-
-#   else
-
-#       define HAVE_STRNCASECMP
-
-#   endif /* defined(_MSC_VER) && !defined(__INTEL_COMPILER) */
+#endif /* _MSC_VER >= 1900 */
 
 #else
 
-#   include <sys/param.h>
+#define HAVE_STRNCASECMP
 
-#   if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L
-#       define HAVE_SNPRINTF_H
-#   endif /* _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE || _POSIX_C_SOURCE >= 200112L */
-#   if defined(_GNU_SOURCE) || defined(ANY_BSD)
-#       define HAVE_STRCASESTR_H
-#   endif /* defined(_GNU_SOURCE) || defined(ANY_BSD) */
+#endif /* defined(_MSC_VER) && !defined(__INTEL_COMPILER) */
 
-#   if defined(__APPLE__) && defined(__MACH__)
-#       define HAVE_SNPRINTF_H
-#       define HAVE_STRNCASECMP_H
-#   endif /* defined(__APPLE__) && defined(__MACH__) */
+#else
 
-#   if defined(BSD) && (BSD >= 199306) && !defined(__linux__) && !defined(linux) && !defined(__linux)
-#      define HAVE_STRNSTR
-#   endif /* defined(BSD) && (BSD >= 199306) && !defined(__linux__) && !defined(linux) && !defined(__linux) */
+#include <sys/param.h>
 
-#endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__) */
+#if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE ||                   \
+    _POSIX_C_SOURCE >= 200112L
+#define HAVE_SNPRINTF_H
+#endif /* _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE ||             \
+          _POSIX_C_SOURCE >= 200112L */
+#if defined(_GNU_SOURCE) || defined(ANY_BSD)
+#define HAVE_STRCASESTR_H
+#endif /* defined(_GNU_SOURCE) || defined(ANY_BSD) */
+
+#if defined(__APPLE__) && defined(__MACH__)
+#define HAVE_SNPRINTF_H
+#define HAVE_STRNCASECMP_H
+#endif /* defined(__APPLE__) && defined(__MACH__) */
+
+#if defined(BSD) && (BSD >= 199306) && !defined(__linux__) &&                  \
+    !defined(linux) && !defined(__linux)
+#define HAVE_STRNSTR
+#endif /* defined(BSD) && (BSD >= 199306) && !defined(__linux__) &&            \
+          !defined(linux) && !defined(__linux) */
+
+#endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) ||           \
+          defined(__NT__) */
 
 #if defined(__STDC_LIB_EXT1__) && __STDC_WANT_LIB_EXT1__
 
-#   define HAVE_STRERRORLEN_S
+#define HAVE_STRERRORLEN_S
 
 #else
 
-#   if !defined(__APPLE__) && !defined(__APPLE_CC__)
+#if !defined(__APPLE__) && !defined(__APPLE_CC__)
 typedef int errno_t;
-#   endif /* !defined(__APPLE__) && !defined(__APPLE_CC__) */
+#endif /* !defined(__APPLE__) && !defined(__APPLE_CC__) */
 
-#   if defined(__linux__) || defined(linux) || defined(__linux) || defined(ANY_BSD)
-#       define strerror_s strerror_r
-#       define HAVE_STRERRORLEN_S
-#   endif /* defined(__linux__) || defined(linux) || defined(__linux) || defined(ANY_BSD) */
+#if defined(__linux__) || defined(linux) || defined(__linux) || defined(ANY_BSD)
+#define strerror_s strerror_r
+#define HAVE_STRERRORLEN_S
+#endif /* defined(__linux__) || defined(linux) || defined(__linux) ||          \
+          defined(ANY_BSD) */
 
 #endif /* defined(__STDC_LIB_EXT1__) && __STDC_WANT_LIB_EXT1__ */
 
 #ifndef _MSC_VER
-#   define HAVE_STRINGS_H
-#   define HAVE_STRNCASECMP_H
+#define HAVE_STRINGS_H
+#define HAVE_STRNCASECMP_H
 #endif
 
-#if defined(ANY_BSD) || defined(__APPLE__) && defined(__MACH__) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
-#   define HAVE_ASPRINTF
-#endif /* defined(ANY_BSD) || defined(__APPLE__) && defined(__MACH__) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE) */
+#if defined(ANY_BSD) || defined(__APPLE__) && defined(__MACH__) ||             \
+    defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+#define HAVE_ASPRINTF
+#endif /* defined(ANY_BSD) || defined(__APPLE__) && defined(__MACH__) ||       \
+          defined(_GNU_SOURCE) || defined(_BSD_SOURCE) */
 
 #ifdef HAVE_STRINGS_H
-#   include <strings.h>
+#include <strings.h>
 #endif /* HAVE_STRINGS_H */
 
 #if !defined(HAVE_SNPRINTF_H) && defined(C89STRINGUTILS_IMPLEMENTATION)
@@ -98,36 +105,37 @@ typedef int errno_t;
  * SPDX-License-Identifier:  BSD-2-Clause
  */
 
-inline int snprintf(char* buffer, size_t count, const char* format, ...)
-{
-    int result;
-    va_list args;
-    va_start(args, format);
-    result = _vsnprintf(buffer, count, format, args);
-    va_end(args);
-    /* In the case where the string entirely filled the buffer, _vsnprintf will not
-       null-terminate it, but snprintf must. */
-    if (count > 0)
-        buffer[count - 1] = '\0';
-    return result;
+inline int snprintf(char *buffer, size_t count, const char *format, ...) {
+  int result;
+  va_list args;
+  va_start(args, format);
+  result = _vsnprintf(buffer, count, format, args);
+  va_end(args);
+  /* In the case where the string entirely filled the buffer, _vsnprintf will
+     not null-terminate it, but snprintf must. */
+  if (count > 0)
+    buffer[count - 1] = '\0';
+  return result;
 }
 
-inline double wtf_vsnprintf(char* buffer, size_t count, const char* format, va_list args)
-{
-    int result = _vsnprintf(buffer, count, format, args);
-    /* In the case where the string entirely filled the buffer, _vsnprintf will not
-       null-terminate it, but vsnprintf must. */
-    if (count > 0)
-        buffer[count - 1] = '\0';
-    return result;
+inline double wtf_vsnprintf(char *buffer, size_t count, const char *format,
+                            va_list args) {
+  int result = _vsnprintf(buffer, count, format, args);
+  /* In the case where the string entirely filled the buffer, _vsnprintf will
+     not null-terminate it, but vsnprintf must. */
+  if (count > 0)
+    buffer[count - 1] = '\0';
+  return result;
 }
 
 /* Work around a difference in Microsoft's implementation of vsnprintf, where
    vsnprintf does not null terminate the buffer. WebKit can rely on the null
    termination. Microsoft's implementation is fixed in VS 2015. */
-#define vsnprintf(buffer, count, format, args) wtf_vsnprintf(buffer, count, format, args)
+#define vsnprintf(buffer, count, format, args)                                 \
+  wtf_vsnprintf(buffer, count, format, args)
 
-#endif /* !defined(HAVE_SNPRINTF_H) && defined(C89STRINGUTILS_IMPLEMENTATION) */
+#endif /* !defined(HAVE_SNPRINTF_H) && defined(C89STRINGUTILS_IMPLEMENTATION)  \
+        */
 
 #ifndef HAVE_STRNCASECMP_H
 
@@ -141,7 +149,8 @@ extern int strcasecmp(const char *, const char *);
 
 #define strcasecmp _stricmp
 
-#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRNCASECMP_H) */
+#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) &&                            \
+          !defined(HAVE_STRNCASECMP_H) */
 
 #endif /* !HAVE_STRNCASECMP_H */
 
@@ -152,31 +161,34 @@ extern char *strnstr(const char *, const char *, size_t);
 #if defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRNSTR)
 #define HAVE_STRNSTR
 char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
-    /*
-       Find the first occurrence of find in s, where the search is limited to the
-       first slen characters of s.
+  /*
+     Find the first occurrence of find in s, where the search is limited to the
+     first slen characters of s.
 
-    DESCRIPTION
-         The strnstr() function locates the	first occurrence of the	null-termi-
-         nated string little in the	string big, where not more than	len characters
-         are searched.  Characters that appear after a `\0'	character are not
-         searched.
+  DESCRIPTION
+       The strnstr() function locates the	first occurrence of the
+  null-termi-
+       nated string little in the	string big, where not more than	len
+  characters are searched.  Characters that appear after a `\0'	character are
+  not searched.
 
-    RETURN VALUES
-         If	little is an empty string, big is returned; if little occurs nowhere
-         in	big, NULL is returned; otherwise a pointer to the first	character of
-         the first occurrence of little is returned.
+  RETURN VALUES
+       If	little is an empty string, big is returned; if little occurs
+  nowhere in	big, NULL is returned; otherwise a pointer to the first
+  character of the first occurrence of little is returned.
 
-     [this doc (c) FreeBSD <3 clause BSD license> from their manpage]  */
-    const size_t targetLength = strlen(target);
-    const char *start;
-    if (targetLength == 0)
-        return (char *) buffer;
-    for (start = buffer; *start && start + targetLength <= buffer + bufferLength; start++) {
-        if (*start == *target && strncmp(start + 1, target + 1, targetLength - 1) == 0)
-            return (char *) (start);
-    }
-    return 0;
+   [this doc (c) FreeBSD <3 clause BSD license> from their manpage]  */
+  const size_t targetLength = strlen(target);
+  const char *start;
+  if (targetLength == 0)
+    return (char *)buffer;
+  for (start = buffer; *start && start + targetLength <= buffer + bufferLength;
+       start++) {
+    if (*start == *target &&
+        strncmp(start + 1, target + 1, targetLength - 1) == 0)
+      return (char *)(start);
+  }
+  return 0;
 }
 #endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRNSTR) */
 
@@ -190,14 +202,16 @@ extern char *strcasestr(const char *, const char *);
 
 /* `strcasestr` from MUSL */
 
-char *strcasestr(const char *h, const char *n)
-{
-    const size_t l = strlen(n);
-    for (; *h; h++) if (!strncasecmp(h, n, l)) return (char *)h;
-    return 0;
+char *strcasestr(const char *h, const char *n) {
+  const size_t l = strlen(n);
+  for (; *h; h++)
+    if (!strncasecmp(h, n, l))
+      return (char *)h;
+  return 0;
 }
 
-#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRCASESTR_H) */
+#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) &&                            \
+          !defined(HAVE_STRCASESTR_H) */
 
 #endif /* !HAVE_STRCASESTR_H */
 
@@ -209,53 +223,50 @@ extern size_t strerrorlen_s(errno_t);
 #define HAVE_STRERRORLEN_S
 /* MIT licensed function from Safe C Library */
 
-size_t strerrorlen_s(errno_t errnum)
-{
+size_t strerrorlen_s(errno_t errnum) {
 #ifndef ESNULLP
-#define ESNULLP         ( 400 )       /* null ptr                    */
+#define ESNULLP (400) /* null ptr                    */
 #endif
 
 #ifndef ESLEWRNG
-#define ESLEWRNG        ( 410 )       /* wrong size                */
+#define ESLEWRNG (410) /* wrong size                */
 #endif
 
 #ifndef ESLAST
 #define ESLAST ESLEWRNG
 #endif
 
-    static const int len_errmsgs_s[] = {
-            sizeof "null ptr",               /* ESNULLP */
-            sizeof "length is zero",         /* ESZEROL */
-            sizeof "length is below min",    /* ESLEMIN */
-            sizeof "length exceeds RSIZE_MAX",/* ESLEMAX */
-            sizeof "overlap undefined",      /* ESOVRLP */
-            sizeof "empty string",           /* ESEMPTY */
-            sizeof "not enough space",       /* ESNOSPC */
-            sizeof "unterminated string",    /* ESUNTERM */
-            sizeof "no difference",          /* ESNODIFF */
-            sizeof "not found",              /* ESNOTFND */
-            sizeof "wrong size",             /* ESLEWRNG */
-    };
+  static const int len_errmsgs_s[] = {
+      sizeof "null ptr",                 /* ESNULLP */
+      sizeof "length is zero",           /* ESZEROL */
+      sizeof "length is below min",      /* ESLEMIN */
+      sizeof "length exceeds RSIZE_MAX", /* ESLEMAX */
+      sizeof "overlap undefined",        /* ESOVRLP */
+      sizeof "empty string",             /* ESEMPTY */
+      sizeof "not enough space",         /* ESNOSPC */
+      sizeof "unterminated string",      /* ESUNTERM */
+      sizeof "no difference",            /* ESNODIFF */
+      sizeof "not found",                /* ESNOTFND */
+      sizeof "wrong size",               /* ESLEWRNG */
+  };
 
-    if (errnum >= ESNULLP && errnum <= ESLAST)
-    {
-        return len_errmsgs_s[errnum - ESNULLP] - 1;
-    }
-    else
-    {
+  if (errnum >= ESNULLP && errnum <= ESLAST) {
+    return len_errmsgs_s[errnum - ESNULLP] - 1;
+  } else {
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4996)
+#pragma warning(disable : 4996)
 #endif /* _MSC_VER */
-        const char *buf = strerror(errnum);
+    const char *buf = strerror(errnum);
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif /* _MSC_VER */
-        return buf ? strlen(buf) : 0;
-    }
+    return buf ? strlen(buf) : 0;
+  }
 }
 
-#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRERRORLEN_S) */
+#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) &&                            \
+          !defined(HAVE_STRERRORLEN_S) */
 
 #endif /* !HAVE_STRERRORLEN_S */
 
@@ -273,87 +284,84 @@ extern int asprintf(char **str, const char *fmt, ...);
 #include <stdlib.h>
 
 #ifndef VA_COPY
-# if defined(HAVE_VA_COPY) || defined(va_copy)
-#  define VA_COPY(dest, src) va_copy(dest, src)
-# else
-#  ifdef HAVE___VA_COPY
-#   define VA_COPY(dest, src) __va_copy(dest, src)
-#  else
-#   define VA_COPY(dest, src) (dest) = (src)
-#  endif
-# endif
+#if defined(HAVE_VA_COPY) || defined(va_copy)
+#define VA_COPY(dest, src) va_copy(dest, src)
+#else
+#ifdef HAVE___VA_COPY
+#define VA_COPY(dest, src) __va_copy(dest, src)
+#else
+#define VA_COPY(dest, src) (dest) = (src)
+#endif
+#endif
 #endif /* ! VA_COPY */
 
-#define INIT_SZ	128
+#define INIT_SZ 128
 
-extern int
-vasprintf(char **str, const char *fmt, va_list ap)
-{
-	int ret;
-	va_list ap2;
-	char *string, *newstr;
-	size_t len;
+extern int vasprintf(char **str, const char *fmt, va_list ap) {
+  int ret;
+  va_list ap2;
+  char *string, *newstr;
+  size_t len;
 
-	if ((string = (char*) malloc(INIT_SZ)) == NULL)
-		goto fail;
+  if ((string = (char *)malloc(INIT_SZ)) == NULL)
+    goto fail;
 
-	VA_COPY(ap2, ap);
-	ret = vsnprintf(string, INIT_SZ, fmt, ap2);
-	va_end(ap2);
-	if (ret >= 0 && ret < INIT_SZ) { /* succeeded with initial alloc */
-		*str = string;
-	} else if (ret == INT_MAX || ret < 0) { /* Bad length */
-		free(string);
-		goto fail;
-	} else {	/* bigger than initial, realloc allowing for nul */
-		len = (size_t)ret + 1;
-		if ((newstr = (char*)realloc(string, len)) == NULL) {
-			free(string);
-			goto fail;
-		}
-		VA_COPY(ap2, ap);
-		ret = vsnprintf(newstr, len, fmt, ap2);
-		va_end(ap2);
-		if (ret < 0 || (size_t)ret >= len) { /* failed with realloc'ed string */
-			free(newstr);
-			goto fail;
-		}
-		*str = newstr;
-	}
-	return ret;
+  VA_COPY(ap2, ap);
+  ret = vsnprintf(string, INIT_SZ, fmt, ap2);
+  va_end(ap2);
+  if (ret >= 0 && ret < INIT_SZ) { /* succeeded with initial alloc */
+    *str = string;
+  } else if (ret == INT_MAX || ret < 0) { /* Bad length */
+    free(string);
+    goto fail;
+  } else { /* bigger than initial, realloc allowing for nul */
+    len = (size_t)ret + 1;
+    if ((newstr = (char *)realloc(string, len)) == NULL) {
+      free(string);
+      goto fail;
+    }
+    VA_COPY(ap2, ap);
+    ret = vsnprintf(newstr, len, fmt, ap2);
+    va_end(ap2);
+    if (ret < 0 || (size_t)ret >= len) { /* failed with realloc'ed string */
+      free(newstr);
+      goto fail;
+    }
+    *str = newstr;
+  }
+  return ret;
 
 fail:
-	*str = NULL;
-	errno = ENOMEM;
-	return -1;
+  *str = NULL;
+  errno = ENOMEM;
+  return -1;
 }
 
-extern int asprintf(char **str, const char *fmt, ...)
-{
-	va_list ap;
-	int ret;
+extern int asprintf(char **str, const char *fmt, ...) {
+  va_list ap;
+  int ret;
 
-	*str = NULL;
-	va_start(ap, fmt);
-	ret = vasprintf(str, fmt, ap);
-	va_end(ap);
+  *str = NULL;
+  va_start(ap, fmt);
+  ret = vasprintf(str, fmt, ap);
+  va_end(ap);
 
-	return ret;
+  return ret;
 }
 
 #endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_ASPRINTF) */
 
 #endif /* !HAVE_ASPRINTF */
 
-/* a version of `asprintf` that can be called multiple times:
- * char *s; concat_asprintf(&s, "foo%s", "bar");
- * concat_asprintf(&s, "can%s", "haz"); free(s);
+/* `jasprintf`, a version of `asprintf` that concatenates on successive calls:
+ * char *s; jasprintf(&s, "foo%s", "bar");
+ * jasprintf(&s, "can%s", "haz"); free(s);
  * */
-char *concat_asprintf(char **unto, const char *fmt, ...);
+char *jasprintf(char **unto, const char *fmt, ...);
 
-#ifndef HAVE_CONCAT_ASPRINTF
-#define HAVE_CONCAT_ASPRINTF
-char *concat_asprintf(char **unto, const char *fmt, ...) {
+#ifndef HAVE_JASPRINTF
+#define HAVE_JASPRINTF
+char *jasprintf(char **unto, const char *fmt, ...) {
   va_list args;
   size_t base_length = unto && *unto ? strlen(*unto) : 0;
   int length;
@@ -377,6 +385,6 @@ char *concat_asprintf(char **unto, const char *fmt, ...) {
 
   return result;
 }
-#endif /* !HAVE_CONCAT_ASPRINTF */
+#endif /* !HAVE_JASPRINTF */
 
 #endif /* !C89STRINGUTILS_STRING_EXTRAS_H */

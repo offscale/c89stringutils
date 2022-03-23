@@ -1,5 +1,4 @@
 get_filename_component(LIBRARY_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(REPLACE " " "_" LIBRARY_NAME "${LIBRARY_NAME}")
 
 set(Header_Files "c89stringutils_string_extras.h")
 
@@ -7,11 +6,12 @@ source_group("Header Files" FILES "${Header_Files}")
 
 add_library("${LIBRARY_NAME}" INTERFACE "${Header_Files}")
 
+include(GNUInstallDirs)
 target_include_directories(
         "${LIBRARY_NAME}"
         INTERFACE
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
-        "$<INSTALL_INTERFACE:include>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
 )
 
 set_target_properties(
@@ -27,6 +27,8 @@ if (TARGET "${DEPENDANT_LIBRARY}")
     list(APPEND installable_libs "${DEPENDANT_LIBRARY}")
 endif ()
 install(TARGETS ${installable_libs}
-        DESTINATION "${INSTALL_DEST}"
-        EXPORT "${LIBRARY_NAME}Targets")
-install(FILES ${Header_Files} DESTINATION "include")
+        EXPORT "${LIBRARY_NAME}Targets"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(FILES ${Header_Files} TYPE "INCLUDE")

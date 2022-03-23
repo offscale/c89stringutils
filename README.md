@@ -25,7 +25,7 @@ Header only (to simplify including). Just `#define C89STRINGUTILS_IMPLEMENTATION
   | [`strerrorlen_s`](https://en.cppreference.com/w/c/string/byte/strerror) | From Safe C Library          |
   | [`asprintf`](https://www.freebsd.org/cgi/man.cgi?query=asprintf)        | From libressl-portable       |
 
-Additionally `concat_asprintf`, a version of `asprintf` that can concatenates on successive calls.
+Additionally `jasprintf`, a version of `asprintf` that concatenates on successive calls.
 
 ### Dependencies
 
