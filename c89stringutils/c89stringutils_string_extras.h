@@ -135,13 +135,13 @@ extern int strncasecmp(const char *, const char *, size_t);
 
 extern int strcasecmp(const char *, const char *);
 
-#ifdef C89STRINGUTILS_IMPLEMENTATION
+#if defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRNCASECMP_H)
 #define HAVE_STRNCASECMP_H
 #define strncasecmp _strnicmp
 
 #define strcasecmp _stricmp
 
-#endif /* C89STRINGUTILS_IMPLEMENTATION */
+#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRNCASECMP_H) */
 
 #endif /* !HAVE_STRNCASECMP_H */
 
@@ -149,7 +149,7 @@ extern int strcasecmp(const char *, const char *);
 
 extern char *strnstr(const char *, const char *, size_t);
 
-#ifdef C89STRINGUTILS_IMPLEMENTATION
+#if defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRNSTR)
 #define HAVE_STRNSTR
 char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
     /*
@@ -178,14 +178,14 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
     }
     return 0;
 }
-#endif /* C89STRINGUTILS_IMPLEMENTATION */
+#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRNSTR) */
 
-#endif /* ! HAVE_STRNSTR */
+#endif /* !HAVE_STRNSTR */
 
 #ifndef HAVE_STRCASESTR_H
 extern char *strcasestr(const char *, const char *);
 
-#ifdef C89STRINGUTILS_IMPLEMENTATION
+#if defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRCASESTR_H)
 #define HAVE_STRCASESTR_H
 
 /* `strcasestr` from MUSL */
@@ -197,15 +197,15 @@ char *strcasestr(const char *h, const char *n)
     return 0;
 }
 
-#endif /* C89STRINGUTILS_IMPLEMENTATION */
+#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRCASESTR_H) */
 
-#endif /* ! HAVE_STRCASESTR_H */
+#endif /* !HAVE_STRCASESTR_H */
 
 #ifndef HAVE_STRERRORLEN_S
 
 extern size_t strerrorlen_s(errno_t);
 
-#ifdef C89STRINGUTILS_IMPLEMENTATION
+#if defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRERRORLEN_S)
 #define HAVE_STRERRORLEN_S
 /* MIT licensed function from Safe C Library */
 
@@ -255,7 +255,7 @@ size_t strerrorlen_s(errno_t errnum)
     }
 }
 
-#endif /* C89STRINGUTILS_IMPLEMENTATION */
+#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRERRORLEN_S) */
 
 #endif /* !HAVE_STRERRORLEN_S */
 
@@ -265,8 +265,7 @@ extern int vasprintf(char **str, const char *fmt, va_list ap);
 
 extern int asprintf(char **str, const char *fmt, ...);
 
-#ifdef C89STRINGUTILS_IMPLEMENTATION
-
+#if defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_ASPRINTF)
 #define HAVE_ASPRINTF
 
 #include <errno.h>
@@ -342,8 +341,42 @@ extern int asprintf(char **str, const char *fmt, ...)
 	return ret;
 }
 
-#endif /* C89STRINGUTILS_IMPLEMENTATION */
+#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_ASPRINTF) */
 
 #endif /* !HAVE_ASPRINTF */
 
-#endif /* ! C89STRINGUTILS_STRING_EXTRAS_H */
+/* a version of `asprintf` that can be called multiple times:
+ * char *s; concat_asprintf(&s, "foo%s", "bar");
+ * concat_asprintf(&s, "can%s", "haz"); free(s);
+ * */
+char *concat_asprintf(char **unto, const char *fmt, ...);
+
+#ifndef HAVE_CONCAT_ASPRINTF
+#define HAVE_CONCAT_ASPRINTF
+char *concat_asprintf(char **unto, const char *fmt, ...) {
+  va_list args;
+  size_t base_length = unto && *unto ? strlen(*unto) : 0;
+  int length;
+  char *result;
+
+  va_start(args, fmt);
+  /* check length for failure */
+  length = vsnprintf(NULL, 0, fmt, args);
+  va_end(args);
+
+  /* check result for failure */
+  result = realloc(unto ? *unto : NULL, base_length + length + 1);
+
+  va_start(args, fmt);
+  /* check for failure*/
+  vsprintf(result + base_length, fmt, args);
+  va_end(args);
+
+  if (unto)
+    *unto = result;
+
+  return result;
+}
+#endif /* !HAVE_CONCAT_ASPRINTF */
+
+#endif /* !C89STRINGUTILS_STRING_EXTRAS_H */
