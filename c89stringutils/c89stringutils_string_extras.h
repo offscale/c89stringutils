@@ -353,13 +353,15 @@ extern int asprintf(char **str, const char *fmt, ...) {
 
 #endif /* !HAVE_ASPRINTF */
 
+#ifndef HAVE_JASPRINTF
+
 /* `jasprintf`, a version of `asprintf` that concatenates on successive calls:
  * char *s; jasprintf(&s, "foo%s", "bar");
  * jasprintf(&s, "can%s", "haz"); free(s);
  * */
 char *jasprintf(char **unto, const char *fmt, ...);
 
-#ifndef HAVE_JASPRINTF
+#if defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_JASPRINTF)
 #define HAVE_JASPRINTF
 char *jasprintf(char **unto, const char *fmt, ...) {
   va_list args;
@@ -385,6 +387,8 @@ char *jasprintf(char **unto, const char *fmt, ...) {
 
   return result;
 }
+#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_JASPRINTF)   \
+        */
 #endif /* !HAVE_JASPRINTF */
 
 #endif /* !C89STRINGUTILS_STRING_EXTRAS_H */

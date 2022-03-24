@@ -17,7 +17,7 @@ TEST x_strnstr_should_fail(void) {
 }
 
 TEST x_jasprintf_should_succeed(void) {
-  char *s=NULL;
+  char *s = NULL;
   jasprintf(&s, "foo%s", "bar");
   jasprintf(&s, "can%s", "haz");
   ASSERT_EQ(strcmp(s, "foobarcanhaz"), 0);
