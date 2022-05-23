@@ -297,44 +297,43 @@ extern int asprintf(char **str, const char *fmt, ...);
 
 #define INIT_SZ 128
 
-extern int vasprintf(char **str, const char *fmt, va_list ap) {
-  int ret;
-  va_list ap2;
-  char *string, *newstr;
-  size_t len;
+#if !defined(WIN32) && !defined(_WIN32) && !defined(__WIN32__) &&              \
+    !defined(__NT__)
+int _vscprintf(const char *format, va_list pargs) {
+  int retval;
+  va_list argcopy;
+  va_copy(argcopy, pargs);
+  retval = vsnprintf(NULL, 0, format, argcopy);
+  va_end(argcopy);
+  return retval;
+}
+#endif /* !defined(WIN32) && !defined(_WIN32) && !defined(__WIN32__) &&        \
+          !defined(__NT__) */
 
-  if ((string = (char *)malloc(INIT_SZ)) == NULL)
-    goto fail;
-
-  VA_COPY(ap2, ap);
-  ret = vsnprintf(string, INIT_SZ, fmt, ap2);
-  va_end(ap2);
-  if (ret >= 0 && ret < INIT_SZ) { /* succeeded with initial alloc */
-    *str = string;
-  } else if (ret == INT_MAX || ret < 0) { /* Bad length */
-    free(string);
-    goto fail;
-  } else { /* bigger than initial, realloc allowing for nul */
-    len = (size_t)ret + 1;
-    if ((newstr = (char *)realloc(string, len)) == NULL) {
-      free(string);
-      goto fail;
-    }
-    VA_COPY(ap2, ap);
-    ret = vsnprintf(newstr, len, fmt, ap2);
-    va_end(ap2);
-    if (ret < 0 || (size_t)ret >= len) { /* failed with realloc'ed string */
-      free(newstr);
-      goto fail;
-    }
-    *str = newstr;
+int vasprintf(char **strp, const char *fmt, va_list ap) {
+  const int len = _vscprintf(fmt, ap);
+  size_t size;
+  char *str;
+  int r;
+  if (len == -1)
+    return -1;
+  size = (size_t)len + 1;
+  str = malloc(size);
+  if (str == NULL)
+    return ENOMEM;
+  r =
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+      vsprintf_s
+#else
+      vsnprintf
+#endif
+      (str, len + 1, fmt, ap);
+  if (r == -1) {
+    free(str);
+    return -1;
   }
-  return ret;
-
-fail:
-  *str = NULL;
-  errno = ENOMEM;
-  return -1;
+  *strp = str;
+  return r;
 }
 
 extern int asprintf(char **str, const char *fmt, ...) {
@@ -368,26 +367,18 @@ char *jasprintf(char **unto, const char *fmt, ...) {
   size_t base_length = unto && *unto ? strlen(*unto) : 0;
   int length;
   char *result;
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  int len;
-  char *res_buf;
-#endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) ||           \
-          defined(__NT__) */
   va_start(args, fmt);
   /* check length for failure */
   length = vsnprintf(NULL, 0, fmt, args);
   va_end(args);
 
-  /* check result for failure */
+  /* TODO: check result for failure */
   result = realloc(unto ? *unto : NULL, base_length + length + 1);
 
   va_start(args, fmt);
   /* check for failure*/
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  len = _vscprintf(fmt, args) + 1;
-  res_buf = (char *)malloc(len * sizeof(char));
-  if (res_buf != NULL)
-    vsprintf_s(res_buf, len, fmt, args);
+  vsprintf_s(result + base_length, length + 1, fmt, args);
 #else
   vsprintf(result + base_length, fmt, args);
 #endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) ||           \
