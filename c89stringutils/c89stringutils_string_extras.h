@@ -368,7 +368,11 @@ char *jasprintf(char **unto, const char *fmt, ...) {
   size_t base_length = unto && *unto ? strlen(*unto) : 0;
   int length;
   char *result;
-
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  int len;
+  char *res_buf;
+#endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) ||           \
+          defined(__NT__) */
   va_start(args, fmt);
   /* check length for failure */
   length = vsnprintf(NULL, 0, fmt, args);
@@ -379,7 +383,15 @@ char *jasprintf(char **unto, const char *fmt, ...) {
 
   va_start(args, fmt);
   /* check for failure*/
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  len = _vscprintf(fmt, args) + 1;
+  res_buf = (char *)malloc(len * sizeof(char));
+  if (res_buf != NULL)
+    vsprintf_s(res_buf, len, fmt, args);
+#else
   vsprintf(result + base_length, fmt, args);
+#endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) ||           \
+          defined(__NT__) */
   va_end(args);
 
   if (unto)
