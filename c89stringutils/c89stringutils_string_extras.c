@@ -3,9 +3,12 @@
  * are now made available on other platforms (Windows, SunOS, &etc.)
  * */
 
-#include <stdlib.h>
-
 #include "c89stringutils_string_extras.h"
+
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #if !defined(HAVE_SNPRINTF_H)
 #define HAVE_SNPRINTF_H
@@ -53,7 +56,7 @@ inline double wtf_vsnprintf(char *buffer, size_t count, const char *format,
 
 #ifndef HAVE_STRNCASECMP_H
 
-#if defined(C89STRINGUTILS_IMPLEMENTATION)
+#if !defined(HAVE_STRNCASECMP_H)
 #define HAVE_STRNCASECMP_H
 
 #define strncasecmp _strnicmp
@@ -279,5 +282,5 @@ char *jasprintf(char **unto, const char *fmt, ...) {
 
   return result;
 }
-#endif /* !defined(HAVE_JASPRINTF)  */
+#endif /* !defined(HAVE_JASPRINTF) */
 #endif /* !HAVE_JASPRINTF */

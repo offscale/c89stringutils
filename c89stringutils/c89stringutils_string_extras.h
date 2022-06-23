@@ -94,49 +94,11 @@ typedef int errno_t;
 #include <strings.h>
 #endif /* HAVE_STRINGS_H */
 
-#if !defined(HAVE_SNPRINTF_H) && defined(C89STRINGUTILS_IMPLEMENTATION)
-#define HAVE_SNPRINTF_H
-/*
- * `snprintf`, `vsnprintf`, `strnstr` taken from:
- * https://chromium.googlesource.com/chromium/blink/+/5cedd2fd208daf119b9ea47c7c1e22d760a586eb/Source/wtf/StringExtras.h
- * …then modified to remove C++ specifics and WebKit specific macros
- *
- * Copyright (C) 2006, 2010 Apple Inc. All rights reserved.
- * Copyright (C) 2020 Offscale.io. All rights reserved.
- *
- * SPDX-License-Identifier:  BSD-2-Clause
- */
-
-C89STRINGUTILS_EXPORT inline int snprintf(char *buffer, size_t count,
-                                          const char *format, ...);
-
-C89STRINGUTILS_EXPORT inline double
-wtf_vsnprintf(char *buffer, size_t count, const char *format, va_list args);
-
-/* Work around a difference in Microsoft's implementation of vsnprintf, where
-   vsnprintf does not null terminate the buffer. WebKit can rely on the null
-   termination. Microsoft's implementation is fixed in VS 2015. */
-#define vsnprintf(buffer, count, format, args)                                 \
-  wtf_vsnprintf(buffer, count, format, args)
-
-#endif /* !defined(HAVE_SNPRINTF_H) && defined(C89STRINGUTILS_IMPLEMENTATION)  \
-        */
-
 #ifndef HAVE_STRNCASECMP_H
 
-extern C89STRINGUTILS_EXPORT int strncasecmp(const char *, const char *,
-                                             size_t);
+extern C89STRINGUTILS_EXPORT int strncasecmp(const char *, const char *, size_t);
 
 extern C89STRINGUTILS_EXPORT int strcasecmp(const char *, const char *);
-
-#if defined(C89STRINGUTILS_IMPLEMENTATION) && !defined(HAVE_STRNCASECMP_H)
-#define HAVE_STRNCASECMP_H
-
-#define strncasecmp _strnicmp
-#define strcasecmp _stricmp
-
-#endif /* defined(C89STRINGUTILS_IMPLEMENTATION) &&                            \
-          !defined(HAVE_STRNCASECMP_H) */
 
 #endif /* !HAVE_STRNCASECMP_H */
 
@@ -159,8 +121,7 @@ extern C89STRINGUTILS_EXPORT size_t strerrorlen_s(errno_t);
 
 #ifndef HAVE_ASPRINTF
 
-extern C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt,
-                                           va_list ap);
+extern C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap);
 
 extern C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...);
 
