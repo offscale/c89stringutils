@@ -28,8 +28,18 @@ include(GenerateExportHeader)
 set(_export_file "${CMAKE_BINARY_DIR}/${LIBRARY_NAME}_export.h")
 generate_export_header("${LIBRARY_NAME}" EXPORT_FILE_NAME "${_export_file}")
 
-# install rules
-set(installable_libs "${LIBRARY_NAME}")
+#################
+# Install rules #
+#################
+
+include(GNUInstallDirs)
+
+# setup the version numbering
+set_property(TARGET "${LIBRARY_NAME}" PROPERTY VERSION "${${PROJECT_NAME}_VERSION}")
+set_property(TARGET "${LIBRARY_NAME}" PROPERTY SOVERSION "${${PROJECT_NAME}_VERSION_MAJOR}")
+
+set(installable_libs # "${EXEC_NAME}"
+        "${LIBRARY_NAME}" "${PROJECT_NAME}_compiler_flags")
 if (TARGET "${DEPENDANT_LIBRARY}")
     list(APPEND installable_libs "${DEPENDANT_LIBRARY}")
 endif ()
@@ -38,4 +48,7 @@ install(TARGETS ${installable_libs}
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-install(FILES ${Header_Files} "${_export_file}" TYPE "INCLUDE")
+install(EXPORT "${LIBRARY_NAME}Targets" DESTINATION "${CMAKE_INSTALL_DATADIR}/${LIBRARY_NAME}")
+
+install(FILES ${Header_Files} "${_export_file}"
+        TYPE "INCLUDE")
