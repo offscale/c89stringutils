@@ -12,7 +12,15 @@ TEST x_strnstr_should_succeed(void) {
 }
 
 TEST x_strnstr_should_fail(void) {
-  ASSERT_EQ(strcmp(buffer, strnstr(buffer, target, strlen(buffer))), 0);
+  ASSERT_STR_EQ(buffer, strnstr(buffer, target, strlen(buffer)));
+  PASS();
+}
+
+TEST x_asprintf_should_succeed(void) {
+  char *s = NULL;
+  asprintf(&s, "foo%s", "bar");
+  ASSERT_STR_EQ("foobar", s);
+  free(s);
   PASS();
 }
 
@@ -20,7 +28,7 @@ TEST x_jasprintf_should_succeed(void) {
   char *s = NULL;
   jasprintf(&s, "foo%s", "bar");
   jasprintf(&s, "can%s", "haz");
-  ASSERT_EQ(strcmp(s, "foobarcanhaz"), 0);
+  ASSERT_STR_EQ("foobarcanhaz", s);
   free(s);
   PASS();
 }
@@ -29,5 +37,6 @@ TEST x_jasprintf_should_succeed(void) {
 SUITE(strnstr_suite) {
   RUN_TEST(x_strnstr_should_succeed);
   RUN_TEST(x_strnstr_should_fail);
+  RUN_TEST(x_asprintf_should_succeed);
   RUN_TEST(x_jasprintf_should_succeed);
 }
