@@ -41,11 +41,10 @@ if (BUILD_TESTING)
     add_subdirectory("c89stringutils_tests")
 endif (BUILD_TESTING)
 
-# header-only so including this will pollute the `find_path` suggestion in vcpkg
-#install(
-#        FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.h"
-#        DESTINATION "include"
-#)
+install(
+        FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.h"
+        DESTINATION "include"
+)
 
 include(InstallRequiredSystemLibraries)
 set(CPACK_BUNDLE_NAME "${PROJECT_NAME}")
@@ -82,3 +81,7 @@ write_basic_package_version_file(
         VERSION "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}"
         COMPATIBILITY AnyNewerVersion
 )
+install(FILES
+        "${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+        "${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}")

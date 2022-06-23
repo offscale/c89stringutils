@@ -107,10 +107,11 @@ typedef int errno_t;
  * SPDX-License-Identifier:  BSD-2-Clause
  */
 
-C89STRINGUTILS_EXPORT inline int snprintf(char *buffer, size_t count, const char *format, ...);
+C89STRINGUTILS_EXPORT inline int snprintf(char *buffer, size_t count,
+                                          const char *format, ...);
 
-C89STRINGUTILS_EXPORT inline double wtf_vsnprintf(char *buffer, size_t count, const char *format,
-                            va_list args);
+C89STRINGUTILS_EXPORT inline double
+wtf_vsnprintf(char *buffer, size_t count, const char *format, va_list args);
 
 /* Work around a difference in Microsoft's implementation of vsnprintf, where
    vsnprintf does not null terminate the buffer. WebKit can rely on the null
@@ -123,7 +124,8 @@ C89STRINGUTILS_EXPORT inline double wtf_vsnprintf(char *buffer, size_t count, co
 
 #ifndef HAVE_STRNCASECMP_H
 
-extern C89STRINGUTILS_EXPORT int strncasecmp(const char *, const char *, size_t);
+extern C89STRINGUTILS_EXPORT int strncasecmp(const char *, const char *,
+                                             size_t);
 
 extern C89STRINGUTILS_EXPORT int strcasecmp(const char *, const char *);
 
@@ -157,7 +159,8 @@ extern C89STRINGUTILS_EXPORT size_t strerrorlen_s(errno_t);
 
 #ifndef HAVE_ASPRINTF
 
-extern C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap);
+extern C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt,
+                                           va_list ap);
 
 extern C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...);
 

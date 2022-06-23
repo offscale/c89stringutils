@@ -4,6 +4,7 @@
  * */
 
 #include <stdlib.h>
+
 #include "c89stringutils_string_extras.h"
 
 #if !defined(HAVE_SNPRINTF_H)
