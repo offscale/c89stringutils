@@ -10,7 +10,7 @@ file(MAKE_DIRECTORY "${DOWNLOAD_DIR}")
 
 set(GREATEST_SHA256 "1292593d95c35eeccc89ffa1c91d6fe53b49f81cbf2c2b7758842b7f3186fcc2")
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
-    file(DOWNLOAD "https://raw.githubusercontent.com/silentbicycle/greatest/11a6af1/greatest.h"
+    file(DOWNLOAD "https://raw.githubusercontent.com/silentbicycle/greatest/fbbf981/greatest.h"
             "${DOWNLOAD_DIR}/greatest.h")
     file(SHA256 "${DOWNLOAD_DIR}/greatest.h" GREATEST_SHA256_FOUND)
     if (NOT GREATEST_SHA256_FOUND STREQUAL GREATEST_SHA256)

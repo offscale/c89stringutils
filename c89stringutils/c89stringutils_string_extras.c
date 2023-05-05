@@ -22,6 +22,16 @@
  *
  * SPDX-License-Identifier:  BSD-2-Clause
  */
+#if OLD_MSVC
+
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
+
+
+
+
+#else
+
 
 inline int snprintf(char *buffer, size_t count, const char *format, ...) {
   int result;
@@ -51,6 +61,8 @@ inline double wtf_vsnprintf(char *buffer, size_t count, const char *format,
    termination. Microsoft's implementation is fixed in VS 2015. */
 #define vsnprintf(buffer, count, format, args)                                 \
   wtf_vsnprintf(buffer, count, format, args)
+
+#endif /* !OLD_MSVC */
 
 #endif /* !defined(HAVE_SNPRINTF_H) */
 

@@ -39,9 +39,12 @@ set_property(TARGET "${LIBRARY_NAME}" PROPERTY VERSION "${${PROJECT_NAME}_VERSIO
 set_property(TARGET "${LIBRARY_NAME}" PROPERTY SOVERSION "${${PROJECT_NAME}_VERSION_MAJOR}")
 
 set(installable_libs # "${EXEC_NAME}"
-        "${LIBRARY_NAME}" "${PROJECT_NAME}_compiler_flags")
+        "${LIBRARY_NAME}")
 if (TARGET "${DEPENDANT_LIBRARY}")
     list(APPEND installable_libs "${DEPENDANT_LIBRARY}")
+endif ()
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.19")
+    list(APPEND installable_libs "${PROJECT_NAME}_compiler_flags")
 endif ()
 install(TARGETS ${installable_libs}
         EXPORT "${LIBRARY_NAME}Targets"
@@ -51,4 +54,4 @@ install(TARGETS ${installable_libs}
 install(EXPORT "${LIBRARY_NAME}Targets" DESTINATION "${CMAKE_INSTALL_DATADIR}/${LIBRARY_NAME}")
 
 install(FILES ${Header_Files} "${_export_file}"
-        TYPE "INCLUDE")
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")

@@ -29,7 +29,7 @@ Additionally `jasprintf`, a version of `asprintf` that concatenates on successiv
 
 ### Dependencies
 
-- [CMake](https://cmake.org) (3.19 or later)
+- [CMake](https://cmake.org) (3.11 or later)
 - C compiler (any that work with CMake, and were released within the last 30 years)
 
 ### Build

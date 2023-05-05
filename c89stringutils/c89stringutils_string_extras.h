@@ -26,6 +26,11 @@
 
 #define HAVE_SNPRINTF_H
 
+#else
+
+#define OLD_MSVC
+/* !defined(MSC_VER) || MSC_VER > 1400 *//* 1400 is MSVC 2005 */
+
 #endif /* _MSC_VER >= 1900 */
 
 #else
@@ -109,6 +114,7 @@ extern C89STRINGUTILS_EXPORT char *strnstr(const char *, const char *, size_t);
 #endif /* !HAVE_STRNSTR */
 
 #ifndef HAVE_STRCASESTR_H
+
 extern C89STRINGUTILS_EXPORT char *strcasestr(const char *, const char *);
 
 #endif /* !HAVE_STRCASESTR_H */
