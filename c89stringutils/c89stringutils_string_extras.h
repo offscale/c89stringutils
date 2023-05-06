@@ -34,6 +34,9 @@
 #endif /* _MSC_VER >= 1900 */
 
 #else
+#ifdef __MINGW32__
+#define HAVE_SNPRINTF_H
+#endif /* __MINGW32__ */
 
 #define HAVE_STRNCASECMP
 

@@ -22,7 +22,7 @@
  *
  * SPDX-License-Identifier:  BSD-2-Clause
  */
-#if OLD_MSVC
+#ifdef OLD_MSVC
 
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
@@ -62,7 +62,7 @@ inline double wtf_vsnprintf(char *buffer, size_t count, const char *format,
 #define vsnprintf(buffer, count, format, args)                                 \
   wtf_vsnprintf(buffer, count, format, args)
 
-#endif /* !OLD_MSVC */
+#endif /* OLD_MSVC */
 
 #endif /* !defined(HAVE_SNPRINTF_H) */
 
