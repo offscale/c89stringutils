@@ -6,11 +6,18 @@ c89stringutils
 [![C89](https://img.shields.io/badge/C-89-blue)](https://en.wikipedia.org/wiki/C89_(C_version))
 
 C89 is missing some nice things. As is MSVC.
-This adds the string related functionality for Windows (particularly: MSVC) and is tested additionally on: SunOS, Linux, BSD, and macOS.
+This adds the string related functionality for:
+- Windows
+  - MSVC 2005
+  - MSVC 2022 (should support all other versions also)
+  - MinGW
+  - Open Watcom 2.0 (including DOS target)
+- SunOS
+- Linux
+- BSD
+- macOS
 
 Everything is hidden behind `ifdef`s so if the compiler/OS supports the function, that function will be used instead of the one provided by this library.
-
-Header only (to simplify including). Just `#define C89STRINGUTILS_IMPLEMENTATION` once-only in your program (before including the header).
 
 ### String functions implemented
 
@@ -29,16 +36,48 @@ Additionally `jasprintf`, a version of `asprintf` that concatenates on successiv
 
 ### Dependencies
 
-- [CMake](https://cmake.org) (3.11 or later)
+- [CMake](https://cmake.org) (3.11 for MSVC 2005 or newer versions for other targets)
 - C compiler (any that work with CMake, and were released within the last 30 years)
 
-### Build
+### Configure, build, and test
 
 ```bash
 mkdir build && cd build
 cmake ..
 cmake --build .
+ctest -C Debug
 ```
+
+#### Instructions for MSVC 2005
+
+With cmake-3.11.4 specified, do:
+```sh
+mkdir build_msvc2005 && cd build_msvc2005
+cmake-3.11.4-win64-x64\bin\cmake -DCMAKE_WARN_VS8=OFF -DCMAKE_BUILD_TYPE="Debug" -G "Visual Studio 8 2005" ..
+cmake-3.11.4-win64-x64\bin\cmake --build .
+cmake-3.11.4-win64-x64\bin\ctest -C Debug
+```
+(the last two commands can be run by opening the solution in Visual Studio 2005)
+
+Alternatively with newer versions of CMake (tested 3.26.3):
+```sh
+mkdir build_msvc_nmake2005 && cd build_msvc_nmake2005
+cmake -DCMAKE_BUILD_TYPE="Debug" -G "NMake Makefiles" ..
+cmake --build .
+ctest -C Debug
+```
+
+#### Instructions for Open Watcom (DOS target)
+
+With v2 from https://github.com/open-watcom/open-watcom-v2/releases installed:
+```sh
+WATCOM\owsetenv.bat
+mkdir build_dos && cd build_dos
+cmake -G "Watcom WMake" -D CMAKE_SYSTEM_NAME "DOS" -D CMAKE_SYSTEM_PROCESSOR "I86" ..
+cmake --build .
+ctest -C Debug
+```
+(that test phase might fail if you're running this on a non-DOS host)
 
 ---
 

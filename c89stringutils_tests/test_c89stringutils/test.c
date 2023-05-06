@@ -1,7 +1,3 @@
-#ifdef _MSC_VER
-#endif /* _MSC_VER */
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #include <greatest.h>
 
 #include "test_string_extras.h"
