@@ -7,15 +7,15 @@ c89stringutils
 
 C89 is missing some nice things. As is MSVC.
 This adds the string related functionality for:
-- Windows
+- **Windows**
   - MSVC 2005
   - MSVC 2022 (should support all other versions also)
   - MinGW
-  - Open Watcom 2.0 (including DOS target)
-- SunOS
-- Linux
-- BSD
-- macOS
+  - Open Watcom 2.0 (including **DOS** target)
+- **SunOS**
+- **Linux**
+- ***BSD**
+- **macOS**
 
 Everything is hidden behind `ifdef`s so if the compiler/OS supports the function, that function will be used instead of the one provided by this library.
 

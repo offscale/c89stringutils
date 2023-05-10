@@ -8,14 +8,14 @@ string(REPLACE " " "_" EXEC_NAME "${EXEC_NAME}")
 set(DOWNLOAD_DIR "${PROJECT_BINARY_DIR}/test_downloads")
 file(MAKE_DIRECTORY "${DOWNLOAD_DIR}")
 
-set(GREATEST_SHA256 "aaea21b1f4f2a4be6c83109a53db910781d294d80cb36aafaa1b37c888ac883d")
+set(GREATEST_SHA256 "b3f89ecad2301c64c580f328cc03a74d92f4cd4bf42ab18d3d4bfb7b8be5b948")
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
     file(DOWNLOAD "https://raw.githubusercontent.com/SamuelMarks/greatest/cmake-and-msvc/greatest.h"
             "${DOWNLOAD_DIR}/greatest.h")
     file(SHA256 "${DOWNLOAD_DIR}/greatest.h" GREATEST_SHA256_FOUND)
     if (NOT GREATEST_SHA256_FOUND STREQUAL GREATEST_SHA256)
-        message(FATAL_ERROR "SHA256 hash verification failed for \"${DOWNLOAD_DIR}/greatest.h\"\n
-                             \"${GREATEST_SHA256_FOUND}\" != \"${GREATEST_SHA256}\"")
+        message(FATAL_ERROR "SHA256 hash verification failed for \"${DOWNLOAD_DIR}/greatest.h\"
+                             \n\"${GREATEST_SHA256_FOUND}\" != \"${GREATEST_SHA256}\"")
     endif (NOT GREATEST_SHA256_FOUND STREQUAL GREATEST_SHA256)
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 
@@ -33,7 +33,7 @@ add_executable("${EXEC_NAME}" "${Header_Files}" "${Source_Files}")
 
 target_link_libraries("${EXEC_NAME}" PRIVATE "c89stringutils")
 if (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
-    target_link_libraries("${EXEC_NAME}" PRIVATE "c89stringutils_compiler_flags" "c89stringutils")
+    target_link_libraries("${EXEC_NAME}" PRIVATE "c89stringutils_compiler_flags")
 endif (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
 target_include_directories(
         "${EXEC_NAME}"

@@ -9,6 +9,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include "c89stringutils_export.h"
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) ||     \
     defined(__bsdi__) || defined(__DragonFly__) || defined(BSD)
@@ -68,13 +69,6 @@
 
 #endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) ||           \
           defined(__NT__) */
-
-#if OLD_MSVC || defined(__WATCOMC__) || defined(__CYGWIN__)
-#ifdef C89STRINGUTILS_EXPORT
-#undef C89STRINGUTILS_EXPORT
-#endif /* C89STRINGUTILS_EXPORT */
-#define C89STRINGUTILS_EXPORT __declspec(dllimport)
-#endif
 
 #if defined(__STDC_LIB_EXT1__) && __STDC_WANT_LIB_EXT1__
 
