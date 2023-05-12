@@ -1,0 +1,9 @@
+@echo on
+call "%~dp0\build_msvc64_2005.bat"
+call "%~dp0\build_msvc86_2005.bat"
+call "%~dp0\build_msvc64_2022.bat"
+call "%~dp0\build_msvc86_2022.bat"
+:: build_dos
+:: build_mingw32
+:: build_mingw64
+:: build_cygwin

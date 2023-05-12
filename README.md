@@ -11,6 +11,7 @@ This adds the string related functionality for:
   - MSVC 2005
   - MSVC 2022 (should support all other versions also)
   - MinGW
+  - Cygwin
   - Open Watcom 2.0 (including **DOS** target)
 - **SunOS**
 - **Linux**
@@ -71,7 +72,7 @@ ctest -C Debug
 
 With v2 from https://github.com/open-watcom/open-watcom-v2/releases installed:
 ```sh
-WATCOM\owsetenv.bat
+[path]\WATCOM\owsetenv.bat
 mkdir build_dos && cd build_dos
 cmake -G "Watcom WMake" -D CMAKE_SYSTEM_NAME "DOS" -D CMAKE_SYSTEM_PROCESSOR "I86" ..
 cmake --build .
