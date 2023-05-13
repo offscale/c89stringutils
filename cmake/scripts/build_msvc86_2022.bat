@@ -9,5 +9,5 @@ set build_dir="build_msvc86_2022"
 IF EXIST "%build_dir%" rd /s /q "%build_dir%"
 md "%build_dir%"
 cd "%build_dir%"
-cmake -DCMAKE_BUILD_TYPE="Debug" -G "Visual Studio 17 2022" -A x86 .. && cmake --build . && ctest -C Debug
+cmake -DCMAKE_BUILD_TYPE="Debug" -G "Visual Studio 17 2022" -A "Win32" .. && cmake --build . && ctest -C "Debug" && cpack -G "ZIP" -C "Debug" && ren *.zip *-msvc2022-win32.zip
 cd ..

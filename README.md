@@ -49,6 +49,18 @@ cmake --build .
 ctest -C Debug
 ```
 
+### Script to automatically build
+
+Build, test, and package for:
+
+  - Cygwin;
+  - MinGW (32-bit and 64-bit);
+  - MSVC 2005 (32-bit and 64-bit);
+  - MSVC 2022 (32-bit and 64-bit);
+  - OpenWatcom's DOS target (16-bit).
+
+…by running in Command Prompt: `cmake\scripts\build_all.bat`
+
 #### Instructions for MSVC 2005
 
 With cmake-3.11.4 specified, do:
