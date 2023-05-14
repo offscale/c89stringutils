@@ -59,7 +59,9 @@ Build, test, and package for:
   - MSVC 2022 (32-bit and 64-bit);
   - OpenWatcom's DOS target (16-bit).
 
-…by running in Command Prompt: `cmake\scripts\build_all.bat`
+…by running in Command Prompt: https://github.com/offscale/win-cmake-multi-build
+
+(also handles upload to GitHub Releases)
 
 #### Instructions for MSVC 2005
 
