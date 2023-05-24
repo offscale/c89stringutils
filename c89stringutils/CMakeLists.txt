@@ -4,7 +4,7 @@ set(Header_Files "c89stringutils_string_extras.h")
 source_group("Header Files" FILES "${Header_Files}")
 
 set(Source_Files "c89stringutils_string_extras.c")
-source_group("Source Files" FILES "${Header_Files}")
+source_group("Source Files" FILES "${Source_Files}")
 
 add_library("${LIBRARY_NAME}" "${Header_Files}" "${Source_Files}")
 
