@@ -32,6 +32,9 @@
 
 #else
 
+#ifdef ANY_BSD
+#define vsnprintf _vsnprintf
+#endif /* !ANY_BSD */
 
 inline int snprintf(char *buffer, size_t count, const char *format, ...) {
   int result;
