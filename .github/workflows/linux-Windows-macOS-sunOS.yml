@@ -1,4 +1,4 @@
-name: Linux, Windows, macOS, SunOS
+name: Linux, Windows, macOS
 
 on:
   push:

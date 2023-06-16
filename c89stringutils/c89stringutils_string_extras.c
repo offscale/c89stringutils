@@ -10,8 +10,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if !defined(HAVE_SNPRINTF_H)
+#ifndef HAVE_SNPRINTF_H
 #define HAVE_SNPRINTF_H
+
 /*
  * `snprintf`, `vsnprintf`, `strnstr` taken from:
  * https://chromium.googlesource.com/chromium/blink/+/5cedd2fd208daf119b9ea47c7c1e22d760a586eb/Source/wtf/StringExtras.h
@@ -31,10 +32,6 @@
 
 
 #else
-
-#ifdef ANY_BSD
-#define vsnprintf _vsnprintf
-#endif /* !ANY_BSD */
 
 inline int snprintf(char *buffer, size_t count, const char *format, ...) {
   int result;
@@ -67,24 +64,20 @@ inline double wtf_vsnprintf(char *buffer, size_t count, const char *format,
 
 #endif /* OLD_MSVC */
 
-#endif /* !defined(HAVE_SNPRINTF_H) */
+#endif /* !HAVE_SNPRINTF_H */
 
 #ifndef HAVE_STRNCASECMP_H
 
-#if !defined(HAVE_STRNCASECMP_H)
 #define HAVE_STRNCASECMP_H
 
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 
-#endif /* !defined(HAVE_STRNCASECMP_H) */
-
 #endif /* !HAVE_STRNCASECMP_H */
 
 #ifndef HAVE_STRNSTR
-
-#if !defined(HAVE_STRNSTR)
 #define HAVE_STRNSTR
+
 char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
   /*
      Find the first occurrence of find in s, where the search is limited to the
@@ -115,13 +108,11 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
   }
   return 0;
 }
-#endif /* !defined(HAVE_STRNSTR) */
 
 #endif /* !HAVE_STRNSTR */
 
 #ifndef HAVE_STRCASESTR_H
 
-#if !defined(HAVE_STRCASESTR_H)
 #define HAVE_STRCASESTR_H
 
 /* `strcasestr` from MUSL */
@@ -134,13 +125,10 @@ char *strcasestr(const char *h, const char *n) {
   return 0;
 }
 
-#endif /* !defined(HAVE_STRCASESTR_H) */
-
 #endif /* !HAVE_STRCASESTR_H */
 
 #ifndef HAVE_STRERRORLEN_S
 
-#if !defined(HAVE_STRERRORLEN_S)
 #define HAVE_STRERRORLEN_S
 /* MIT licensed function from Safe C Library */
 
@@ -186,13 +174,9 @@ size_t strerrorlen_s(errno_t errnum) {
   }
 }
 
-#endif /* !defined(HAVE_STRERRORLEN_S) */
-
 #endif /* !HAVE_STRERRORLEN_S */
 
 #ifndef HAVE_ASPRINTF
-
-#if !defined(HAVE_ASPRINTF)
 #define HAVE_ASPRINTF
 
 #include <errno.h>
@@ -265,13 +249,9 @@ extern int asprintf(char **str, const char *fmt, ...) {
   return ret;
 }
 
-#endif /* !defined(HAVE_ASPRINTF) */
-
 #endif /* !HAVE_ASPRINTF */
 
 #ifndef HAVE_JASPRINTF
-
-#if !defined(HAVE_JASPRINTF)
 #define HAVE_JASPRINTF
 char *jasprintf(char **unto, const char *fmt, ...) {
   va_list args;
@@ -297,5 +277,4 @@ char *jasprintf(char **unto, const char *fmt, ...) {
 
   return result;
 }
-#endif /* !defined(HAVE_JASPRINTF) */
 #endif /* !HAVE_JASPRINTF */

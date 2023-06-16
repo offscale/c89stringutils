@@ -1,7 +1,7 @@
 c89stringutils
 ==============
 [![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![CI for Linux, Windows, macOS, sunOS](https://github.com/offscale/c89stringutils/actions/workflows/linux-Windows-macOS-sunOS.yml/badge.svg)](https://github.com/offscale/c89stringutils/actions/workflows/github-actions.yml)
+[![CI for Linux, Windows, macOS](https://github.com/offscale/c89stringutils/actions/workflows/linux-Windows-macOS-sunOS.yml/badge.svg)](https://github.com/offscale/c89stringutils/actions/workflows/github-actions.yml)
 [![CI for FreeBSD](https://api.cirrus-ci.com/github/offscale/c89stringutils.svg)](https://cirrus-ci.com/github/offscale/c89stringutils)
 [![C89](https://img.shields.io/badge/C-89-blue)](https://en.wikipedia.org/wiki/C89_(C_version))
 
