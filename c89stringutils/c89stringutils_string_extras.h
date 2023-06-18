@@ -14,6 +14,7 @@
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) ||     \
     defined(__bsdi__) || defined(__DragonFly__) || defined(BSD)
 #define ANY_BSD
+#define __BSD_VISIBLE 1
 #endif
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
