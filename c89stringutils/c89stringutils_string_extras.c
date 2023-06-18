@@ -7,8 +7,8 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifndef HAVE_SNPRINTF_H
 #define HAVE_SNPRINTF_H
@@ -27,9 +27,6 @@
 
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
-
-
-
 
 #else
 

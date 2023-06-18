@@ -6,10 +6,10 @@
 #ifndef C89STRINGUTILS_STRING_EXTRAS_H
 #define C89STRINGUTILS_STRING_EXTRAS_H
 
+#include "c89stringutils_export.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include "c89stringutils_export.h"
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) ||     \
     defined(__bsdi__) || defined(__DragonFly__) || defined(BSD)
@@ -29,7 +29,7 @@
 #else
 
 #define OLD_MSVC
-/* !defined(MSC_VER) || MSC_VER > 1400 *//* 1400 is MSVC 2005 */
+/* !defined(MSC_VER) || MSC_VER > 1400 */ /* 1400 is MSVC 2005 */
 
 #endif /* _MSC_VER >= 1900 */
 
@@ -63,7 +63,7 @@
 #endif /* defined(__APPLE__) && defined(__MACH__) */
 
 #if defined(BSD) && (BSD >= 199306) && !defined(__linux__) &&                  \
-    !defined(linux) && !defined(__linux)
+    !defined(linux) && !defined(__linux) && !defined(__OpenBSD__)
 #define HAVE_STRNSTR
 #endif /* defined(BSD) && (BSD >= 199306) && !defined(__linux__) &&            \
           !defined(linux) && !defined(__linux) */
@@ -106,7 +106,8 @@ typedef int errno_t;
 
 #ifndef HAVE_STRNCASECMP_H
 
-extern C89STRINGUTILS_EXPORT int strncasecmp(const char *, const char *, size_t);
+extern C89STRINGUTILS_EXPORT int strncasecmp(const char *, const char *,
+                                             size_t);
 
 extern C89STRINGUTILS_EXPORT int strcasecmp(const char *, const char *);
 
@@ -132,7 +133,8 @@ extern C89STRINGUTILS_EXPORT size_t strerrorlen_s(errno_t);
 
 #ifndef HAVE_ASPRINTF
 
-extern C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap);
+extern C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt,
+                                           va_list ap);
 
 extern C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...);
 
