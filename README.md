@@ -8,31 +8,33 @@ c89stringutils
 
 C89 is missing some nice things. As is MSVC.
 This adds the string related functionality for:
+
 - **Windows**
-  - MSVC 2005
-  - MSVC 2022 (should support all other versions also)
-  - MinGW
-  - Cygwin
-  - Open Watcom 2.0 (including **DOS** target)
+    - MSVC 2005
+    - MSVC 2022 (should support all other versions also)
+    - MinGW
+    - Cygwin
+    - Open Watcom 2.0 (including **DOS** target)
 - **SunOS**
 - **Linux**
 - ***BSD**
 - **macOS**
 
-Everything is hidden behind `ifdef`s so if the compiler/OS supports the function, that function will be used instead of the one provided by this library.
+Everything is hidden behind `ifdef`s so if the compiler/OS supports the function, that function will be used instead of
+the one provided by this library.
 
 ### String functions implemented
 
-  | Function                                                                | Citation                     |
-----------------------------------------------------------------------------|------------------------------|
-  | [`strcasestr`](https://www.freebsd.org/cgi/man.cgi?query=strcasestr)    | From MUSL                    |
-  | [`strncasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strncasecmp)  | Alias for MSVC's `_strnicmp` |
-  | [`strcasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strcasecmp)    | Alias for MSVC's `_stricmp`  |
-  | [`snprintf`](https://www.freebsd.org/cgi/man.cgi?query=snprintf)        | Mostly from WTF_StringExtras |
-  | [`vsnprintf`](https://www.freebsd.org/cgi/man.cgi?query=vsnprintf)      | Mostly from WTF_StringExtras |
-  | [`strnstr`](https://www.freebsd.org/cgi/man.cgi?query=strnstr)          | Mostly from WTF_StringExtras |
-  | [`strerrorlen_s`](https://en.cppreference.com/w/c/string/byte/strerror) | From Safe C Library          |
-  | [`asprintf`](https://www.freebsd.org/cgi/man.cgi?query=asprintf)        | From libressl-portable       |
+| Function                                                                | Citation                     |
+  |-------------------------------------------------------------------------|------------------------------|
+| [`strcasestr`](https://www.freebsd.org/cgi/man.cgi?query=strcasestr)    | From MUSL                    |
+| [`strncasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strncasecmp)  | Alias for MSVC's `_strnicmp` |
+| [`strcasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strcasecmp)    | Alias for MSVC's `_stricmp`  |
+| [`snprintf`](https://www.freebsd.org/cgi/man.cgi?query=snprintf)        | Mostly from WTF_StringExtras |
+| [`vsnprintf`](https://www.freebsd.org/cgi/man.cgi?query=vsnprintf)      | Mostly from WTF_StringExtras |
+| [`strnstr`](https://www.freebsd.org/cgi/man.cgi?query=strnstr)          | Mostly from WTF_StringExtras |
+| [`strerrorlen_s`](https://en.cppreference.com/w/c/string/byte/strerror) | From Safe C Library          |
+| [`asprintf`](https://www.freebsd.org/cgi/man.cgi?query=asprintf)        | From libressl-portable       |
 
 Additionally `jasprintf`, a version of `asprintf` that concatenates on successive calls.
 
@@ -43,10 +45,9 @@ Additionally `jasprintf`, a version of `asprintf` that concatenates on successiv
 
 ### Configure, build, and test
 
-```bash
-mkdir build && cd build
-cmake ..
-cmake --build .
+```sh
+cmake -S . -B build
+cmake --build build
 ctest -C Debug
 ```
 
@@ -54,11 +55,11 @@ ctest -C Debug
 
 Build, test, and package for:
 
-  - Cygwin;
-  - MinGW (32-bit and 64-bit);
-  - MSVC 2005 (32-bit and 64-bit);
-  - MSVC 2022 (32-bit and 64-bit);
-  - OpenWatcom's DOS target (16-bit).
+- Cygwin;
+- MinGW (32-bit and 64-bit);
+- MSVC 2005 (32-bit and 64-bit);
+- MSVC 2022 (32-bit and 64-bit);
+- OpenWatcom's DOS target (16-bit).
 
 …by running in Command Prompt: https://github.com/offscale/win-cmake-multi-build
 
@@ -67,15 +68,18 @@ Build, test, and package for:
 #### Instructions for MSVC 2005
 
 With cmake-3.11.4 specified, do:
+
 ```sh
 mkdir build_msvc2005 && cd build_msvc2005
 cmake-3.11.4-win64-x64\bin\cmake -DCMAKE_WARN_VS8=OFF -DCMAKE_BUILD_TYPE="Debug" -G "Visual Studio 8 2005" ..
 cmake-3.11.4-win64-x64\bin\cmake --build .
 cmake-3.11.4-win64-x64\bin\ctest -C Debug
 ```
+
 (the last two commands can be run by opening the solution in Visual Studio 2005)
 
 Alternatively with newer versions of CMake (tested 3.26.3):
+
 ```sh
 mkdir build_msvc_nmake2005 && cd build_msvc_nmake2005
 cmake -DCMAKE_BUILD_TYPE="Debug" -G "NMake Makefiles" ..
@@ -86,6 +90,7 @@ ctest -C Debug
 #### Instructions for Open Watcom (DOS target)
 
 With v2 from https://github.com/open-watcom/open-watcom-v2/releases installed:
+
 ```sh
 [path]\WATCOM\owsetenv.bat
 mkdir build_dos && cd build_dos
@@ -93,6 +98,7 @@ cmake -G "Watcom WMake" -D CMAKE_SYSTEM_NAME "DOS" -D CMAKE_SYSTEM_PROCESSOR "I8
 cmake --build .
 ctest -C Debug
 ```
+
 (that test phase might fail if you're running this on a non-DOS host)
 
 ---

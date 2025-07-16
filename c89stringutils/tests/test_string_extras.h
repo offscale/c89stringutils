@@ -1,6 +1,5 @@
 #include <greatest.h>
 
-// #define C89STRINGUTILS_IMPLEMENTATION
 #include <c89stringutils_string_extras.h>
 
 static const char *buffer = "hello world";

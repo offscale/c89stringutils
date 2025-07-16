@@ -56,8 +56,8 @@ configure_file(
 add_subdirectory("${PROJECT_NAME}")
 
 include(CTest)
-option(BUILD_TESTING "Build the tests" ON)
-option(C89STRINGUTILS_BUILD_TESTING "Build the tests" ON)
+option(BUILD_TESTING "Build the tests" OFF)
+option(C89STRINGUTILS_BUILD_TESTING "Build the tests" OFF)
 if (BUILD_TESTING AND C89STRINGUTILS_BUILD_TESTING)
     add_subdirectory("${PROJECT_NAME}/tests")
 endif (BUILD_TESTING AND C89STRINGUTILS_BUILD_TESTING)
