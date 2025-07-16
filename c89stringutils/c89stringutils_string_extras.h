@@ -94,11 +94,13 @@ typedef int errno_t;
 #define HAVE_STRNCASECMP_H
 #endif
 
-#if defined(ANY_BSD) || defined(__APPLE__) && defined(__MACH__) ||             \
-    defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+#if !defined(HAVE_ASPRINTF) && (defined(ANY_BSD) || \
+    defined(__APPLE__) && defined(__MACH__) ||  \
+    defined(_GNU_SOURCE) || defined(_BSD_SOURCE))
 #define HAVE_ASPRINTF
-#endif /* defined(ANY_BSD) || defined(__APPLE__) && defined(__MACH__) ||       \
-          defined(_GNU_SOURCE) || defined(_BSD_SOURCE) */
+#endif /* !defined(HAVE_ASPRINTF) && (defined(ANY_BSD) || \
+          defined(__APPLE__) && defined(__MACH__) ||  \
+          defined(_GNU_SOURCE) || defined(_BSD_SOURCE)) */
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
