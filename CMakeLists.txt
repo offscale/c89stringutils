@@ -20,15 +20,18 @@ elseif ((MSVC_VERSION STRLESS_EQUAL "1900"
             "${CMAKE_BINARY_DIR}/c89stringutils_export.h")
 endif ()
 if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
-    # add compiler warning flags just when building this project via
-    # the BUILD_INTERFACE genex
     set(gcc_like "$<COMPILE_LANG_AND_ID:C,CXX,ARMClang,AppleClang,Clang,GNU,LCC>")
     set(msvc "$<COMPILE_LANG_AND_ID:C,CXX,MSVC>")
     target_compile_options(
             "${PROJECT_NAME}_compiler_flags"
             INTERFACE
-            "$<${gcc_like}:$<BUILD_INTERFACE:-Wshadow;-Wformat=2;-Wall;-pedantic>>"
+            "$<$<AND:${gcc_like},$<CONFIG:Debug>>:$<BUILD_INTERFACE:-Wshadow;-Wformat=2;-Wall;-Wno-missing-braces;-Wno-long-long;-pedantic;-fprofile-arcs;-ftest-coverage>>"
             "$<${msvc}:$<BUILD_INTERFACE:-W3;-WX;-Zi;-permissive->>"
+    )
+    target_link_options(
+            "${PROJECT_NAME}_compiler_flags"
+            INTERFACE
+            "$<$<AND:${gcc_like},$<CONFIG:Debug>>:$<BUILD_INTERFACE:--coverage>>"
     )
 endif (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
 # Set the build directories
@@ -53,9 +56,11 @@ configure_file(
 add_subdirectory("${PROJECT_NAME}")
 
 include(CTest)
-if (BUILD_TESTING)
-    add_subdirectory("${PROJECT_NAME}_tests")
-endif (BUILD_TESTING)
+option(BUILD_TESTING "Build the tests" ON)
+option(C89STRINGUTILS_BUILD_TESTING "Build the tests" ON)
+if (BUILD_TESTING AND C89STRINGUTILS_BUILD_TESTING)
+    add_subdirectory("${PROJECT_NAME}/tests")
+endif (BUILD_TESTING AND C89STRINGUTILS_BUILD_TESTING)
 
 ###########
 # Install #

@@ -1,5 +1,5 @@
 get_filename_component(EXEC_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(REPLACE " " "_" EXEC_NAME "${EXEC_NAME}")
+set(EXEC_NAME "${PROJECT_NAME}_${EXEC_NAME}")
 
 #########################
 # Dependencies download #
@@ -31,9 +31,9 @@ source_group("Source Files" FILES "${Source_Files}")
 
 add_executable("${EXEC_NAME}" "${Header_Files}" "${Source_Files}")
 
-target_link_libraries("${EXEC_NAME}" PRIVATE "c89stringutils")
+target_link_libraries("${EXEC_NAME}" PRIVATE "${PROJECT_NAME}")
 if (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
-    target_link_libraries("${EXEC_NAME}" PRIVATE "c89stringutils_compiler_flags")
+    target_link_libraries("${EXEC_NAME}" PRIVATE "${PROJECT_NAME}_compiler_flags")
 endif (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
 target_include_directories(
         "${EXEC_NAME}"
