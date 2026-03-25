@@ -1,6 +1,8 @@
+/* clang-format off */
 #include <greatest.h>
 
 #include "test_string_extras.h"
+/* clang-format on */
 
 /* Add definitions that need to be in the test runner's main file. */
 GREATEST_MAIN_DEFS();

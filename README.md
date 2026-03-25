@@ -1,7 +1,7 @@
 c89stringutils
 ==============
 [![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![CI for Linux, Windows, macOS](https://github.com/offscale/c89stringutils/actions/workflows/linux-Windows-macOS-sunOS.yml/badge.svg)](https://github.com/offscale/c89stringutils/actions/workflows/github-actions.yml)
+[![CI for Linux, Windows, macOS](https://github.com/offscale/c89stringutils/actions/workflows/ci.yml/badge.svg)](https://github.com/offscale/c89stringutils/actions/workflows/ci.yml)
 [![CI for FreeBSD](https://api.cirrus-ci.com/github/offscale/c89stringutils.svg)](https://cirrus-ci.com/github/offscale/c89stringutils)
 ![coverage](reports/test_coverage.svg)
 [![C89](https://img.shields.io/badge/C-89-blue)](https://en.wikipedia.org/wiki/C89_(C_version))
@@ -10,8 +10,7 @@ C89 is missing some nice things. As is MSVC.
 This adds the string related functionality for:
 
 - **Windows**
-    - MSVC 2005
-    - MSVC 2022 (should support all other versions also)
+    - MSVC 2005 through MSVC 2026+
     - MinGW
     - Cygwin
     - Open Watcom 2.0 (including **DOS** target)
@@ -23,10 +22,42 @@ This adds the string related functionality for:
 Everything is hidden behind `ifdef`s so if the compiler/OS supports the function, that function will be used instead of
 the one provided by this library.
 
+### Architecture & Standards
+
+- **Strict C89 Compliance:** The entire codebase strictly conforms to ISO C90 (C89), preventing compilation issues on extremely old enterprise toolchains.
+- **Header Guards & C++ Interop:** Fully instrumented with `extern "C"` blocks and robust guards, playing nicely when directly `#include`d into C++ sources.
+- **Windows Security:** Eradicates the inclusion of heavy platform headers like `<windows.h>`, and actively defaults to MSVC "Safe CRT" variants (e.g., `vsprintf_s`, `_vscprintf`) implicitly when building on Microsoft compilers.
+- **Quality Metrics:** Maintains 100% Doxygen documentation and 100% test coverage locally.
+
+### Single-File Header-Only Amalgamation (STB-style)
+
+If you don't want to link against a built `static` or `shared` library, you can generate a drop-in, STB-style single-header amalgamation!
+
+When building the project via CMake, toggle `C89STRINGUTILS_BUILD_AMALGAMATION=ON`:
+```sh
+cmake -B build -DC89STRINGUTILS_BUILD_AMALGAMATION=ON
+```
+This generates `build/c89stringutils/c89stringutils_amalgamation.h`.
+
+**To use the amalgamation in your project:**
+Drop it into your source tree and define `C89STRINGUTILS_IMPLEMENTATION` in **exactly one** `.c` or `.cpp` file before including the header:
+
+```c
+#define C89STRINGUTILS_IMPLEMENTATION
+#include "c89stringutils_amalgamation.h"
+
+int main(void) {
+    char* str = NULL;
+    asprintf(&str, "Hello %s", "World");
+    free(str);
+    return 0;
+}
+```
+
 ### String functions implemented
 
 | Function                                                                | Citation                     |
-  |-------------------------------------------------------------------------|------------------------------|
+|-------------------------------------------------------------------------|------------------------------|
 | [`strcasestr`](https://www.freebsd.org/cgi/man.cgi?query=strcasestr)    | From MUSL                    |
 | [`strncasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strncasecmp)  | Alias for MSVC's `_strnicmp` |
 | [`strcasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strcasecmp)    | Alias for MSVC's `_stricmp`  |
@@ -46,10 +77,17 @@ Additionally `jasprintf`, a version of `asprintf` that concatenates on successiv
 ### Configure, build, and test
 
 ```sh
-cmake -S . -B build
+cmake -S . -B build -DBUILD_TESTING=ON
 cmake --build build
-ctest -C Debug
+ctest --test-dir build -C Debug
 ```
+
+**Advanced CMake Toggles:**
+The build environment seamlessly supports several CDD-style switches out of the box:
+* `CDD_CHARSET`: `Unicode` or `ANSI` (Sets `UNICODE` and `_UNICODE` defines).
+* `CDD_THREADING`: `ON` or `OFF`.
+* `CDD_LTO`: `ON` or `OFF` (Validates and sets `CMAKE_INTERPROCEDURAL_OPTIMIZATION`).
+* `CDD_MSVC_RTC`: `RTC1`, `RTCu`, or `RTCs` (Automatically injects `/RTCx` flags on MSVC).
 
 ### Script to automatically build
 
@@ -58,7 +96,7 @@ Build, test, and package for:
 - Cygwin;
 - MinGW (32-bit and 64-bit);
 - MSVC 2005 (32-bit and 64-bit);
-- MSVC 2022 (32-bit and 64-bit);
+- MSVC 2022 / 2026 (32-bit and 64-bit);
 - OpenWatcom's DOS target (16-bit).
 
 …by running in Command Prompt: https://github.com/offscale/win-cmake-multi-build

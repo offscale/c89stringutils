@@ -6,10 +6,21 @@
 #ifndef C89STRINGUTILS_STRING_EXTRAS_H
 #define C89STRINGUTILS_STRING_EXTRAS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+/* clang-format off */
 #include "c89stringutils_export.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+
+#if defined(_MSC_VER)
+#define NUM_FORMAT "%I64d"
+#else
+#define NUM_FORMAT "%lld"
+#endif
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) ||     \
     defined(__bsdi__) || defined(__DragonFly__) || defined(BSD)
@@ -105,51 +116,115 @@ typedef int errno_t;
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif /* HAVE_STRINGS_H */
+/* clang-format on */
 
 #ifndef HAVE_STRNCASECMP_H
 
-extern C89STRINGUTILS_EXPORT int strncasecmp(const char *, const char *,
-                                             size_t);
+/**
+ * @brief Compare at most n characters of two strings, ignoring case.
+ * @param s1 The first string to compare.
+ * @param s2 The second string to compare.
+ * @param n The maximum number of characters to compare.
+ * @return An integer less than, equal to, or greater than zero if s1 is found,
+ * respectively, to be less than, to match, or be greater than s2.
+ */
+extern C89STRINGUTILS_EXPORT int strncasecmp(const char *s1, const char *s2,
+                                             size_t n);
 
-extern C89STRINGUTILS_EXPORT int strcasecmp(const char *, const char *);
+/**
+ * @brief Compare two strings, ignoring case.
+ * @param s1 The first string to compare.
+ * @param s2 The second string to compare.
+ * @return An integer less than, equal to, or greater than zero if s1 is found,
+ * respectively, to be less than, to match, or be greater than s2.
+ */
+extern C89STRINGUTILS_EXPORT int strcasecmp(const char *s1, const char *s2);
 
 #endif /* !HAVE_STRNCASECMP_H */
 
 #ifndef HAVE_STRNSTR
 
-extern C89STRINGUTILS_EXPORT char *strnstr(const char *, const char *, size_t);
+/**
+ * @brief Locate a substring in a string, looking at no more than len
+ * characters.
+ * @param buffer The string to search.
+ * @param target The substring to find.
+ * @param bufferLength The maximum number of characters to search.
+ * @return A pointer to the first occurrence of little in big, or NULL if not
+ * found.
+ */
+extern C89STRINGUTILS_EXPORT char *
+strnstr(const char *buffer, const char *target, size_t bufferLength);
 
 #endif /* !HAVE_STRNSTR */
 
 #ifndef HAVE_STRCASESTR_H
 
-extern C89STRINGUTILS_EXPORT char *strcasestr(const char *, const char *);
+/**
+ * @brief Locate a substring in a string, ignoring case.
+ * @param h The string to search.
+ * @param n The substring to find.
+ * @return A pointer to the first occurrence of little in big, or NULL if not
+ * found.
+ */
+extern C89STRINGUTILS_EXPORT char *strcasestr(const char *h, const char *n);
 
 #endif /* !HAVE_STRCASESTR_H */
 
 #ifndef HAVE_STRERRORLEN_S
 
-extern C89STRINGUTILS_EXPORT size_t strerrorlen_s(errno_t);
+/**
+ * @brief Get the length of a string describing an error number.
+ * @param errnum The error number.
+ * @return The length of the string describing the error.
+ */
+extern C89STRINGUTILS_EXPORT size_t strerrorlen_s(errno_t errnum);
 
 #endif /* !HAVE_STRERRORLEN_S */
 
 #ifndef HAVE_ASPRINTF
 
+/**
+ * @brief Write formatted output to a dynamically allocated string using a
+ * va_list.
+ * @param str A pointer to a string pointer where the allocated string will be
+ * stored.
+ * @param fmt The format string.
+ * @param ap The va_list of arguments.
+ * @return The number of characters printed, or -1 on error.
+ */
 extern C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt,
                                            va_list ap);
 
+/**
+ * @brief Write formatted output to a dynamically allocated string.
+ * @param str A pointer to a string pointer where the allocated string will be
+ * stored.
+ * @param fmt The format string.
+ * @param ... The arguments.
+ * @return The number of characters printed, or -1 on error.
+ */
 extern C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...);
 
 #endif /* !HAVE_ASPRINTF */
 
 #ifndef HAVE_JASPRINTF
 
-/* `jasprintf`, a version of `asprintf` that concatenates on successive calls:
- * char *s; jasprintf(&s, "foo%s", "bar");
- * jasprintf(&s, "can%s", "haz"); free(s);
- * */
+/**
+ * @brief `jasprintf`, a version of `asprintf` that concatenates on successive
+ * calls: char *s = NULL; jasprintf(&s, "foo%s", "bar"); jasprintf(&s, "can%s",
+ * "haz"); free(s);
+ * @param unto The string to append to.
+ * @param fmt The format string.
+ * @param ... The arguments.
+ * @return The concatenated string.
+ */
 extern C89STRINGUTILS_EXPORT char *jasprintf(char **unto, const char *fmt, ...);
 
 #endif /* !HAVE_JASPRINTF */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* !C89STRINGUTILS_STRING_EXTRAS_H */

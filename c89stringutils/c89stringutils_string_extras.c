@@ -1,14 +1,17 @@
+#define _CRT_SECURE_NO_WARNINGS
 /*
  * string functions helpful on Linux (and sometimes BSD)
  * are now made available on other platforms (Windows, SunOS, &etc.)
  * */
 
+/* clang-format off */
 #include "c89stringutils_string_extras.h"
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+/* clang-format on */
 
 #ifndef HAVE_SNPRINTF_H
 #define HAVE_SNPRINTF_H
@@ -16,7 +19,7 @@
 /*
  * `snprintf`, `vsnprintf`, `strnstr` taken from:
  * https://chromium.googlesource.com/chromium/blink/+/5cedd2fd208daf119b9ea47c7c1e22d760a586eb/Source/wtf/StringExtras.h
- * …then modified to remove C++ specifics and WebKit specific macros
+ * ...then modified to remove C++ specifics and WebKit specific macros
  *
  * Copyright (C) 2006, 2010 Apple Inc. All rights reserved.
  * Copyright (C) 2020 Offscale.io. All rights reserved.
@@ -34,7 +37,7 @@
 #define _vsnprintf vsnprintf
 #endif /* ANY_BSD */
 
-inline int snprintf(char *buffer, size_t count, const char *format, ...) {
+static int wtf_snprintf(char *buffer, size_t count, const char *format, ...) {
   int result;
   va_list args;
   va_start(args, format);
@@ -47,8 +50,8 @@ inline int snprintf(char *buffer, size_t count, const char *format, ...) {
   return result;
 }
 
-inline double wtf_vsnprintf(char *buffer, size_t count, const char *format,
-                            va_list args) {
+static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
+                         va_list args) {
   int result = _vsnprintf(buffer, count, format, args);
   /* In the case where the string entirely filled the buffer, _vsnprintf will
      not null-terminate it, but vsnprintf must. */
@@ -62,6 +65,7 @@ inline double wtf_vsnprintf(char *buffer, size_t count, const char *format,
    termination. Microsoft's implementation is fixed in VS 2015. */
 #define vsnprintf(buffer, count, format, args)                                 \
   wtf_vsnprintf(buffer, count, format, args)
+#define snprintf wtf_snprintf
 
 #endif /* OLD_MSVC */
 
@@ -163,11 +167,12 @@ size_t strerrorlen_s(errno_t errnum) {
   if (errnum >= ESNULLP && errnum <= ESLAST) {
     return len_errmsgs_s[errnum - ESNULLP] - 1;
   } else {
+    const char *buf;
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4996)
 #endif /* _MSC_VER */
-    const char *buf = strerror(errnum);
+    buf = strerror(errnum);
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif /* _MSC_VER */
@@ -256,21 +261,32 @@ extern int asprintf(char **str, const char *fmt, ...) {
 #define HAVE_JASPRINTF
 char *jasprintf(char **unto, const char *fmt, ...) {
   va_list args;
-  size_t base_length = unto && *unto ? strlen(*unto) : 0;
+  size_t base_length;
   int length;
   char *result;
 
+  base_length = unto && *unto ? strlen(*unto) : 0;
+
   va_start(args, fmt);
   /* check length for failure */
+#if defined(_MSC_VER) && _MSC_VER < 1900
+  length = _vscprintf(fmt, args);
+#else
   length = vsnprintf(NULL, 0, fmt, args);
+#endif
   va_end(args);
 
   /* check result for failure */
-  result = realloc(unto ? *unto : NULL, base_length + length + 1);
+  result =
+      (char *)realloc(unto ? *unto : NULL, base_length + (size_t)length + 1);
 
   va_start(args, fmt);
   /* check for failure*/
+#if defined(_MSC_VER)
+  vsprintf_s(result + base_length, (size_t)length + 1, fmt, args);
+#else
   vsprintf(result + base_length, fmt, args);
+#endif
   va_end(args);
 
   if (unto)

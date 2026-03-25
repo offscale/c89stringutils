@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    uses: SamuelMarks/c-ci/.github/workflows/c-cmake-ci.yml@master
+    with:
+      cmake_configure_flags: '-DC89STRINGUTILS_BUILD_AMALGAMATION=ON'
+      project_name: 'c89stringutils'
+
+  test-amalg:
+    name: Test Amalgamation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate amalgamation
+        run: |
+          cmake -B build -DC89STRINGUTILS_BUILD_AMALGAMATION=ON
+          cmake --build build
+
+      - name: Create Test File
+        run: |
+          cat << 'EOF' > test_amalg.c
+          #define C89STRINGUTILS_IMPLEMENTATION
+          #include "build/c89stringutils/c89stringutils_amalgamation.h"
+          #include <stdio.h>
+          #include <stdlib.h>
+
+          int main(void) {
+            char* x = NULL;
+            int len = asprintf(&x, "hello %s", "world");
+            if (len > 0 && x != NULL) {
+              printf("%s\n", x);
+              free(x);
+              return 0;
+            }
+            return 1;
+          }
+          EOF
+
+      - name: Compile Test Amalgamation
+        run: gcc -Wall -Wextra -Werror -o test_amalg test_amalg.c
+
+      - name: Run Test Amalgamation
+        run: ./test_amalg

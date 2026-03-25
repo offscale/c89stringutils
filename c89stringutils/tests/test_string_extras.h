@@ -1,6 +1,16 @@
+#ifndef TEST_STRING_EXTRAS_H
+#define TEST_STRING_EXTRAS_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+/* clang-format off */
 #include <greatest.h>
 
 #include <c89stringutils_string_extras.h>
+#include <stdlib.h>
+/* clang-format on */
 
 static const char *buffer = "hello world";
 static const char *target = "hello\0\0\0";
@@ -39,3 +49,9 @@ SUITE(strnstr_suite) {
   RUN_TEST(x_asprintf_should_succeed);
   RUN_TEST(x_jasprintf_should_succeed);
 }
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* !TEST_STRING_EXTRAS_H */
