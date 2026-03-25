@@ -2,6 +2,10 @@
 #ifndef C89STRINGUTILS_EXPORT_H
 #define C89STRINGUTILS_EXPORT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #ifdef C89STRINGUTILS_STATIC_DEFINE
 #define C89STRINGUTILS_EXPORT
 #define C89STRINGUTILS_NO_EXPORT
@@ -14,13 +18,13 @@
 #else
 #define C89STRINGUTILS_EXPORT
 #endif
-#endif
 #else
 /* We are using this library */
 #if defined(BUILD_SHARED)
 #define C89STRINGUTILS_EXPORT __declspec(dllimport)
 #else
 #define C89STRINGUTILS_EXPORT
+#endif
 #endif
 #endif
 
@@ -52,5 +56,9 @@
 #define C89STRINGUTILS_NO_DEPRECATED
 #endif
 #endif
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* C89STRINGUTILS_EXPORT_H */

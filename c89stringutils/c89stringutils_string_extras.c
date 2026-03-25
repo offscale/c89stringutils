@@ -26,12 +26,6 @@
  *
  * SPDX-License-Identifier:  BSD-2-Clause
  */
-#ifdef OLD_MSVC
-
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
-
-#else
 
 #ifdef ANY_BSD
 #define _vsnprintf vsnprintf
@@ -41,7 +35,11 @@ static int wtf_snprintf(char *buffer, size_t count, const char *format, ...) {
   int result;
   va_list args;
   va_start(args, format);
+#if defined(_MSC_VER)
+  result = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
+#else
   result = _vsnprintf(buffer, count, format, args);
+#endif
   va_end(args);
   /* In the case where the string entirely filled the buffer, _vsnprintf will
      not null-terminate it, but snprintf must. */
@@ -52,7 +50,12 @@ static int wtf_snprintf(char *buffer, size_t count, const char *format, ...) {
 
 static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
                          va_list args) {
-  int result = _vsnprintf(buffer, count, format, args);
+  int result;
+#if defined(_MSC_VER)
+  result = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
+#else
+  result = _vsnprintf(buffer, count, format, args);
+#endif
   /* In the case where the string entirely filled the buffer, _vsnprintf will
      not null-terminate it, but vsnprintf must. */
   if (count > 0)
@@ -60,14 +63,9 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
   return result;
 }
 
-/* Work around a difference in Microsoft's implementation of vsnprintf, where
-   vsnprintf does not null terminate the buffer. WebKit can rely on the null
-   termination. Microsoft's implementation is fixed in VS 2015. */
 #define vsnprintf(buffer, count, format, args)                                 \
   wtf_vsnprintf(buffer, count, format, args)
 #define snprintf wtf_snprintf
-
-#endif /* OLD_MSVC */
 
 #endif /* !HAVE_SNPRINTF_H */
 
