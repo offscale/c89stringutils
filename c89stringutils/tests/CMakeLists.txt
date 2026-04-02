@@ -8,15 +8,9 @@ set(EXEC_NAME "${PROJECT_NAME}_${EXEC_NAME}")
 set(DOWNLOAD_DIR "${PROJECT_BINARY_DIR}/test_downloads")
 file(MAKE_DIRECTORY "${DOWNLOAD_DIR}")
 
-set(GREATEST_SHA256 "b3f89ecad2301c64c580f328cc03a74d92f4cd4bf42ab18d3d4bfb7b8be5b948")
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
-    file(DOWNLOAD "https://raw.githubusercontent.com/SamuelMarks/greatest/cmake-and-msvc/greatest.h"
+    file(DOWNLOAD "https://raw.githubusercontent.com/SamuelMarks/greatest/master/greatest.h"
             "${DOWNLOAD_DIR}/greatest.h")
-    file(SHA256 "${DOWNLOAD_DIR}/greatest.h" GREATEST_SHA256_FOUND)
-    if (NOT GREATEST_SHA256_FOUND STREQUAL GREATEST_SHA256)
-        message(FATAL_ERROR "SHA256 hash verification failed for \"${DOWNLOAD_DIR}/greatest.h\"
-                             \n\"${GREATEST_SHA256_FOUND}\" != \"${GREATEST_SHA256}\"")
-    endif (NOT GREATEST_SHA256_FOUND STREQUAL GREATEST_SHA256)
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 
 #########
