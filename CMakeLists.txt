@@ -57,7 +57,11 @@ add_subdirectory("${PROJECT_NAME}")
 
 include(CTest)
 option(BUILD_TESTING "Build the tests" ON)
-option(C89STRINGUTILS_BUILD_TESTING "Build the tests" ON)
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    option(C89STRINGUTILS_BUILD_TESTING "Build the tests" ON)
+else()
+    option(C89STRINGUTILS_BUILD_TESTING "Build the tests" OFF)
+endif()
 
 if (CDD_CHARSET STREQUAL "Unicode")
     add_compile_definitions(UNICODE _UNICODE)
@@ -124,3 +128,4 @@ write_basic_package_version_file(
 )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}")
+
