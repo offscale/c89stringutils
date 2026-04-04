@@ -1,4 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
 /*
  * string functions helpful on Linux (and sometimes BSD)
  * are now made available on other platforms (Windows, SunOS, &etc.)
@@ -165,16 +164,14 @@ size_t strerrorlen_s(errno_t errnum) {
   if (errnum >= ESNULLP && errnum <= ESLAST) {
     return len_errmsgs_s[errnum - ESNULLP] - 1;
   } else {
+#ifdef _MSC_VER
+    char errbuf[256];
+    return strerror_s(errbuf, sizeof(errbuf), errnum) == 0 ? strlen(errbuf) : 0;
+#else
     const char *buf;
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4996)
-#endif /* _MSC_VER */
     buf = strerror(errnum);
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif /* _MSC_VER */
     return buf ? strlen(buf) : 0;
+#endif /* _MSC_VER */
   }
 }
 
