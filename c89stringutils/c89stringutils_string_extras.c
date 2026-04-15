@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <limits.h> /* for INT_MAX */
 /* clang-format on */
 
 #ifndef HAVE_SNPRINTF_H
@@ -37,6 +39,9 @@ static int wtf_snprintf(char *buffer, size_t count, const char *format, ...) {
   va_start(args, format);
 #if defined(_MSC_VER)
   rc = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
+  if (rc < 0) {
+    rc = _vscprintf(format, args);
+  }
 #else
   rc = _vsnprintf(buffer, count, format, args);
 #endif
@@ -53,6 +58,9 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
   int rc;
 #if defined(_MSC_VER)
   rc = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
+  if (rc < 0) {
+    rc = _vscprintf(format, args);
+  }
 #else
   rc = _vsnprintf(buffer, count, format, args);
 #endif
@@ -184,10 +192,6 @@ size_t strerrorlen_s(errno_t errnum) {
 #ifndef HAVE_ASPRINTF
 #define HAVE_ASPRINTF
 
-#include <errno.h>
-#include <limits.h> /* for INT_MAX */
-#include <stdlib.h>
-
 #ifndef VA_COPY
 #if defined(HAVE_VA_COPY) || defined(va_copy)
 #define VA_COPY(dest, src) va_copy(dest, src)
@@ -286,6 +290,7 @@ char *jasprintf(char **unto, const char *fmt, ...) {
   va_list args;
   size_t base_length;
   int length;
+  int rc;
   char *result;
 
   base_length = unto && *unto ? strlen(*unto) : 0;
@@ -299,16 +304,29 @@ char *jasprintf(char **unto, const char *fmt, ...) {
 #endif
   va_end(args);
 
+  if (length < 0)
+    return NULL;
+
   /* check result for failure */
   result =
       (char *)realloc(unto ? *unto : NULL, base_length + (size_t)length + 1);
 
+  if (result == NULL)
+    return NULL;
+
   va_start(args, fmt);
   /* check for failure*/
 #if defined(_MSC_VER)
-  vsprintf_s(result + base_length, (size_t)length + 1, fmt, args);
+  rc = vsprintf_s(result + base_length, (size_t)length + 1, fmt, args);
+  if (rc < 0) {
+    /* handle error, printing the nonzero exit code for debug purposes */
+    LOG_DEBUG("vsprintf_s failed with rc=%d\n", rc);
+  }
 #else
-  vsprintf(result + base_length, fmt, args);
+  rc = vsprintf(result + base_length, fmt, args);
+  if (rc < 0) {
+    LOG_DEBUG("vsprintf failed with rc=%d\n", rc);
+  }
 #endif
   va_end(args);
 
