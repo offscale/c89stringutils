@@ -1,6 +1,6 @@
 get_filename_component(LIBRARY_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
 
-set(Header_Files "c89stringutils_string_extras.h")
+set(Header_Files "c89stringutils_string_extras.h" "c89stringutils_log.h")
 source_group("Header Files" FILES "${Header_Files}")
 
 set(Source_Files "c89stringutils_string_extras.c")
@@ -61,19 +61,23 @@ if (C89STRINGUTILS_BUILD_AMALGAMATION)
     set(amalg_file "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_amalgamation.h")
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
         "c89stringutils_export_pregen.h"
+        "c89stringutils_log.h"
         "c89stringutils_string_extras.h"
         "c89stringutils_string_extras.c")
 
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_export_pregen.h" amalg_export)
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_log.h" amalg_log)
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_string_extras.h" amalg_header)
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_string_extras.c" amalg_source)
 
     string(REPLACE "#include \"c89stringutils_export.h\"" "" amalg_header "${amalg_header}")
     string(REPLACE "#include \"c89stringutils_string_extras.h\"" "" amalg_source "${amalg_source}")
+    string(REPLACE "#include \"c89stringutils_log.h\"" "" amalg_source "${amalg_source}")
 
     set(amalgamation "/* c89stringutils Amalgamation STB-style */\n\n")
     string(APPEND amalgamation "#ifndef C89STRINGUTILS_AMALGAMATION_H\n#define C89STRINGUTILS_AMALGAMATION_H\n\n")
     string(APPEND amalgamation "${amalg_export}\n\n")
+    string(APPEND amalgamation "${amalg_log}\n\n")
     string(APPEND amalgamation "${amalg_header}\n\n")
     string(APPEND amalgamation "#ifdef C89STRINGUTILS_IMPLEMENTATION\n\n")
     string(APPEND amalgamation "${amalg_source}\n\n")

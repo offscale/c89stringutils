@@ -5,6 +5,7 @@
 
 /* clang-format off */
 #include "c89stringutils_string_extras.h"
+#include "c89stringutils_log.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -31,35 +32,35 @@
 #endif /* ANY_BSD */
 
 static int wtf_snprintf(char *buffer, size_t count, const char *format, ...) {
-  int result;
+  int rc;
   va_list args;
   va_start(args, format);
 #if defined(_MSC_VER)
-  result = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
+  rc = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
 #else
-  result = _vsnprintf(buffer, count, format, args);
+  rc = _vsnprintf(buffer, count, format, args);
 #endif
   va_end(args);
   /* In the case where the string entirely filled the buffer, _vsnprintf will
      not null-terminate it, but snprintf must. */
   if (count > 0)
     buffer[count - 1] = '\0';
-  return result;
+  return rc;
 }
 
 static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
                          va_list args) {
-  int result;
+  int rc;
 #if defined(_MSC_VER)
-  result = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
+  rc = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
 #else
-  result = _vsnprintf(buffer, count, format, args);
+  rc = _vsnprintf(buffer, count, format, args);
 #endif
   /* In the case where the string entirely filled the buffer, _vsnprintf will
      not null-terminate it, but vsnprintf must. */
   if (count > 0)
     buffer[count - 1] = '\0';
-  return result;
+  return rc;
 }
 
 #define vsnprintf(buffer, count, format, args)                                 \
@@ -72,8 +73,11 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
 
 #define HAVE_STRNCASECMP_H
 
-#define strncasecmp _strnicmp
-#define strcasecmp _stricmp
+int strncasecmp(const char *s1, const char *s2, size_t n) {
+  return _strnicmp(s1, s2, n);
+}
+
+int strcasecmp(const char *s1, const char *s2) { return _stricmp(s1, s2); }
 
 #endif /* !HAVE_STRNCASECMP_H */
 
@@ -199,55 +203,79 @@ size_t strerrorlen_s(errno_t errnum) {
 #define INIT_SZ 128
 
 extern int vasprintf(char **str, const char *fmt, va_list ap) {
-  int ret;
+  int rc;
   va_list ap2;
   char *string, *newstr;
   size_t len;
 
-  if ((string = (char *)malloc(INIT_SZ)) == NULL)
+  if ((string = (char *)malloc(INIT_SZ)) == NULL) {
+    rc = -1;
     goto fail;
+  }
 
   VA_COPY(ap2, ap);
-  ret = vsnprintf(string, INIT_SZ, fmt, ap2);
+  rc = vsnprintf(string, INIT_SZ, fmt, ap2);
   va_end(ap2);
-  if (ret >= 0 && ret < INIT_SZ) { /* succeeded with initial alloc */
+  if (rc >= 0 && rc < INIT_SZ) { /* succeeded with initial alloc */
     *str = string;
-  } else if (ret == INT_MAX || ret < 0) { /* Bad length */
+  } else if (rc == INT_MAX || rc < 0) { /* Bad length */
     free(string);
+    rc = -1;
     goto fail;
   } else { /* bigger than initial, realloc allowing for nul */
-    len = (size_t)ret + 1;
+    len = (size_t)rc + 1;
     if ((newstr = (char *)realloc(string, len)) == NULL) {
       free(string);
+      rc = -1;
       goto fail;
     }
     VA_COPY(ap2, ap);
-    ret = vsnprintf(newstr, len, fmt, ap2);
+    rc = vsnprintf(newstr, len, fmt, ap2);
     va_end(ap2);
-    if (ret < 0 || (size_t)ret >= len) { /* failed with realloc'ed string */
+    if (rc < 0 || (size_t)rc >= len) { /* failed with realloc'ed string */
       free(newstr);
+      rc = -1;
       goto fail;
     }
     *str = newstr;
   }
-  return ret;
+  return rc;
 
 fail:
+  if (rc != 0) {
+#ifdef _MSC_VER
+    char errbuf[256];
+    strerror_s(errbuf, sizeof(errbuf), errno);
+    LOG_DEBUG("vasprintf failed with rc=%d, error=%s\n", rc, errbuf);
+#else
+    LOG_DEBUG("vasprintf failed with rc=%d, error=%s\n", rc, strerror(errno));
+#endif
+  }
   *str = NULL;
   errno = ENOMEM;
-  return -1;
+  return rc;
 }
 
 extern int asprintf(char **str, const char *fmt, ...) {
   va_list ap;
-  int ret;
+  int rc;
 
   *str = NULL;
   va_start(ap, fmt);
-  ret = vasprintf(str, fmt, ap);
+  rc = vasprintf(str, fmt, ap);
   va_end(ap);
 
-  return ret;
+  if (rc < 0) {
+#ifdef _MSC_VER
+    char errbuf[256];
+    strerror_s(errbuf, sizeof(errbuf), errno);
+    LOG_DEBUG("asprintf failed with rc=%d, error=%s\n", rc, errbuf);
+#else
+    LOG_DEBUG("asprintf failed with rc=%d, error=%s\n", rc, strerror(errno));
+#endif
+  }
+
+  return rc;
 }
 
 #endif /* !HAVE_ASPRINTF */

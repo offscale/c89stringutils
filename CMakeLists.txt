@@ -63,6 +63,12 @@ else()
     option(C89STRINGUTILS_BUILD_TESTING "Build the tests" OFF)
 endif()
 
+set(CDD_CHARSET "Unicode" CACHE STRING "Charset to use: Unicode or ANSI")
+set(CDD_THREADING "Multi-threaded" CACHE STRING "Threading: Multi-threaded or Single-threaded")
+set(CDD_MSVC_RTC "" CACHE STRING "MSVC Runtime Checks: RTC1, RTCs, RTCu, or empty")
+set(CDD_LTO OFF CACHE BOOL "Enable Link-Time Optimization (LTO)")
+set(CDD_DEPS "System" CACHE STRING "Dependency resolution strategy")
+
 if (CDD_CHARSET STREQUAL "Unicode")
     add_compile_definitions(UNICODE _UNICODE)
 endif()
