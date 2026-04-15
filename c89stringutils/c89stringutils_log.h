@@ -6,33 +6,26 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* clang-format off */
-#include <stdio.h>
+#include "c89stringutils_export.h"
 /* clang-format on */
 
 #ifndef LOG_DEBUG
 #ifdef DEBUG
-#if defined(_MSC_VER) && _MSC_VER < 1400
-/* MSVC older than 2005 doesn't support variadic macros well */
-#define LOG_DEBUG(fmt, ...)
+/**
+ * @brief Log debug message
+ * @param fmt The format string.
+ * @param ... The arguments.
+ */
+C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...);
+#define LOG_DEBUG c89stringutils_log_debug
 #else
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvariadic-macros"
-#endif /* defined(__GNUC__) || defined(__clang__) */
-#define LOG_DEBUG(fmt, ...) fprintf(stderr, "[DEBUG] " fmt, ##__VA_ARGS__)
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif /* defined(__GNUC__) || defined(__clang__) */
-#endif
-#else
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvariadic-macros"
-#endif /* defined(__GNUC__) || defined(__clang__) */
-#define LOG_DEBUG(fmt, ...)
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif /* defined(__GNUC__) || defined(__clang__) */
+/**
+ * @brief Log debug message
+ * @param fmt The format string.
+ * @param ... The arguments.
+ */
+C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...);
+#define LOG_DEBUG 1 ? (void)0 : c89stringutils_log_debug
 #endif /* DEBUG */
 #endif /* !LOG_DEBUG */
 

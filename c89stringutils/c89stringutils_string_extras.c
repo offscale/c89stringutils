@@ -15,6 +15,14 @@
 #include <limits.h> /* for INT_MAX */
 /* clang-format on */
 
+void c89stringutils_log_debug(const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vfprintf(stderr, fmt, args);
+  fprintf(stderr, "\n");
+  va_end(args);
+}
+
 #ifndef HAVE_SNPRINTF_H
 #define HAVE_SNPRINTF_H
 
@@ -32,26 +40,6 @@
 #ifdef ANY_BSD
 #define _vsnprintf vsnprintf
 #endif /* ANY_BSD */
-
-static int wtf_snprintf(char *buffer, size_t count, const char *format, ...) {
-  int rc;
-  va_list args;
-  va_start(args, format);
-#if defined(_MSC_VER)
-  rc = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
-  if (rc < 0) {
-    rc = _vscprintf(format, args);
-  }
-#else
-  rc = _vsnprintf(buffer, count, format, args);
-#endif
-  va_end(args);
-  /* In the case where the string entirely filled the buffer, _vsnprintf will
-     not null-terminate it, but snprintf must. */
-  if (count > 0)
-    buffer[count - 1] = '\0';
-  return rc;
-}
 
 static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
                          va_list args) {
@@ -73,7 +61,6 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
 
 #define vsnprintf(buffer, count, format, args)                                 \
   wtf_vsnprintf(buffer, count, format, args)
-#define snprintf wtf_snprintf
 
 #endif /* !HAVE_SNPRINTF_H */
 
@@ -82,10 +69,16 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
 #define HAVE_STRNCASECMP_H
 
 int strncasecmp(const char *s1, const char *s2, size_t n) {
-  return _strnicmp(s1, s2, n);
+  int rc;
+  rc = _strnicmp(s1, s2, n);
+  return rc;
 }
 
-int strcasecmp(const char *s1, const char *s2) { return _stricmp(s1, s2); }
+int strcasecmp(const char *s1, const char *s2) {
+  int rc;
+  rc = _stricmp(s1, s2);
+  return rc;
+}
 
 #endif /* !HAVE_STRNCASECMP_H */
 
@@ -98,15 +91,15 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
      first slen characters of s.
 
   DESCRIPTION
-       The strnstr() function locates the	first occurrence of the
+       The strnstr() function locates the       first occurrence of the
   null-termi-
-       nated string little in the	string big, where not more than	len
-  characters are searched.  Characters that appear after a `\0'	character are
+       nated string little in the       string big, where not more than len
+  characters are searched.  Characters that appear after a `\0' character are
   not searched.
 
   RETURN VALUES
-       If	little is an empty string, big is returned; if little occurs
-  nowhere in	big, NULL is returned; otherwise a pointer to the first
+       If       little is an empty string, big is returned; if little occurs
+  nowhere in    big, NULL is returned; otherwise a pointer to the first
   character of the first occurrence of little is returned.
 
    [this doc (c) FreeBSD <3 clause BSD license> from their manpage]  */
@@ -250,9 +243,9 @@ fail:
 #ifdef _MSC_VER
     char errbuf[256];
     strerror_s(errbuf, sizeof(errbuf), errno);
-    LOG_DEBUG("vasprintf failed with rc=%d, error=%s\n", rc, errbuf);
+    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errbuf);
 #else
-    LOG_DEBUG("vasprintf failed with rc=%d, error=%s\n", rc, strerror(errno));
+    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, strerror(errno));
 #endif
   }
   *str = NULL;
@@ -261,8 +254,8 @@ fail:
 }
 
 extern int asprintf(char **str, const char *fmt, ...) {
-  va_list ap;
   int rc;
+  va_list ap;
 
   *str = NULL;
   va_start(ap, fmt);
@@ -273,9 +266,9 @@ extern int asprintf(char **str, const char *fmt, ...) {
 #ifdef _MSC_VER
     char errbuf[256];
     strerror_s(errbuf, sizeof(errbuf), errno);
-    LOG_DEBUG("asprintf failed with rc=%d, error=%s\n", rc, errbuf);
+    LOG_DEBUG("asprintf failed with rc=%d, error=%s", rc, errbuf);
 #else
-    LOG_DEBUG("asprintf failed with rc=%d, error=%s\n", rc, strerror(errno));
+    LOG_DEBUG("asprintf failed with rc=%d, error=%s", rc, strerror(errno));
 #endif
   }
 
@@ -320,12 +313,12 @@ char *jasprintf(char **unto, const char *fmt, ...) {
   rc = vsprintf_s(result + base_length, (size_t)length + 1, fmt, args);
   if (rc < 0) {
     /* handle error, printing the nonzero exit code for debug purposes */
-    LOG_DEBUG("vsprintf_s failed with rc=%d\n", rc);
+    LOG_DEBUG("vsprintf_s failed with rc=%d", rc);
   }
 #else
   rc = vsprintf(result + base_length, fmt, args);
   if (rc < 0) {
-    LOG_DEBUG("vsprintf failed with rc=%d\n", rc);
+    LOG_DEBUG("vsprintf failed with rc=%d", rc);
   }
 #endif
   va_end(args);

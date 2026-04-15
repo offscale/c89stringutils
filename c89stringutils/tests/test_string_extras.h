@@ -9,6 +9,7 @@ extern "C" {
 #include <greatest.h>
 
 #include <c89stringutils_string_extras.h>
+#include <c89stringutils_log.h>
 #include <stdlib.h>
 #include <errno.h>
 /* clang-format on */
@@ -90,6 +91,11 @@ TEST x_vasprintf_should_succeed(void) {
   PASS();
 }
 
+TEST x_log_debug_should_succeed(void) {
+  LOG_DEBUG("test log debug: %d", 1);
+  PASS();
+}
+
 /* Suites can group multiple tests with common setup. */
 SUITE(strnstr_suite) {
   RUN_TEST(x_strnstr_should_succeed);
@@ -101,6 +107,7 @@ SUITE(strnstr_suite) {
   RUN_TEST(x_strcasestr_should_succeed);
   RUN_TEST(x_strerrorlen_s_should_succeed);
   RUN_TEST(x_vasprintf_should_succeed);
+  RUN_TEST(x_log_debug_should_succeed);
 }
 
 #ifdef __cplusplus

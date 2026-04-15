@@ -1,5 +1,6 @@
 /* clang-format off */
 #include <greatest.h>
+#include <c89stringutils_log.h>
 
 #include "test_string_extras.h"
 /* clang-format on */
