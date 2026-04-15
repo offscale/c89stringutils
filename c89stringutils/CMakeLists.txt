@@ -71,6 +71,7 @@ if (C89STRINGUTILS_BUILD_AMALGAMATION)
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_string_extras.c" amalg_source)
 
     string(REPLACE "#include \"c89stringutils_export.h\"" "" amalg_header "${amalg_header}")
+    string(REPLACE "#include \"c89stringutils_export.h\"" "" amalg_log "${amalg_log}")
     string(REPLACE "#include \"c89stringutils_string_extras.h\"" "" amalg_source "${amalg_source}")
     string(REPLACE "#include \"c89stringutils_log.h\"" "" amalg_source "${amalg_source}")
 
