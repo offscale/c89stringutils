@@ -1,0 +1,35 @@
+* text=auto
+
+# C/C++ files
+*.c text
+*.h text
+*.cpp text
+*.hpp text
+
+# Shell scripts and batch files
+*.sh text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# CMake and build system files
+*.cmake text
+CMakeLists.txt text
+*.in text
+*.plist text
+
+# Documentation and text files
+*.md text
+*.txt text
+LICENSE* text
+
+# YAML files
+*.yml text
+*.yaml text
+
+# Dockerfiles
+*.Dockerfile text
+
+# Binaries
+*.icns binary
+*.png binary
+*.jpg binary
