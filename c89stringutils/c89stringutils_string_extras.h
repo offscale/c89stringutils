@@ -19,7 +19,8 @@ extern "C" {
 #if defined(_MSC_VER)
 #define NUM_FORMAT "%I64d"
 #else
-#define NUM_FORMAT "%lld"
+/* Fix:- Change from C99 long long to long */
+#define NUM_FORMAT "%ld"
 #endif
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) ||     \
