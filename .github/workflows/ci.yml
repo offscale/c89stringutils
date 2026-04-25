@@ -45,7 +45,7 @@ jobs:
           EOF
 
       - name: Compile Test Amalgamation
-        run: gcc -Wall -Wextra -Werror -o test_amalg test_amalg.c
+        run: gcc -std=c89 -Wpedantic -Wall -Wextra -Werror -o test_amalg test_amalg.c
 
       - name: Run Test Amalgamation
         run: ./test_amalg
