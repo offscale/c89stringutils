@@ -15,6 +15,11 @@
 #include <limits.h> /* for INT_MAX */
 /* clang-format on */
 
+#if defined(__GNUC__) && __GNUC__ >= 7 && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnonnull-compare"
+#endif
+
 void c89stringutils_log_debug(const char *fmt, ...) {
   int rc;
   va_list args;
@@ -416,3 +421,7 @@ char *jasprintf(char **unto, const char *fmt, ...) {
   return result;
 }
 #endif /* !HAVE_JASPRINTF */
+
+#if defined(__GNUC__) && __GNUC__ >= 7 && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
