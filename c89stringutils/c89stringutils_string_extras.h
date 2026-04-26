@@ -105,7 +105,6 @@ typedef int errno_t;
 
 #ifndef _MSC_VER
 #define HAVE_STRINGS_H
-#define HAVE_STRNCASECMP_H
 #endif
 
 #if !defined(HAVE_ASPRINTF) &&                                                 \
