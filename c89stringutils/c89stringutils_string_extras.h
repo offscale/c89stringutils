@@ -94,7 +94,7 @@ typedef int errno_t;
 
 #if defined(__linux__) || defined(linux) || defined(__linux) || defined(ANY_BSD)
 #define strerror_s strerror_r
-#define HAVE_STRERRORLEN_S
+#define HAVE_STRERROR_S
 #endif /* defined(__linux__) || defined(linux) || defined(__linux) ||          \
           defined(ANY_BSD) */
 
