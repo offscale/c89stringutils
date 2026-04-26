@@ -16,10 +16,25 @@
 /* clang-format on */
 
 void c89stringutils_log_debug(const char *fmt, ...) {
+  int rc;
   va_list args;
   va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
-  fprintf(stderr, "\n");
+#if defined(_MSC_VER)
+  rc = vfprintf_s(stderr, fmt, args);
+#else
+  rc = vfprintf(stderr, fmt, args);
+#endif
+  if (rc < 0) {
+    /* ignore error in log */
+  }
+#if defined(_MSC_VER)
+  rc = fprintf_s(stderr, "\n");
+#else
+  rc = fprintf(stderr, "\n");
+#endif
+  if (rc < 0) {
+    /* ignore error in log */
+  }
   va_end(args);
 }
 
@@ -48,9 +63,17 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
   rc = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
   if (rc < 0) {
     rc = _vscprintf(format, args);
+    if (rc < 0) {
+      LOG_DEBUG("_vscprintf failed with rc=%d", rc);
+      return rc;
+    }
   }
 #else
   rc = _vsnprintf(buffer, count, format, args);
+  if (rc < 0) {
+    LOG_DEBUG("_vsnprintf failed with rc=%d", rc);
+    return rc;
+  }
 #endif
   /* In the case where the string entirely filled the buffer, _vsnprintf will
      not null-terminate it, but vsnprintf must. */
@@ -70,12 +93,20 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
 
 int strncasecmp(const char *s1, const char *s2, size_t n) {
   int rc;
+  if (s1 == NULL || s2 == NULL) {
+    LOG_DEBUG("s1 or s2 is NULL");
+    return -1;
+  }
   rc = _strnicmp(s1, s2, n);
   return rc;
 }
 
 int strcasecmp(const char *s1, const char *s2) {
   int rc;
+  if (s1 == NULL || s2 == NULL) {
+    LOG_DEBUG("s1 or s2 is NULL");
+    return -1;
+  }
   rc = _stricmp(s1, s2);
   return rc;
 }
@@ -86,32 +117,24 @@ int strcasecmp(const char *s1, const char *s2) {
 #define HAVE_STRNSTR
 
 char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
-  /*
-     Find the first occurrence of find in s, where the search is limited to the
-     first slen characters of s.
-
-  DESCRIPTION
-       The strnstr() function locates the       first occurrence of the
-  null-termi-
-       nated string little in the       string big, where not more than len
-  characters are searched.  Characters that appear after a `\0' character are
-  not searched.
-
-  RETURN VALUES
-       If       little is an empty string, big is returned; if little occurs
-  nowhere in    big, NULL is returned; otherwise a pointer to the first
-  character of the first occurrence of little is returned.
-
-   [this doc (c) FreeBSD <3 clause BSD license> from their manpage]  */
-  const size_t targetLength = strlen(target);
+  size_t targetLength;
   const char *start;
+  int rc;
+  if (buffer == NULL || target == NULL) {
+    LOG_DEBUG("buffer or target is NULL");
+    return NULL;
+  }
+  targetLength = strlen(target);
   if (targetLength == 0)
     return (char *)buffer;
   for (start = buffer; *start && start + targetLength <= buffer + bufferLength;
        start++) {
-    if (*start == *target &&
-        strncmp(start + 1, target + 1, targetLength - 1) == 0)
-      return (char *)(start);
+    if (*start == *target) {
+      rc = strncmp(start + 1, target + 1, targetLength - 1);
+      if (rc == 0) {
+        return (char *)(start);
+      }
+    }
   }
   return 0;
 }
@@ -125,10 +148,18 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
 /* `strcasestr` from MUSL */
 
 char *strcasestr(const char *h, const char *n) {
-  const size_t l = strlen(n);
-  for (; *h; h++)
-    if (!strncasecmp(h, n, l))
+  size_t l;
+  int rc;
+  if (h == NULL || n == NULL) {
+    LOG_DEBUG("h or n is NULL");
+    return NULL;
+  }
+  l = strlen(n);
+  for (; *h; h++) {
+    rc = strncasecmp(h, n, l);
+    if (rc == 0)
       return (char *)h;
+  }
   return 0;
 }
 
@@ -171,7 +202,13 @@ size_t strerrorlen_s(errno_t errnum) {
   } else {
 #ifdef _MSC_VER
     char errbuf[256];
-    return strerror_s(errbuf, sizeof(errbuf), errnum) == 0 ? strlen(errbuf) : 0;
+    int rc;
+    rc = strerror_s(errbuf, sizeof(errbuf), errnum);
+    if (rc != 0) {
+      LOG_DEBUG("strerror_s failed with rc=%d", rc);
+      return 0;
+    }
+    return strlen(errbuf);
 #else
     const char *buf;
     buf = strerror(errnum);
@@ -189,7 +226,7 @@ size_t strerrorlen_s(errno_t errnum) {
 #if defined(HAVE_VA_COPY) || defined(va_copy)
 #define VA_COPY(dest, src) va_copy(dest, src)
 #else
-#ifdef HAVE___VA_COPY
+#if defined(HAVE___VA_COPY) || defined(__va_copy)
 #define VA_COPY(dest, src) __va_copy(dest, src)
 #else
 #define VA_COPY(dest, src) (dest) = (src)
@@ -205,7 +242,13 @@ extern int vasprintf(char **str, const char *fmt, va_list ap) {
   char *string, *newstr;
   size_t len;
 
-  if ((string = (char *)malloc(INIT_SZ)) == NULL) {
+  if (str == NULL || fmt == NULL) {
+    LOG_DEBUG("str or fmt is NULL");
+    return -1;
+  }
+
+  string = (char *)malloc(INIT_SZ);
+  if (string == NULL) {
     rc = -1;
     goto fail;
   }
@@ -221,7 +264,8 @@ extern int vasprintf(char **str, const char *fmt, va_list ap) {
     goto fail;
   } else { /* bigger than initial, realloc allowing for nul */
     len = (size_t)rc + 1;
-    if ((newstr = (char *)realloc(string, len)) == NULL) {
+    newstr = (char *)realloc(string, len);
+    if (newstr == NULL) {
       free(string);
       rc = -1;
       goto fail;
@@ -242,10 +286,18 @@ fail:
   if (rc != 0) {
 #ifdef _MSC_VER
     char errbuf[256];
-    strerror_s(errbuf, sizeof(errbuf), errno);
+    int err_rc;
+    err_rc = strerror_s(errbuf, sizeof(errbuf), errno);
+    if (err_rc != 0) {
+      LOG_DEBUG("strerror_s failed with rc=%d", err_rc);
+      errbuf[0] = '\0';
+    }
     LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errbuf);
 #else
-    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, strerror(errno));
+    const char *errstr;
+    errstr = strerror(errno);
+    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc,
+              errstr ? errstr : "");
 #endif
   }
   *str = NULL;
@@ -257,6 +309,11 @@ extern int asprintf(char **str, const char *fmt, ...) {
   int rc;
   va_list ap;
 
+  if (str == NULL || fmt == NULL) {
+    LOG_DEBUG("str or fmt is NULL");
+    return -1;
+  }
+
   *str = NULL;
   va_start(ap, fmt);
   rc = vasprintf(str, fmt, ap);
@@ -265,10 +322,17 @@ extern int asprintf(char **str, const char *fmt, ...) {
   if (rc < 0) {
 #ifdef _MSC_VER
     char errbuf[256];
-    strerror_s(errbuf, sizeof(errbuf), errno);
+    int err_rc;
+    err_rc = strerror_s(errbuf, sizeof(errbuf), errno);
+    if (err_rc != 0) {
+      LOG_DEBUG("strerror_s failed with rc=%d", err_rc);
+      errbuf[0] = '\0';
+    }
     LOG_DEBUG("asprintf failed with rc=%d, error=%s", rc, errbuf);
 #else
-    LOG_DEBUG("asprintf failed with rc=%d, error=%s", rc, strerror(errno));
+    const char *errstr;
+    errstr = strerror(errno);
+    LOG_DEBUG("asprintf failed with rc=%d, error=%s", rc, errstr ? errstr : "");
 #endif
   }
 
@@ -286,14 +350,25 @@ char *jasprintf(char **unto, const char *fmt, ...) {
   int rc;
   char *result;
 
+  if (fmt == NULL) {
+    LOG_DEBUG("fmt is NULL");
+    return NULL;
+  }
+
   base_length = unto && *unto ? strlen(*unto) : 0;
 
   va_start(args, fmt);
   /* check length for failure */
 #if defined(_MSC_VER) && _MSC_VER < 1900
   length = _vscprintf(fmt, args);
+  if (length < 0) {
+    LOG_DEBUG("_vscprintf failed with rc=%d", length);
+  }
 #else
   length = vsnprintf(NULL, 0, fmt, args);
+  if (length < 0) {
+    LOG_DEBUG("vsnprintf failed with rc=%d", length);
+  }
 #endif
   va_end(args);
 
@@ -304,8 +379,10 @@ char *jasprintf(char **unto, const char *fmt, ...) {
   result =
       (char *)realloc(unto ? *unto : NULL, base_length + (size_t)length + 1);
 
-  if (result == NULL)
+  if (result == NULL) {
+    LOG_DEBUG("realloc failed with rc=-1");
     return NULL;
+  }
 
   va_start(args, fmt);
   /* check for failure*/
@@ -314,11 +391,21 @@ char *jasprintf(char **unto, const char *fmt, ...) {
   if (rc < 0) {
     /* handle error, printing the nonzero exit code for debug purposes */
     LOG_DEBUG("vsprintf_s failed with rc=%d", rc);
+    free(result);
+    if (unto)
+      *unto = NULL;
+    va_end(args);
+    return NULL;
   }
 #else
   rc = vsprintf(result + base_length, fmt, args);
   if (rc < 0) {
     LOG_DEBUG("vsprintf failed with rc=%d", rc);
+    free(result);
+    if (unto)
+      *unto = NULL;
+    va_end(args);
+    return NULL;
   }
 #endif
   va_end(args);
