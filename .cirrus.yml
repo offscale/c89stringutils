@@ -1,5 +1,5 @@
 freebsd_instance:
-  image_family: freebsd-14
+  image_family: freebsd-15
 
 task:
   install_script: pkg install -y cmake

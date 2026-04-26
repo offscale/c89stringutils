@@ -15,6 +15,13 @@ check_c_source_compiles("#include <stdarg.h>
     void t(int i, ...) { va_list a, b; va_start(a,i); b = a; va_end(a); }
     int main() { return 0; }" HAVE_VA_LIST_ASSIGNMENT)
 
+check_c_source_compiles("
+int main(void) {
+  long long x = 0;
+  return (int)x;
+}
+" HAVE_LONG_LONG)
+
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 set(CMAKE_C_STANDARD 90)
@@ -27,6 +34,10 @@ elseif(HAVE___VA_COPY)
     target_compile_definitions("${PROJECT_NAME}_compiler_flags" INTERFACE HAVE___VA_COPY)
 elseif(HAVE_VA_LIST_ASSIGNMENT)
     target_compile_definitions("${PROJECT_NAME}_compiler_flags" INTERFACE HAVE_VA_LIST_ASSIGNMENT)
+endif()
+
+if(HAVE_LONG_LONG)
+    target_compile_definitions("${PROJECT_NAME}_compiler_flags" INTERFACE HAVE_LONG_LONG)
 endif()
 
 if (NOT DEFINED MSVC_VERSION

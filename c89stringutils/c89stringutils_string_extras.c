@@ -103,11 +103,9 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
   character of the first occurrence of little is returned.
 
    [this doc (c) FreeBSD <3 clause BSD license> from their manpage]  */
-  size_t targetLength;
+  const size_t targetLength = strlen(target);
   const char *start;
 
-  /* Fix assignment of targetLength. C89 requires variables to be defined at beginning of a scope */
-  targetLength = strlen(target);
   if (targetLength == 0)
     return (char *)buffer;
   for (start = buffer; *start && start + targetLength <= buffer + bufferLength;
@@ -128,8 +126,7 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
 /* `strcasestr` from MUSL */
 
 char *strcasestr(const char *h, const char *n) {
-  size_t l;
-  l = strlen(n);
+  const size_t l = strlen(n);
   for (; *h; h++)
     if (!strncasecmp(h, n, l))
       return (char *)h;
