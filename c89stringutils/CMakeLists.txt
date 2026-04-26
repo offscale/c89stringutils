@@ -8,6 +8,8 @@ source_group("Source Files" FILES "${Source_Files}")
 
 add_library("${LIBRARY_NAME}" "${Header_Files}" "${Source_Files}")
 
+target_link_libraries("${LIBRARY_NAME}" PUBLIC "${PROJECT_NAME}_compiler_flags")
+
 include(GNUInstallDirs)
 target_include_directories(
         "${LIBRARY_NAME}"

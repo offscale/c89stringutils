@@ -190,16 +190,16 @@ size_t strerrorlen_s(errno_t errnum) {
 #define HAVE_ASPRINTF
 
 #ifndef VA_COPY
-#if defined(HAVE_VA_COPY) || defined(va_copy)
-#define VA_COPY(dest, src) va_copy(dest, src)
-#else
-#ifdef HAVE___VA_COPY
-#define VA_COPY(dest, src) __va_copy(dest, src)
-#else
-#define VA_COPY(dest, src) memcpy(&(dest), &(src), sizeof(va_list))
-#endif
-#endif
-#endif /* ! VA_COPY */
+# if defined(HAVE_VA_COPY)
+#  define VA_COPY(dest, src) va_copy(dest, src)
+# elif defined(HAVE___VA_COPY)
+#  define VA_COPY(dest, src) __va_copy(dest, src)
+# elif defined(HAVE_VA_LIST_ASSIGNMENT)
+#  define VA_COPY(dest, src) ((dest) = (src))
+# else
+#  define VA_COPY(dest, src) memcpy(&(dest), &(src), sizeof(va_list))
+# endif
+#endif /* !VA_COPY */
 
 #define INIT_SZ 128
 

@@ -1,11 +1,34 @@
 cmake_minimum_required(VERSION 3.11)
 project(c89stringutils VERSION 0.0.2 LANGUAGES C)
 
+include(CheckCSourceCompiles)
+
+check_c_source_compiles("#include <stdarg.h>
+    void t(int i, ...) { va_list a, b; va_start(a,i); va_copy(b,a); va_end(b); va_end(a); }
+    int main() { return 0; }" HAVE_VA_COPY)
+
+check_c_source_compiles("#include <stdarg.h>
+    void t(int i, ...) { va_list a, b; va_start(a,i); __va_copy(b,a); va_end(b); va_end(a); }
+    int main() { return 0; }" HAVE___VA_COPY)
+
+check_c_source_compiles("#include <stdarg.h>
+    void t(int i, ...) { va_list a, b; va_start(a,i); b = a; va_end(a); }
+    int main() { return 0; }" HAVE_VA_LIST_ASSIGNMENT)
+
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 set(CMAKE_C_STANDARD 90)
 
 add_library("${PROJECT_NAME}_compiler_flags" INTERFACE)
+
+if(HAVE_VA_COPY)
+    target_compile_definitions("${PROJECT_NAME}_compiler_flags" INTERFACE HAVE_VA_COPY)
+elseif(HAVE___VA_COPY)
+    target_compile_definitions("${PROJECT_NAME}_compiler_flags" INTERFACE HAVE___VA_COPY)
+elseif(HAVE_VA_LIST_ASSIGNMENT)
+    target_compile_definitions("${PROJECT_NAME}_compiler_flags" INTERFACE HAVE_VA_LIST_ASSIGNMENT)
+endif()
+
 if (NOT DEFINED MSVC_VERSION
         OR MSVC_VERSION STRGREATER "1900" # 2015
         OR NOT (CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom"))
