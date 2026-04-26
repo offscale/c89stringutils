@@ -1,0 +1,3 @@
+string functions from newer standards / common non-standards for C89
+
+https://github.com/offscale/c89stringutils
