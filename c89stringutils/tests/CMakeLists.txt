@@ -25,7 +25,7 @@ source_group("Source Files" FILES "${Source_Files}")
 
 add_executable("${EXEC_NAME}" "${Header_Files}" "${Source_Files}")
 
-target_link_libraries("${EXEC_NAME}" PRIVATE "${PROJECT_NAME}")
+target_link_libraries("${EXEC_NAME}" PRIVATE c89stringutils)
 if (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
     target_link_libraries("${EXEC_NAME}" PRIVATE "${PROJECT_NAME}_compiler_flags")
 endif (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
