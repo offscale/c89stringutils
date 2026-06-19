@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.11...3.28)
 project(c89stringutils VERSION 0.0.2 LANGUAGES C)
 
 set(CMAKE_C_VISIBILITY_PRESET hidden)
@@ -56,12 +56,12 @@ configure_file(
 add_subdirectory("${PROJECT_NAME}")
 
 include(CTest)
-option(BUILD_TESTING "Build the tests" ON)
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    option(C89STRINGUTILS_BUILD_TESTING "Build the tests" ON)
+    set(C89STRINGUTILS_BUILD_TESTING_DEFAULT ON)
 else()
-    option(C89STRINGUTILS_BUILD_TESTING "Build the tests" OFF)
+    set(C89STRINGUTILS_BUILD_TESTING_DEFAULT OFF)
 endif()
+option(C89STRINGUTILS_BUILD_TESTING "Build the tests" ${C89STRINGUTILS_BUILD_TESTING_DEFAULT})
 
 set(CDD_CHARSET "Unicode" CACHE STRING "Charset to use: Unicode or ANSI")
 set(CDD_THREADING "Multi-threaded" CACHE STRING "Threading: Multi-threaded or Single-threaded")

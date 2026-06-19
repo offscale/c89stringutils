@@ -124,6 +124,7 @@ int strcasecmp(const char *s1, const char *s2) {
 char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
   size_t targetLength;
   const char *start;
+  size_t remaining;
   int rc;
   if (buffer == NULL || target == NULL) {
     LOG_DEBUG("buffer or target is NULL");
@@ -132,8 +133,9 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
   targetLength = strlen(target);
   if (targetLength == 0)
     return (char *)buffer;
-  for (start = buffer; *start && start + targetLength <= buffer + bufferLength;
-       start++) {
+  remaining = bufferLength;
+  for (start = buffer; *start && remaining >= targetLength;
+       start++, remaining--) {
     if (*start == *target) {
       rc = strncmp(start + 1, target + 1, targetLength - 1);
       if (rc == 0) {
@@ -160,6 +162,8 @@ char *strcasestr(const char *h, const char *n) {
     return NULL;
   }
   l = strlen(n);
+  if (l == 0)
+    return (char *)h;
   for (; *h; h++) {
     rc = strncasecmp(h, n, l);
     if (rc == 0)

@@ -40,8 +40,10 @@ set_property(TARGET "${LIBRARY_NAME}" PROPERTY SOVERSION "${${PROJECT_NAME}_VERS
 
 set(installable_libs # "${EXEC_NAME}"
         "${LIBRARY_NAME}")
-if (TARGET "${DEPENDANT_LIBRARY}")
-    list(APPEND installable_libs "${DEPENDANT_LIBRARY}")
+if (DEFINED DEPENDANT_LIBRARY)
+    if (TARGET "${DEPENDANT_LIBRARY}")
+        list(APPEND installable_libs "${DEPENDANT_LIBRARY}")
+    endif ()
 endif ()
 if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.19")
     list(APPEND installable_libs "${PROJECT_NAME}_compiler_flags")
