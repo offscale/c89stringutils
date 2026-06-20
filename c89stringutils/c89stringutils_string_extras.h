@@ -1,7 +1,8 @@
-/*
- * string functions helpful on Linux (and sometimes BSD)
+/**
+ * @file c89stringutils_string_extras.h
+ * @brief string functions helpful on Linux (and sometimes BSD)
  * are now made available on other platforms (Windows, SunOS, &etc.)
- * */
+ */
 
 #ifndef C89STRINGUTILS_STRING_EXTRAS_H
 #define C89STRINGUTILS_STRING_EXTRAS_H

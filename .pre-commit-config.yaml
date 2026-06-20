@@ -1,0 +1,19 @@
+repos:
+-   repo: local
+    hooks:
+    -   id: clang-format
+        name: clang-format
+        entry: clang-format -i --style=LLVM
+        language: system
+        types_or: [c, c++]
+        require_serial: true
+    -   id: cppcheck
+        name: cppcheck
+        entry: cppcheck --error-exitcode=1 --force
+        language: system
+        types_or: [c, c++]
+    -   id: custom-checks
+        name: Build, Test, Valgrind, Coverage, Shields
+        entry: ./scripts/run_custom_checks.sh
+        language: system
+        pass_filenames: false

@@ -1,7 +1,8 @@
-/*
- * string functions helpful on Linux (and sometimes BSD)
+/**
+ * @file c89stringutils_string_extras.c
+ * @brief string functions helpful on Linux (and sometimes BSD)
  * are now made available on other platforms (Windows, SunOS, &etc.)
- * */
+ */
 
 /* clang-format off */
 #include "c89stringutils_string_extras.h"
@@ -20,6 +21,11 @@
 #pragma GCC diagnostic ignored "-Wnonnull-compare"
 #endif
 
+/**
+ * @brief Log debug message
+ * @param fmt The format string.
+ * @param ... The arguments.
+ */
 void c89stringutils_log_debug(const char *fmt, ...) {
   int rc;
   va_list args;
@@ -61,6 +67,14 @@ void c89stringutils_log_debug(const char *fmt, ...) {
 #define _vsnprintf vsnprintf
 #endif /* ANY_BSD */
 
+/**
+ * @brief Implement vsnprintf for platforms that don't have it.
+ * @param buffer The buffer to write to.
+ * @param count The maximum number of characters to write.
+ * @param format The format string.
+ * @param args The va_list of arguments.
+ * @return The number of characters written, or a negative value on error.
+ */
 static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
                          va_list args) {
   int rc;
@@ -96,6 +110,14 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
 
 #define HAVE_STRNCASECMP_H
 
+/**
+ * @brief Compare at most n characters of two strings, ignoring case.
+ * @param s1 The first string to compare.
+ * @param s2 The second string to compare.
+ * @param n The maximum number of characters to compare.
+ * @return An integer less than, equal to, or greater than zero if s1 is found,
+ * respectively, to be less than, to match, or be greater than s2.
+ */
 int strncasecmp(const char *s1, const char *s2, size_t n) {
   int rc;
   if (s1 == NULL || s2 == NULL) {
@@ -106,6 +128,13 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
   return rc;
 }
 
+/**
+ * @brief Compare two strings, ignoring case.
+ * @param s1 The first string to compare.
+ * @param s2 The second string to compare.
+ * @return An integer less than, equal to, or greater than zero if s1 is found,
+ * respectively, to be less than, to match, or be greater than s2.
+ */
 int strcasecmp(const char *s1, const char *s2) {
   int rc;
   if (s1 == NULL || s2 == NULL) {
@@ -121,6 +150,15 @@ int strcasecmp(const char *s1, const char *s2) {
 #ifndef HAVE_STRNSTR
 #define HAVE_STRNSTR
 
+/**
+ * @brief Locate a substring in a string, looking at no more than len
+ * characters.
+ * @param buffer The string to search.
+ * @param target The substring to find.
+ * @param bufferLength The maximum number of characters to search.
+ * @return A pointer to the first occurrence of little in big, or NULL if not
+ * found.
+ */
 char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
   size_t targetLength;
   const char *start;
@@ -154,6 +192,13 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
 
 /* `strcasestr` from MUSL */
 
+/**
+ * @brief Locate a substring in a string, ignoring case.
+ * @param h The string to search.
+ * @param n The substring to find.
+ * @return A pointer to the first occurrence of little in big, or NULL if not
+ * found.
+ */
 char *strcasestr(const char *h, const char *n) {
   size_t l;
   int rc;
@@ -179,6 +224,11 @@ char *strcasestr(const char *h, const char *n) {
 #define HAVE_STRERRORLEN_S
 /* MIT licensed function from Safe C Library */
 
+/**
+ * @brief Get the length of a string describing an error number.
+ * @param errnum The error number.
+ * @return The length of the string describing the error.
+ */
 size_t strerrorlen_s(errno_t errnum) {
 #ifndef ESNULLP
 #define ESNULLP (400) /* null ptr                    */
@@ -245,6 +295,15 @@ size_t strerrorlen_s(errno_t errnum) {
 
 #define INIT_SZ 128
 
+/**
+ * @brief Write formatted output to a dynamically allocated string using a
+ * va_list.
+ * @param str A pointer to a string pointer where the allocated string will be
+ * stored.
+ * @param fmt The format string.
+ * @param ap The va_list of arguments.
+ * @return The number of characters printed, or -1 on error.
+ */
 extern int vasprintf(char **str, const char *fmt, va_list ap) {
   int rc;
   va_list ap2;
@@ -314,6 +373,14 @@ fail:
   return rc;
 }
 
+/**
+ * @brief Write formatted output to a dynamically allocated string.
+ * @param str A pointer to a string pointer where the allocated string will be
+ * stored.
+ * @param fmt The format string.
+ * @param ... The arguments.
+ * @return The number of characters printed, or -1 on error.
+ */
 extern int asprintf(char **str, const char *fmt, ...) {
   int rc;
   va_list ap;
@@ -352,6 +419,15 @@ extern int asprintf(char **str, const char *fmt, ...) {
 
 #ifndef HAVE_JASPRINTF
 #define HAVE_JASPRINTF
+/**
+ * @brief `jasprintf`, a version of `asprintf` that concatenates on successive
+ * calls: char *s = NULL; jasprintf(&s, "foo%s", "bar"); jasprintf(&s, "can%s",
+ * "haz"); free(s);
+ * @param unto The string to append to.
+ * @param fmt The format string.
+ * @param ... The arguments.
+ * @return The concatenated string.
+ */
 char *jasprintf(char **unto, const char *fmt, ...) {
   va_list args;
   size_t base_length;

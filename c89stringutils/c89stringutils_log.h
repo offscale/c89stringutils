@@ -1,3 +1,7 @@
+/**
+ * @file c89stringutils_log.h
+ * @brief Logging utilities for c89stringutils.
+ */
 #ifndef C89STRINGUTILS_LOG_H
 #define C89STRINGUTILS_LOG_H
 

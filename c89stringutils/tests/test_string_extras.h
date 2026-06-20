@@ -1,3 +1,7 @@
+/**
+ * @file test_string_extras.h
+ * @brief Tests for string extra functions.
+ */
 #ifndef TEST_STRING_EXTRAS_H
 #define TEST_STRING_EXTRAS_H
 
@@ -17,11 +21,19 @@ extern "C" {
 static const char *buffer = "hello world";
 static const char *target = "hello\0\0\0";
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_strnstr_should_succeed(void) {
   ASSERT_EQ_FMT(buffer, strnstr(buffer, target, strlen(buffer)), "%s");
   PASS();
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_strnstr_should_fail(void) {
   ASSERT_EQ(NULL, strnstr(buffer, "world", 5));
   ASSERT_EQ(NULL, strnstr(NULL, "world", 5));
@@ -30,6 +42,10 @@ TEST x_strnstr_should_fail(void) {
   PASS();
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_asprintf_should_succeed(void) {
   char *s = NULL;
   int rc = asprintf(&s, "foo%s", "bar");
@@ -41,6 +57,10 @@ TEST x_asprintf_should_succeed(void) {
   PASS();
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_jasprintf_should_succeed(void) {
   char *s = NULL;
   jasprintf(&s, "foo%s", "bar");
@@ -52,6 +72,10 @@ TEST x_jasprintf_should_succeed(void) {
   PASS();
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_strcasecmp_should_succeed(void) {
   ASSERT_EQ(0, strcasecmp("HeLlO", "hElLo"));
   ASSERT(strcasecmp("apple", "banana") < 0);
@@ -59,16 +83,31 @@ TEST x_strcasecmp_should_succeed(void) {
   PASS();
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_strncasecmp_should_succeed(void) {
   ASSERT_EQ(0, strncasecmp("HeLlO World", "hElLo Earth", 5));
   ASSERT(strncasecmp("apple pie", "apple tart", 9) < 0);
   PASS();
 }
 
+/**
+ * @brief Wrapper for strcasestr to avoid compiler warnings.
+ * @param h The string to search.
+ * @param n The substring to find.
+ * @return A pointer to the first occurrence of little in big, or NULL if not
+ * found.
+ */
 static char *test_strcasestr_wrapper(const char *h, const char *n) {
   return strcasestr(h, n);
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_strcasestr_should_succeed(void) {
   const char *haystack = "The Quick Brown Fox";
   ASSERT_STR_EQ("Brown Fox", strcasestr(haystack, "bRoWn"));
@@ -83,6 +122,10 @@ TEST x_strcasestr_should_succeed(void) {
   PASS();
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_strerrorlen_s_should_succeed(void) {
   ASSERT(strerrorlen_s(ENOMEM) > 0);
   ASSERT(strerrorlen_s(400) == 8); /* ESNULLP */
@@ -95,6 +138,14 @@ TEST x_strerrorlen_s_should_succeed(void) {
 
 /* vasprintf can be tested implicitly via asprintf, but let's test it directly
  * just in case */
+/**
+ * @brief Wrapper for vasprintf for testing.
+ * @param str A pointer to a string pointer where the allocated string will be
+ * stored.
+ * @param fmt The format string.
+ * @param ... The arguments.
+ * @return The number of characters printed, or -1 on error.
+ */
 static int test_vasprintf_wrapper(char **str, const char *fmt, ...) {
   int rc;
   va_list ap;
@@ -104,6 +155,10 @@ static int test_vasprintf_wrapper(char **str, const char *fmt, ...) {
   return rc;
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_vasprintf_should_succeed(void) {
   char *s = NULL;
   int rc = test_vasprintf_wrapper(&s, "test %d", 123);
@@ -115,12 +170,20 @@ TEST x_vasprintf_should_succeed(void) {
   PASS();
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_log_debug_should_succeed(void) {
   LOG_DEBUG("test log debug: %d", 1);
   c89stringutils_log_debug("direct call %s", "test");
   PASS();
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_asprintf_realloc_path(void) {
   char *s = NULL;
   int rc;
@@ -135,6 +198,10 @@ TEST x_asprintf_realloc_path(void) {
   PASS();
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_jasprintf_realloc_path(void) {
   char *s = NULL;
   char big[200];
@@ -147,6 +214,10 @@ TEST x_jasprintf_realloc_path(void) {
   PASS();
 }
 
+/**
+ * @brief Test case
+ * @return enum test result
+ */
 TEST x_jasprintf_should_fail(void) {
   /* It is difficult to trigger vsnprintf / realloc failures natively without
      mocking. We will rely on existing coverage. */
@@ -154,6 +225,9 @@ TEST x_jasprintf_should_fail(void) {
 }
 
 /* Suites can group multiple tests with common setup. */
+/**
+ * @brief Test suite
+ */
 SUITE(strnstr_suite) {
   RUN_TEST(x_strnstr_should_succeed);
   RUN_TEST(x_strnstr_should_fail);
@@ -161,6 +235,7 @@ SUITE(strnstr_suite) {
   RUN_TEST(x_asprintf_realloc_path);
   RUN_TEST(x_jasprintf_should_succeed);
   RUN_TEST(x_jasprintf_realloc_path);
+  RUN_TEST(x_jasprintf_should_fail);
   RUN_TEST(x_strcasecmp_should_succeed);
   RUN_TEST(x_strncasecmp_should_succeed);
   RUN_TEST(x_strcasestr_should_succeed);

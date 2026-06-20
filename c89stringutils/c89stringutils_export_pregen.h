@@ -1,4 +1,8 @@
-/* for older targets and non CMake using build systems on MSVC */
+/**
+ * @file c89stringutils_export_pregen.h
+ * @brief Export macros for older targets and non CMake using build systems on
+ * MSVC
+ */
 #ifndef C89STRINGUTILS_EXPORT_H
 #define C89STRINGUTILS_EXPORT_H
 
