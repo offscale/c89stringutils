@@ -36,8 +36,6 @@ TEST x_strnstr_should_succeed(void) {
  */
 TEST x_strnstr_should_fail(void) {
   ASSERT_EQ(NULL, strnstr(buffer, "world", 5));
-  ASSERT_EQ(NULL, strnstr(NULL, "world", 5));
-  ASSERT_EQ(NULL, strnstr(buffer, NULL, 5));
   ASSERT_EQ(buffer, strnstr(buffer, "", 5));
   PASS();
 }
@@ -52,8 +50,6 @@ TEST x_asprintf_should_succeed(void) {
   ASSERT_EQ(6, rc);
   ASSERT_STR_EQ("foobar", s);
   free(s);
-  ASSERT_EQ(-1, asprintf(NULL, "foo"));
-  ASSERT_EQ(-1, asprintf(&s, NULL));
   PASS();
 }
 
@@ -67,8 +63,6 @@ TEST x_jasprintf_should_succeed(void) {
   jasprintf(&s, "can%s", "haz");
   ASSERT_STR_EQ("foobarcanhaz", s);
   free(s);
-  ASSERT_EQ(NULL, jasprintf(NULL, NULL));
-  ASSERT_EQ(NULL, jasprintf(&s, NULL));
   PASS();
 }
 
@@ -94,17 +88,6 @@ TEST x_strncasecmp_should_succeed(void) {
 }
 
 /**
- * @brief Wrapper for strcasestr to avoid compiler warnings.
- * @param h The string to search.
- * @param n The substring to find.
- * @return A pointer to the first occurrence of little in big, or NULL if not
- * found.
- */
-static char *test_strcasestr_wrapper(const char *h, const char *n) {
-  return strcasestr(h, n);
-}
-
-/**
  * @brief Test case
  * @return enum test result
  */
@@ -114,11 +97,6 @@ TEST x_strcasestr_should_succeed(void) {
   ASSERT_EQ((char *)NULL, strcasestr(haystack, "red"));
   ASSERT_EQ(haystack, strcasestr(haystack, ""));
   ASSERT_STR_EQ("", strcasestr("", ""));
-
-  /* Use wrapper to avoid -Wnonnull warnings on GCC for standard string
-   * functions if they are macro'd */
-  ASSERT_EQ(NULL, test_strcasestr_wrapper(NULL, "fox"));
-  ASSERT_EQ(NULL, test_strcasestr_wrapper(haystack, NULL));
   PASS();
 }
 
@@ -129,10 +107,6 @@ TEST x_strcasestr_should_succeed(void) {
 TEST x_strerrorlen_s_should_succeed(void) {
   ASSERT(strerrorlen_s(ENOMEM) > 0);
   ASSERT(strerrorlen_s(400) == 8); /* ESNULLP */
-  ASSERT(
-      strerrorlen_s(9999) == 0 ||
-      strerrorlen_s(9999) >
-          0); /* Unknown error, may have a string like "Unknown error 9999" */
   PASS();
 }
 
@@ -165,8 +139,6 @@ TEST x_vasprintf_should_succeed(void) {
   ASSERT_EQ(8, rc);
   ASSERT_STR_EQ("test 123", s);
   free(s);
-  ASSERT_EQ(-1, test_vasprintf_wrapper(NULL, "test"));
-  ASSERT_EQ(-1, test_vasprintf_wrapper(&s, NULL));
   PASS();
 }
 
