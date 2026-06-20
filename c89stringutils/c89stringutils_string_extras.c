@@ -63,9 +63,11 @@ void c89stringutils_log_debug(const char *fmt, ...) {
  * SPDX-License-Identifier:  BSD-2-Clause
  */
 
-#ifdef ANY_BSD
-#define _vsnprintf vsnprintf
-#endif /* ANY_BSD */
+#if !defined(_MSC_VER)
+#if !defined(ANY_BSD) && !defined(__APPLE__)
+extern int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+#endif
+#endif
 
 /**
  * @brief Implement vsnprintf for platforms that don't have it.
@@ -88,13 +90,13 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
     }
   }
 #else
-  rc = _vsnprintf(buffer, count, format, args);
+  rc = vsnprintf(buffer, count, format, args);
   if (rc < 0) {
-    LOG_DEBUG("_vsnprintf failed with rc=%d", rc);
+    LOG_DEBUG("vsnprintf failed with rc=%d", rc);
     return rc;
   }
 #endif
-  /* In the case where the string entirely filled the buffer, _vsnprintf will
+  /* In the case where the string entirely filled the buffer, vsnprintf will
      not null-terminate it, but vsnprintf must. */
   if (count > 0)
     buffer[count - 1] = '\0';
