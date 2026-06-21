@@ -26,7 +26,9 @@ static const char *target = "hello\0\0\0";
  * @return enum test result
  */
 TEST x_strnstr_should_succeed(void) {
-  ASSERT_EQ_FMT(buffer, strnstr(buffer, target, strlen(buffer)), "%s");
+  char *out;
+  out = c89stringutils_strnstr(buffer, target, strlen(buffer));
+  ASSERT_EQ_FMT(buffer, out, "%s");
   PASS();
 }
 
@@ -35,8 +37,11 @@ TEST x_strnstr_should_succeed(void) {
  * @return enum test result
  */
 TEST x_strnstr_should_fail(void) {
-  ASSERT_EQ(NULL, strnstr(buffer, "world", 5));
-  ASSERT_EQ(buffer, strnstr(buffer, "", 5));
+  char *out;
+  out = c89stringutils_strnstr(buffer, "world", 5);
+  ASSERT_EQ(NULL, out);
+  out = c89stringutils_strnstr(buffer, "", 5);
+  ASSERT_EQ(buffer, out);
   PASS();
 }
 
@@ -46,7 +51,7 @@ TEST x_strnstr_should_fail(void) {
  */
 TEST x_asprintf_should_succeed(void) {
   char *s = NULL;
-  int rc = asprintf(&s, "foo%s", "bar");
+  int rc = c89stringutils_asprintf(&s, "foo%s", "bar");
   ASSERT_EQ(6, rc);
   ASSERT_STR_EQ("foobar", s);
   free(s);
@@ -59,8 +64,8 @@ TEST x_asprintf_should_succeed(void) {
  */
 TEST x_jasprintf_should_succeed(void) {
   char *s = NULL;
-  int rc1 = jasprintf(&s, "foo%s", "bar");
-  int rc2 = jasprintf(&s, "can%s", "haz");
+  int rc1 = c89stringutils_jasprintf(&s, "foo%s", "bar");
+  int rc2 = c89stringutils_jasprintf(&s, "can%s", "haz");
   ASSERT_EQ(0, rc1);
   ASSERT_EQ(0, rc2);
   ASSERT_STR_EQ("foobarcanhaz", s);
@@ -73,9 +78,13 @@ TEST x_jasprintf_should_succeed(void) {
  * @return enum test result
  */
 TEST x_strcasecmp_should_succeed(void) {
-  ASSERT_EQ(0, strcasecmp("HeLlO", "hElLo"));
-  ASSERT(strcasecmp("apple", "banana") < 0);
-  ASSERT(strcasecmp("banana", "apple") > 0);
+  int out;
+  out = c89stringutils_strcasecmp("HeLlO", "hElLo");
+  ASSERT_EQ(0, out);
+  out = c89stringutils_strcasecmp("apple", "banana");
+  ASSERT(out < 0);
+  out = c89stringutils_strcasecmp("banana", "apple");
+  ASSERT(out > 0);
   PASS();
 }
 
@@ -84,8 +93,11 @@ TEST x_strcasecmp_should_succeed(void) {
  * @return enum test result
  */
 TEST x_strncasecmp_should_succeed(void) {
-  ASSERT_EQ(0, strncasecmp("HeLlO World", "hElLo Earth", 5));
-  ASSERT(strncasecmp("apple pie", "apple tart", 9) < 0);
+  int out;
+  out = c89stringutils_strncasecmp("HeLlO World", "hElLo Earth", 5);
+  ASSERT_EQ(0, out);
+  out = c89stringutils_strncasecmp("apple pie", "apple tart", 9);
+  ASSERT(out < 0);
   PASS();
 }
 
@@ -95,10 +107,15 @@ TEST x_strncasecmp_should_succeed(void) {
  */
 TEST x_strcasestr_should_succeed(void) {
   const char *haystack = "The Quick Brown Fox";
-  ASSERT_STR_EQ("Brown Fox", strcasestr(haystack, "bRoWn"));
-  ASSERT_EQ((char *)NULL, strcasestr(haystack, "red"));
-  ASSERT_EQ(haystack, strcasestr(haystack, ""));
-  ASSERT_STR_EQ("", strcasestr("", ""));
+  char *out;
+  out = c89stringutils_strcasestr(haystack, "bRoWn");
+  ASSERT_STR_EQ("Brown Fox", out);
+  out = c89stringutils_strcasestr(haystack, "red");
+  ASSERT_EQ((char *)NULL, out);
+  out = c89stringutils_strcasestr(haystack, "");
+  ASSERT_EQ(haystack, out);
+  out = c89stringutils_strcasestr("", "");
+  ASSERT_STR_EQ("", out);
   PASS();
 }
 
@@ -107,8 +124,11 @@ TEST x_strcasestr_should_succeed(void) {
  * @return enum test result
  */
 TEST x_strerrorlen_s_should_succeed(void) {
-  ASSERT(strerrorlen_s(ENOMEM) > 0);
-  ASSERT(strerrorlen_s(400) == 8); /* ESNULLP */
+  size_t out;
+  out = c89stringutils_strerrorlen_s(ENOMEM);
+  ASSERT(out > 0);
+  out = c89stringutils_strerrorlen_s(400);
+  ASSERT(out == 8); /* ESNULLP */
   PASS();
 }
 
@@ -120,13 +140,13 @@ TEST x_strerrorlen_s_should_succeed(void) {
  * stored.
  * @param fmt The format string.
  * @param ... The arguments.
- * @return The number of characters printed, or -1 on error.
+ * @return exit code
  */
 static int test_vasprintf_wrapper(char **str, const char *fmt, ...) {
   int rc;
   va_list ap;
   va_start(ap, fmt);
-  rc = vasprintf(str, fmt, ap);
+  rc = c89stringutils_vasprintf(str, fmt, ap);
   va_end(ap);
   return rc;
 }
@@ -141,6 +161,16 @@ TEST x_vasprintf_should_succeed(void) {
   ASSERT_EQ(8, rc);
   ASSERT_STR_EQ("test 123", s);
   free(s);
+  PASS();
+}
+
+/**
+ * @brief Test case
+ * @return enum test result
+ */
+TEST x_vasprintf_should_fail(void) {
+  int rc = test_vasprintf_wrapper(NULL, "test %d", 123);
+  ASSERT_EQ(-1, rc);
   PASS();
 }
 
@@ -165,7 +195,7 @@ TEST x_asprintf_realloc_path(void) {
   char big[200];
   memset(big, 'A', 199);
   big[199] = '\0';
-  rc = asprintf(&s, "%s", big);
+  rc = c89stringutils_asprintf(&s, "%s", big);
   ASSERT_EQ(199, rc);
   ASSERT_STR_EQ(big, s);
   free(s);
@@ -181,8 +211,8 @@ TEST x_jasprintf_realloc_path(void) {
   char big[200];
   memset(big, 'A', 199);
   big[199] = '\0';
-  jasprintf(&s, "%s", big);
-  jasprintf(&s, "%s", big);
+  c89stringutils_jasprintf(&s, "%s", big);
+  c89stringutils_jasprintf(&s, "%s", big);
   ASSERT_EQ(398, strlen(s));
   free(s);
   PASS();
@@ -215,6 +245,7 @@ SUITE(strnstr_suite) {
   RUN_TEST(x_strcasestr_should_succeed);
   RUN_TEST(x_strerrorlen_s_should_succeed);
   RUN_TEST(x_vasprintf_should_succeed);
+  RUN_TEST(x_vasprintf_should_fail);
   RUN_TEST(x_log_debug_should_succeed);
 }
 

@@ -9,8 +9,14 @@ set(DOWNLOAD_DIR "${PROJECT_BINARY_DIR}/test_downloads")
 file(MAKE_DIRECTORY "${DOWNLOAD_DIR}")
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
-    file(DOWNLOAD "https://raw.githubusercontent.com/SamuelMarks/greatest/master/greatest.h"
-            "${DOWNLOAD_DIR}/greatest.h")
+    include(FetchContent)
+    FetchContent_Declare(
+            greatest
+            URL "https://raw.githubusercontent.com/SamuelMarks/greatest/master/greatest.h"
+            DOWNLOAD_NO_EXTRACT TRUE
+    )
+    FetchContent_MakeAvailable(greatest)
+    file(COPY "${greatest_SOURCE_DIR}/greatest.h" DESTINATION "${DOWNLOAD_DIR}")
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 
 #########

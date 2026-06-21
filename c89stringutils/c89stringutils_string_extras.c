@@ -115,8 +115,6 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
 
 #endif /* !HAVE_SNPRINTF_H */
 
-#ifndef HAVE_STRNCASECMP_H
-
 #define HAVE_STRNCASECMP_H
 
 /**
@@ -127,15 +125,19 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
  * @return An integer less than, equal to, or greater than zero if s1 is found,
  * respectively, to be less than, to match, or be greater than s2.
  */
-C89STRINGUTILS_EXPORT int strncasecmp(const char *s1, const char *s2,
-                                      size_t n) {
-  int rc;
-  if (s1 == NULL || s2 == NULL) {
-    LOG_DEBUG("s1 or s2 is NULL");
+C89STRINGUTILS_EXPORT int c89stringutils_strncasecmp(const char *s1,
+                                                     const char *s2, size_t n) {
+  if (s1 == s2)
+    return 0;
+  if (s1 == NULL)
     return -1;
-  }
-  rc = _strnicmp(s1, s2, n);
-  return rc;
+  if (s2 == NULL)
+    return 1;
+#if defined(_MSC_VER)
+  return _strnicmp(s1, s2, n);
+#else
+  return strncasecmp(s1, s2, n);
+#endif
 }
 
 /**
@@ -145,19 +147,21 @@ C89STRINGUTILS_EXPORT int strncasecmp(const char *s1, const char *s2,
  * @return An integer less than, equal to, or greater than zero if s1 is found,
  * respectively, to be less than, to match, or be greater than s2.
  */
-C89STRINGUTILS_EXPORT int strcasecmp(const char *s1, const char *s2) {
-  int rc;
-  if (s1 == NULL || s2 == NULL) {
-    LOG_DEBUG("s1 or s2 is NULL");
+C89STRINGUTILS_EXPORT int c89stringutils_strcasecmp(const char *s1,
+                                                    const char *s2) {
+  if (s1 == s2)
+    return 0;
+  if (s1 == NULL)
     return -1;
-  }
-  rc = _stricmp(s1, s2);
-  return rc;
+  if (s2 == NULL)
+    return 1;
+#if defined(_MSC_VER)
+  return _stricmp(s1, s2);
+#else
+  return strcasecmp(s1, s2);
+#endif
 }
 
-#endif /* !HAVE_STRNCASECMP_H */
-
-#ifndef HAVE_STRNSTR
 #define HAVE_STRNSTR
 
 /**
@@ -169,8 +173,9 @@ C89STRINGUTILS_EXPORT int strcasecmp(const char *s1, const char *s2) {
  * @return A pointer to the first occurrence of little in big, or NULL if not
  * found.
  */
-C89STRINGUTILS_EXPORT char *strnstr(const char *buffer, const char *target,
-                                    size_t bufferLength) {
+C89STRINGUTILS_EXPORT char *c89stringutils_strnstr(const char *buffer,
+                                                   const char *target,
+                                                   size_t bufferLength) {
   size_t targetLength;
   const char *start;
   size_t remaining;
@@ -180,8 +185,9 @@ C89STRINGUTILS_EXPORT char *strnstr(const char *buffer, const char *target,
     return NULL;
   }
   targetLength = strlen(target);
-  if (targetLength == 0)
+  if (targetLength == 0) {
     return (char *)buffer;
+  }
   remaining = bufferLength;
   for (start = buffer; *start && remaining >= targetLength;
        start++, remaining--) {
@@ -192,12 +198,8 @@ C89STRINGUTILS_EXPORT char *strnstr(const char *buffer, const char *target,
       }
     }
   }
-  return 0;
+  return NULL;
 }
-
-#endif /* !HAVE_STRNSTR */
-
-#ifndef HAVE_STRCASESTR_H
 
 #define HAVE_STRCASESTR_H
 
@@ -210,27 +212,26 @@ C89STRINGUTILS_EXPORT char *strnstr(const char *buffer, const char *target,
  * @return A pointer to the first occurrence of little in big, or NULL if not
  * found.
  */
-C89STRINGUTILS_EXPORT char *strcasestr(const char *h, const char *n) {
+C89STRINGUTILS_EXPORT char *c89stringutils_strcasestr(const char *h,
+                                                      const char *n) {
   size_t l;
-  int rc;
+  int cmp;
   if (h == NULL || n == NULL) {
     LOG_DEBUG("h or n is NULL");
     return NULL;
   }
   l = strlen(n);
-  if (l == 0)
+  if (l == 0) {
     return (char *)h;
-  for (; *h; h++) {
-    rc = strncasecmp(h, n, l);
-    if (rc == 0)
-      return (char *)h;
   }
-  return 0;
+  for (; *h; h++) {
+    cmp = c89stringutils_strncasecmp(h, n, l);
+    if (cmp == 0) {
+      return (char *)h;
+    }
+  }
+  return NULL;
 }
-
-#endif /* !HAVE_STRCASESTR_H */
-
-#ifndef HAVE_STRERRORLEN_S
 
 #define HAVE_STRERRORLEN_S
 /* MIT licensed function from Safe C Library */
@@ -240,7 +241,7 @@ C89STRINGUTILS_EXPORT char *strcasestr(const char *h, const char *n) {
  * @param errnum The error number.
  * @return The length of the string describing the error.
  */
-C89STRINGUTILS_EXPORT size_t strerrorlen_s(errno_t errnum) {
+C89STRINGUTILS_EXPORT size_t c89stringutils_strerrorlen_s(errno_t errnum) {
 #ifndef ESNULLP
 #define ESNULLP (400) /* null ptr                    */
 #endif
@@ -268,7 +269,7 @@ C89STRINGUTILS_EXPORT size_t strerrorlen_s(errno_t errnum) {
   };
 
   if (errnum >= ESNULLP && errnum <= ESLAST) {
-    return len_errmsgs_s[errnum - ESNULLP] - 1;
+    return (size_t)(len_errmsgs_s[errnum - ESNULLP] - 1);
   } else {
 #ifdef _MSC_VER
     char errbuf[256];
@@ -287,9 +288,6 @@ C89STRINGUTILS_EXPORT size_t strerrorlen_s(errno_t errnum) {
   }
 }
 
-#endif /* !HAVE_STRERRORLEN_S */
-
-#ifndef HAVE_ASPRINTF
 #define HAVE_ASPRINTF
 
 #ifndef VA_COPY
@@ -315,7 +313,8 @@ C89STRINGUTILS_EXPORT size_t strerrorlen_s(errno_t errnum) {
  * @param ap The va_list of arguments.
  * @return The number of characters printed, or -1 on error.
  */
-C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap) {
+C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
+                                                   va_list ap) {
   int rc;
   va_list ap2;
   char *string, *newstr;
@@ -333,7 +332,11 @@ C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap) {
   }
 
   VA_COPY(ap2, ap);
+#if defined(_MSC_VER)
+  rc = vsnprintf_s(string, INIT_SZ, _TRUNCATE, fmt, ap2);
+#else
   rc = vsnprintf(string, INIT_SZ, fmt, ap2);
+#endif
   va_end(ap2);
   if (rc >= 0 && rc < INIT_SZ) { /* succeeded with initial alloc */
     *str = string;
@@ -350,7 +353,11 @@ C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap) {
       goto fail;
     }
     VA_COPY(ap2, ap);
+#if defined(_MSC_VER)
+    rc = vsnprintf_s(newstr, len, _TRUNCATE, fmt, ap2);
+#else
     rc = vsnprintf(newstr, len, fmt, ap2);
+#endif
     va_end(ap2);
     if (rc < 0 || (size_t)rc >= len) { /* failed with realloc'ed string */
       free(newstr);
@@ -381,7 +388,7 @@ fail:
   }
   *str = NULL;
   errno = ENOMEM;
-  return rc;
+  return -1;
 }
 
 /**
@@ -392,7 +399,8 @@ fail:
  * @param ... The arguments.
  * @return The number of characters printed, or -1 on error.
  */
-C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
+C89STRINGUTILS_EXPORT int c89stringutils_asprintf(char **str, const char *fmt,
+                                                  ...) {
   int rc;
   va_list ap;
 
@@ -403,7 +411,7 @@ C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
 
   *str = NULL;
   va_start(ap, fmt);
-  rc = vasprintf(str, fmt, ap);
+  rc = c89stringutils_vasprintf(str, fmt, ap);
   va_end(ap);
 
   if (rc < 0) {
@@ -426,20 +434,18 @@ C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
   return rc;
 }
 
-#endif /* !HAVE_ASPRINTF */
-
-#ifndef HAVE_JASPRINTF
 #define HAVE_JASPRINTF
 /**
  * @brief `jasprintf`, a version of `asprintf` that concatenates on successive
- * calls: char *s = NULL; jasprintf(&s, "foo%s", "bar"); jasprintf(&s, "can%s",
- * "haz"); free(s);
+ * calls: char *s = NULL; c89stringutils_jasprintf(&s, "foo%s", "bar");
+ * c89stringutils_jasprintf(&s, "can%s", "haz"); free(s);
  * @param unto The string to append to.
  * @param fmt The format string.
  * @param ... The arguments.
  * @return The concatenated string.
  */
-C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
+C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
+                                                   ...) {
   va_list args;
   size_t base_length;
   int length;
@@ -507,7 +513,6 @@ C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
 
   return 0;
 }
-#endif /* !HAVE_JASPRINTF */
 
 #if defined(__GNUC__) && __GNUC__ >= 7 && !defined(__clang__)
 #pragma GCC diagnostic pop

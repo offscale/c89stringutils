@@ -34,8 +34,9 @@ jobs:
 
           int main(void) {
             char* x = NULL;
-            int len = asprintf(&x, "hello %s", "world");
-            if (len > 0 && x != NULL) {
+            int len = 0;
+            int rc = c89stringutils_asprintf(&x, &len, "hello %s", "world");
+            if (rc == 0 && x != NULL) {
               printf("%s\n", x);
               free(x);
               return 0;

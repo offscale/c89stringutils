@@ -17,3 +17,4 @@ fi
 python3 scripts/update_shields.py
 
 # Stage README.md if it was modified
+git add README.md
