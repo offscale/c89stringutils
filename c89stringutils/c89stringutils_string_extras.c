@@ -81,6 +81,13 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
                          va_list args) {
   int rc;
 #if defined(_MSC_VER)
+  if (buffer == NULL || count == 0) {
+    rc = _vscprintf(format, args);
+    if (rc < 0) {
+      LOG_DEBUG("_vscprintf failed with rc=%d", rc);
+    }
+    return rc;
+  }
   rc = _vsnprintf_s(buffer, count, _TRUNCATE, format, args);
   if (rc < 0) {
     rc = _vscprintf(format, args);
@@ -98,7 +105,7 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
 #endif
   /* In the case where the string entirely filled the buffer, vsnprintf will
      not null-terminate it, but vsnprintf must. */
-  if (count > 0)
+  if (count > 0 && buffer != NULL)
     buffer[count - 1] = '\0';
   return rc;
 }
