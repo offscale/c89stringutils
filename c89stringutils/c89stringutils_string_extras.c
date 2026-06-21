@@ -26,7 +26,7 @@
  * @param fmt The format string.
  * @param ... The arguments.
  */
-void c89stringutils_log_debug(const char *fmt, ...) {
+C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...) {
   int rc;
   va_list args;
   va_start(args, fmt);
@@ -127,7 +127,8 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
  * @return An integer less than, equal to, or greater than zero if s1 is found,
  * respectively, to be less than, to match, or be greater than s2.
  */
-int strncasecmp(const char *s1, const char *s2, size_t n) {
+C89STRINGUTILS_EXPORT int strncasecmp(const char *s1, const char *s2,
+                                      size_t n) {
   int rc;
   if (s1 == NULL || s2 == NULL) {
     LOG_DEBUG("s1 or s2 is NULL");
@@ -144,7 +145,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
  * @return An integer less than, equal to, or greater than zero if s1 is found,
  * respectively, to be less than, to match, or be greater than s2.
  */
-int strcasecmp(const char *s1, const char *s2) {
+C89STRINGUTILS_EXPORT int strcasecmp(const char *s1, const char *s2) {
   int rc;
   if (s1 == NULL || s2 == NULL) {
     LOG_DEBUG("s1 or s2 is NULL");
@@ -168,7 +169,8 @@ int strcasecmp(const char *s1, const char *s2) {
  * @return A pointer to the first occurrence of little in big, or NULL if not
  * found.
  */
-char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
+C89STRINGUTILS_EXPORT char *strnstr(const char *buffer, const char *target,
+                                    size_t bufferLength) {
   size_t targetLength;
   const char *start;
   size_t remaining;
@@ -208,7 +210,7 @@ char *strnstr(const char *buffer, const char *target, size_t bufferLength) {
  * @return A pointer to the first occurrence of little in big, or NULL if not
  * found.
  */
-char *strcasestr(const char *h, const char *n) {
+C89STRINGUTILS_EXPORT char *strcasestr(const char *h, const char *n) {
   size_t l;
   int rc;
   if (h == NULL || n == NULL) {
@@ -238,7 +240,7 @@ char *strcasestr(const char *h, const char *n) {
  * @param errnum The error number.
  * @return The length of the string describing the error.
  */
-size_t strerrorlen_s(errno_t errnum) {
+C89STRINGUTILS_EXPORT size_t strerrorlen_s(errno_t errnum) {
 #ifndef ESNULLP
 #define ESNULLP (400) /* null ptr                    */
 #endif
@@ -313,7 +315,7 @@ size_t strerrorlen_s(errno_t errnum) {
  * @param ap The va_list of arguments.
  * @return The number of characters printed, or -1 on error.
  */
-extern int vasprintf(char **str, const char *fmt, va_list ap) {
+C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap) {
   int rc;
   va_list ap2;
   char *string, *newstr;
@@ -390,7 +392,7 @@ fail:
  * @param ... The arguments.
  * @return The number of characters printed, or -1 on error.
  */
-extern int asprintf(char **str, const char *fmt, ...) {
+C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
   int rc;
   va_list ap;
 
@@ -437,19 +439,19 @@ extern int asprintf(char **str, const char *fmt, ...) {
  * @param ... The arguments.
  * @return The concatenated string.
  */
-char *jasprintf(char **unto, const char *fmt, ...) {
+C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
   va_list args;
   size_t base_length;
   int length;
   int rc;
   char *result;
 
-  if (fmt == NULL) {
-    LOG_DEBUG("fmt is NULL");
-    return NULL;
+  if (unto == NULL || fmt == NULL) {
+    LOG_DEBUG("unto or fmt is NULL");
+    return -1;
   }
 
-  base_length = unto && *unto ? strlen(*unto) : 0;
+  base_length = *unto ? strlen(*unto) : 0;
 
   va_start(args, fmt);
   /* check length for failure */
@@ -467,15 +469,14 @@ char *jasprintf(char **unto, const char *fmt, ...) {
   va_end(args);
 
   if (length < 0)
-    return NULL;
+    return -1;
 
   /* check result for failure */
-  result =
-      (char *)realloc(unto ? *unto : NULL, base_length + (size_t)length + 1);
+  result = (char *)realloc(*unto, base_length + (size_t)length + 1);
 
   if (result == NULL) {
     LOG_DEBUG("realloc failed with rc=-1");
-    return NULL;
+    return -1;
   }
 
   va_start(args, fmt);
@@ -486,28 +487,25 @@ char *jasprintf(char **unto, const char *fmt, ...) {
     /* handle error, printing the nonzero exit code for debug purposes */
     LOG_DEBUG("vsprintf_s failed with rc=%d", rc);
     free(result);
-    if (unto)
-      *unto = NULL;
+    *unto = NULL;
     va_end(args);
-    return NULL;
+    return -1;
   }
 #else
   rc = vsprintf(result + base_length, fmt, args);
   if (rc < 0) {
     LOG_DEBUG("vsprintf failed with rc=%d", rc);
     free(result);
-    if (unto)
-      *unto = NULL;
+    *unto = NULL;
     va_end(args);
-    return NULL;
+    return -1;
   }
 #endif
   va_end(args);
 
-  if (unto)
-    *unto = result;
+  *unto = result;
 
-  return result;
+  return 0;
 }
 #endif /* !HAVE_JASPRINTF */
 

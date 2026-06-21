@@ -59,8 +59,10 @@ TEST x_asprintf_should_succeed(void) {
  */
 TEST x_jasprintf_should_succeed(void) {
   char *s = NULL;
-  jasprintf(&s, "foo%s", "bar");
-  jasprintf(&s, "can%s", "haz");
+  int rc1 = jasprintf(&s, "foo%s", "bar");
+  int rc2 = jasprintf(&s, "can%s", "haz");
+  ASSERT_EQ(0, rc1);
+  ASSERT_EQ(0, rc2);
   ASSERT_STR_EQ("foobarcanhaz", s);
   free(s);
   PASS();

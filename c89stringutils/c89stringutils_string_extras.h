@@ -220,7 +220,7 @@ extern C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...);
  * @param ... The arguments.
  * @return The concatenated string.
  */
-extern C89STRINGUTILS_EXPORT char *jasprintf(char **unto, const char *fmt, ...);
+extern C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...);
 
 #endif /* !HAVE_JASPRINTF */
 
