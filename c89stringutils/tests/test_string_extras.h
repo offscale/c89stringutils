@@ -285,6 +285,7 @@ extern int g_mock_strerror_null;
 
 extern int g_mock_vsnprintf_fail_call;
 extern int g_mock_vsnprintf_call_count;
+extern int g_mock_vsnprintf_ret2;
 
 TEST x_mock_failures(void) {
   char *s = NULL;

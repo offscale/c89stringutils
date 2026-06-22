@@ -104,7 +104,9 @@ install(
         FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.h"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )
-include(InstallRequiredSystemLibraries)
+if(CMAKE_HOST_WIN32)
+    include(InstallRequiredSystemLibraries)
+endif()
 set(CPACK_BUNDLE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Samuel Marks")
 set(CPACK_PACKAGE_DESCRIPTION "string functions from newer standards / common non-standards for C89")

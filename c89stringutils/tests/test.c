@@ -3,12 +3,17 @@
  * @brief Main entry point for greatest tests.
  */
 /* clang-format off */
+#if defined(_MSC_VER)
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <greatest.h>
 #include <c89stringutils_log.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include "test_string_extras.h"
+/* clang-format on */
 
 int g_mock_malloc_fail = 0;
 int g_mock_realloc_fail = 0;
@@ -17,12 +22,14 @@ int g_mock_vsnprintf_ret = 0;
 int g_mock_strerror_null = 0;
 
 void *mock_malloc(size_t size) {
-  if (g_mock_malloc_fail) return NULL;
+  if (g_mock_malloc_fail)
+    return NULL;
   return malloc(size);
 }
 
 void *mock_realloc(void *ptr, size_t size) {
-  if (g_mock_realloc_fail) return NULL;
+  if (g_mock_realloc_fail)
+    return NULL;
   return realloc(ptr, size);
 }
 
@@ -32,18 +39,18 @@ int g_mock_vsnprintf_ret2 = 0; /* for second call */
 
 int mock_vsnprintf(char *str, size_t size, const char *format, va_list ap) {
   g_mock_vsnprintf_call_count++;
-  if (g_mock_vsnprintf_fail_call == g_mock_vsnprintf_call_count) return g_mock_vsnprintf_ret2;
-  if (g_mock_vsnprintf_fail) return g_mock_vsnprintf_ret < 0 ? -1 : g_mock_vsnprintf_ret;
+  if (g_mock_vsnprintf_fail_call == g_mock_vsnprintf_call_count)
+    return g_mock_vsnprintf_ret2;
+  if (g_mock_vsnprintf_fail)
+    return g_mock_vsnprintf_ret < 0 ? -1 : g_mock_vsnprintf_ret;
   return vsnprintf(str, size, format, ap);
 }
 
 char *mock_strerror(int errnum) {
-  if (g_mock_strerror_null) return NULL;
+  if (g_mock_strerror_null)
+    return NULL;
   return strerror(errnum);
 }
-
-#include "test_string_extras.h"
-/* clang-format on */
 
 /* Add definitions that need to be in the test runner's main file. */
 GREATEST_MAIN_DEFS();
