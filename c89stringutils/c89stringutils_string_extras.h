@@ -206,6 +206,14 @@ extern C89STRINGUTILS_EXPORT int c89stringutils_asprintf(char **str,
 extern C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto,
                                                           const char *fmt, ...);
 
+
+#if !defined(HAVE_ASPRINTF)
+extern C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap);
+extern C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...);
+#endif
+
+extern C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

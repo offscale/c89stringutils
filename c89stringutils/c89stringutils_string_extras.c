@@ -288,7 +288,6 @@ C89STRINGUTILS_EXPORT size_t c89stringutils_strerrorlen_s(errno_t errnum) {
   }
 }
 
-#define HAVE_ASPRINTF
 
 #ifndef VA_COPY
 #if defined(HAVE_VA_COPY) || defined(va_copy)
@@ -490,3 +489,58 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
 #if defined(__GNUC__) && __GNUC__ >= 7 && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
+
+
+#if !defined(HAVE_ASPRINTF)
+C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap) {
+  return c89stringutils_vasprintf(str, fmt, ap);
+}
+
+C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
+  int rc;
+  va_list args;
+  va_start(args, fmt);
+  rc = c89stringutils_vasprintf(str, fmt, args);
+  va_end(args);
+  return rc;
+}
+#endif
+
+C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
+  int rc;
+  va_list args;
+  size_t base_length;
+  int length;
+  char *result;
+
+  if (unto == NULL || fmt == NULL) {
+    return -1;
+  }
+
+  base_length = *unto ? strlen(*unto) : 0;
+
+  va_start(args, fmt);
+  length = vsnprintf(NULL, 0, fmt, args);
+  va_end(args);
+
+  if (length < 0)
+    return -1;
+
+  result = (char *)realloc(*unto, base_length + (size_t)length + 1);
+  if (result == NULL) {
+    return -1;
+  }
+
+  va_start(args, fmt);
+  rc = vsnprintf(result + base_length, (size_t)length + 1, fmt, args);
+  va_end(args);
+
+  if (rc < 0) {
+    free(result);
+    *unto = NULL;
+    return -1;
+  }
+
+  *unto = result;
+  return 0;
+}
