@@ -22,12 +22,18 @@ extern void *mock_realloc(void *ptr, size_t size);
 extern int mock_vsnprintf(char *str, size_t size, const char *format,
                           va_list ap);
 extern char *mock_strerror(int errnum);
+#ifdef _MSC_VER
+extern int mock_strerror_s(char *buffer, size_t sizeInBytes, int errnum);
+#endif
 #define malloc mock_malloc
 #define realloc mock_realloc
 #define wtf_vsnprintf mock_vsnprintf
 #undef vsnprintf
 #define vsnprintf mock_vsnprintf
 #define strerror mock_strerror
+#ifdef _MSC_VER
+#define strerror_s mock_strerror_s
+#endif
 #endif
 
 #if defined(__GNUC__) && __GNUC__ >= 7 && !defined(__clang__)

@@ -52,6 +52,14 @@ char *mock_strerror(int errnum) {
   return strerror(errnum);
 }
 
+#ifdef _MSC_VER
+int mock_strerror_s(char *buffer, size_t sizeInBytes, int errnum) {
+  if (g_mock_strerror_null)
+    return 22; /* EINVAL */
+  return strerror_s(buffer, sizeInBytes, errnum);
+}
+#endif
+
 /* Add definitions that need to be in the test runner's main file. */
 GREATEST_MAIN_DEFS();
 
