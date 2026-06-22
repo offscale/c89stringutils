@@ -8,7 +8,7 @@ WORKDIR /c89stringutils
 
 RUN cmake -DCMAKE_BUILD_TYPE="Debug" \
           -DBUILD_TESTING=1 \
-          -DC89STRINGUTILS_BUILD_TESTING=1 \
+          -DBUILD_TESTING_c89stringutils=1 \
           -S . -B build && \
     cmake --build build
 

@@ -16,6 +16,20 @@
 #include <limits.h> /* for INT_MAX */
 /* clang-format on */
 
+#ifdef C89STRINGUTILS_TEST_MOCKS
+extern void *mock_malloc(size_t size);
+extern void *mock_realloc(void *ptr, size_t size);
+extern int mock_vsnprintf(char *str, size_t size, const char *format,
+                          va_list ap);
+extern char *mock_strerror(int errnum);
+#define malloc mock_malloc
+#define realloc mock_realloc
+#define wtf_vsnprintf mock_vsnprintf
+#undef vsnprintf
+#define vsnprintf mock_vsnprintf
+#define strerror mock_strerror
+#endif
+
 #if defined(__GNUC__) && __GNUC__ >= 7 && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnonnull-compare"
@@ -288,7 +302,6 @@ C89STRINGUTILS_EXPORT size_t c89stringutils_strerrorlen_s(errno_t errnum) {
   }
 }
 
-
 #ifndef VA_COPY
 #if defined(HAVE_VA_COPY) || defined(va_copy)
 #define VA_COPY(dest, src) va_copy(dest, src)
@@ -333,12 +346,17 @@ C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
   VA_COPY(ap2, ap);
   rc = vsnprintf(string, INIT_SZ, fmt, ap2);
   va_end(ap2);
-  if (rc >= 0 && rc < INIT_SZ) { /* succeeded with initial alloc */
-    *str = string;
-  } else if (rc == INT_MAX || rc < 0) { /* Bad length */
+
+  if (rc < 0) { /* Bad length */
     free(string);
     rc = -1;
     goto fail;
+  } else if (rc == INT_MAX) { /* Bad length */
+    free(string);
+    rc = -1;
+    goto fail;
+  } else if (rc < INIT_SZ) { /* succeeded with initial alloc */
+    *str = string;
   } else { /* bigger than initial, realloc allowing for nul */
     len = (size_t)rc + 1;
     newstr = (char *)realloc(string, len);
@@ -350,7 +368,11 @@ C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
     VA_COPY(ap2, ap);
     rc = vsnprintf(newstr, len, fmt, ap2);
     va_end(ap2);
-    if (rc < 0 || (size_t)rc >= len) { /* failed with realloc'ed string */
+    if (rc < 0) { /* failed with realloc'ed string */
+      free(newstr);
+      rc = -1;
+      goto fail;
+    } else if ((size_t)rc >= len) {
       free(newstr);
       rc = -1;
       goto fail;
@@ -360,23 +382,24 @@ C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
   return rc;
 
 fail:
-  if (rc != 0) {
 #ifdef _MSC_VER
-    char errbuf[256];
-    int err_rc;
-    err_rc = strerror_s(errbuf, sizeof(errbuf), errno);
-    if (err_rc != 0) {
-      LOG_DEBUG("strerror_s failed with rc=%d", err_rc);
-      errbuf[0] = '\0';
-    }
-    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errbuf);
-#else
-    const char *errstr;
-    errstr = strerror(errno);
-    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc,
-              errstr ? errstr : "");
-#endif
+{
+  char errbuf[256];
+  int err_rc;
+  err_rc = strerror_s(errbuf, sizeof(errbuf), errno);
+  if (err_rc != 0) {
+    LOG_DEBUG("strerror_s failed with rc=%d", err_rc);
+    errbuf[0] = '\0';
   }
+  LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errbuf);
+}
+#else
+{
+  const char *errstr;
+  errstr = strerror(errno);
+  LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errstr ? errstr : "");
+}
+#endif
   *str = NULL;
   errno = ENOMEM;
   return -1;
@@ -489,7 +512,6 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
 #if defined(__GNUC__) && __GNUC__ >= 7 && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-
 
 #if !defined(HAVE_ASPRINTF)
 C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap) {

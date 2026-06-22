@@ -55,13 +55,7 @@ configure_file(
 
 add_subdirectory("${PROJECT_NAME}")
 
-include(CTest)
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    set(C89STRINGUTILS_BUILD_TESTING_DEFAULT ON)
-else()
-    set(C89STRINGUTILS_BUILD_TESTING_DEFAULT OFF)
-endif()
-option(C89STRINGUTILS_BUILD_TESTING "Build the tests" ${C89STRINGUTILS_BUILD_TESTING_DEFAULT})
+option(BUILD_TESTING_${PROJECT_NAME} "Build the tests" ON)
 
 set(CDD_CHARSET "Unicode" CACHE STRING "Charset to use: Unicode or ANSI")
 set(CDD_THREADING "Multi-threaded" CACHE STRING "Threading: Multi-threaded or Single-threaded")
@@ -93,9 +87,12 @@ if (CDD_LTO)
     endif()
 endif()
 
-if (BUILD_TESTING AND C89STRINGUTILS_BUILD_TESTING)
-    add_subdirectory("${PROJECT_NAME}/tests")
-endif (BUILD_TESTING AND C89STRINGUTILS_BUILD_TESTING)
+if (BUILD_TESTING_${PROJECT_NAME})
+    include(CTest)
+    if (BUILD_TESTING)
+        add_subdirectory("${PROJECT_NAME}/tests")
+    endif (BUILD_TESTING)
+endif (BUILD_TESTING_${PROJECT_NAME})
 
 ###########
 # Install #

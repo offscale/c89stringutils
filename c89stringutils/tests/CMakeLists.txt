@@ -26,18 +26,21 @@ endif (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 set(Header_Files "test_string_extras.h")
 source_group("Header Files" FILES "${Header_Files}")
 
-set(Source_Files "test.c")
+set(Source_Files "test.c" "${CMAKE_CURRENT_SOURCE_DIR}/../c89stringutils_string_extras.c")
 source_group("Source Files" FILES "${Source_Files}")
 
 add_executable("${EXEC_NAME}" "${Header_Files}" "${Source_Files}")
 
-target_link_libraries("${EXEC_NAME}" PRIVATE "${PROJECT_NAME}")
+target_compile_definitions("${EXEC_NAME}" PRIVATE C89STRINGUTILS_TEST_MOCKS)
+
 if (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
     target_link_libraries("${EXEC_NAME}" PRIVATE "${PROJECT_NAME}_compiler_flags")
 endif (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
 target_include_directories(
         "${EXEC_NAME}"
         PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/.."
+        "${CMAKE_BINARY_DIR}"
         "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>"
         "$<BUILD_INTERFACE:${DOWNLOAD_DIR}>"
 )
