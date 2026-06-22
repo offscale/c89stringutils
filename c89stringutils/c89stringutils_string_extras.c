@@ -332,11 +332,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
   }
 
   VA_COPY(ap2, ap);
-#if defined(_MSC_VER)
-  rc = vsnprintf_s(string, INIT_SZ, _TRUNCATE, fmt, ap2);
-#else
   rc = vsnprintf(string, INIT_SZ, fmt, ap2);
-#endif
   va_end(ap2);
   if (rc >= 0 && rc < INIT_SZ) { /* succeeded with initial alloc */
     *str = string;
@@ -353,11 +349,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
       goto fail;
     }
     VA_COPY(ap2, ap);
-#if defined(_MSC_VER)
-    rc = vsnprintf_s(newstr, len, _TRUNCATE, fmt, ap2);
-#else
     rc = vsnprintf(newstr, len, fmt, ap2);
-#endif
     va_end(ap2);
     if (rc < 0 || (size_t)rc >= len) { /* failed with realloc'ed string */
       free(newstr);
@@ -461,17 +453,10 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
 
   va_start(args, fmt);
   /* check length for failure */
-#if defined(_MSC_VER) && _MSC_VER < 1900
-  length = _vscprintf(fmt, args);
-  if (length < 0) {
-    LOG_DEBUG("_vscprintf failed with rc=%d", length);
-  }
-#else
   length = vsnprintf(NULL, 0, fmt, args);
   if (length < 0) {
     LOG_DEBUG("vsnprintf failed with rc=%d", length);
   }
-#endif
   va_end(args);
 
   if (length < 0)
@@ -487,26 +472,14 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
 
   va_start(args, fmt);
   /* check for failure*/
-#if defined(_MSC_VER)
-  rc = vsprintf_s(result + base_length, (size_t)length + 1, fmt, args);
+  rc = vsnprintf(result + base_length, (size_t)length + 1, fmt, args);
   if (rc < 0) {
-    /* handle error, printing the nonzero exit code for debug purposes */
-    LOG_DEBUG("vsprintf_s failed with rc=%d", rc);
+    LOG_DEBUG("vsnprintf failed with rc=%d", rc);
     free(result);
     *unto = NULL;
     va_end(args);
     return -1;
   }
-#else
-  rc = vsprintf(result + base_length, fmt, args);
-  if (rc < 0) {
-    LOG_DEBUG("vsprintf failed with rc=%d", rc);
-    free(result);
-    *unto = NULL;
-    va_end(args);
-    return -1;
-  }
-#endif
   va_end(args);
 
   *unto = result;
