@@ -69,6 +69,16 @@ set(CDD_MSVC_RTC "" CACHE STRING "MSVC Runtime Checks: RTC1, RTCs, RTCu, or empt
 set(CDD_LTO OFF CACHE BOOL "Enable Link-Time Optimization (LTO)")
 set(CDD_DEPS "System" CACHE STRING "Dependency resolution strategy")
 
+set(CDD_CRT_LINKAGE "Shared" CACHE STRING "MSVC CRT Linkage: Static or Shared")
+if (MSVC)
+    if (CDD_CRT_LINKAGE STREQUAL "Static")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif()
+endif()
+
+
 if (CDD_CHARSET STREQUAL "Unicode")
     add_compile_definitions(UNICODE _UNICODE)
 endif()

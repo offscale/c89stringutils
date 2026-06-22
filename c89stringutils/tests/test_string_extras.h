@@ -51,7 +51,8 @@ TEST x_strnstr_should_fail(void) {
  */
 TEST x_asprintf_should_succeed(void) {
   char *s = NULL;
-  int rc = c89stringutils_asprintf(&s, "foo%s", "bar");
+  int rc;
+  rc = c89stringutils_asprintf(&s, "foo%s", "bar");
   ASSERT_EQ(6, rc);
   ASSERT_STR_EQ("foobar", s);
   free(s);
@@ -64,8 +65,10 @@ TEST x_asprintf_should_succeed(void) {
  */
 TEST x_jasprintf_should_succeed(void) {
   char *s = NULL;
-  int rc1 = c89stringutils_jasprintf(&s, "foo%s", "bar");
-  int rc2 = c89stringutils_jasprintf(&s, "can%s", "haz");
+  int rc1;
+  int rc2;
+  rc1 = c89stringutils_jasprintf(&s, "foo%s", "bar");
+  rc2 = c89stringutils_jasprintf(&s, "can%s", "haz");
   ASSERT_EQ(0, rc1);
   ASSERT_EQ(0, rc2);
   ASSERT_STR_EQ("foobarcanhaz", s);
@@ -157,7 +160,8 @@ static int test_vasprintf_wrapper(char **str, const char *fmt, ...) {
  */
 TEST x_vasprintf_should_succeed(void) {
   char *s = NULL;
-  int rc = test_vasprintf_wrapper(&s, "test %d", 123);
+  int rc;
+  rc = test_vasprintf_wrapper(&s, "test %d", 123);
   ASSERT_EQ(8, rc);
   ASSERT_STR_EQ("test 123", s);
   free(s);
@@ -169,7 +173,8 @@ TEST x_vasprintf_should_succeed(void) {
  * @return enum test result
  */
 TEST x_vasprintf_should_fail(void) {
-  int rc = test_vasprintf_wrapper(NULL, "test %d", 123);
+  int rc;
+  rc = test_vasprintf_wrapper(NULL, "test %d", 123);
   ASSERT_EQ(-1, rc);
   PASS();
 }
