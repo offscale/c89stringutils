@@ -4,7 +4,9 @@
  */
 /* clang-format off */
 #if defined(_MSC_VER)
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#endif
 #endif
 #include <greatest.h>
 #include <c89stringutils_log.h>

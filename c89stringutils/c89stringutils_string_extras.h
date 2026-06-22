@@ -18,6 +18,14 @@ extern "C" {
 #include <string.h>
 #include <errno.h>
 
+#if !(defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__) || defined(__WATCOMC__))
+#include <sys/param.h>
+#endif
+#ifndef _MSC_VER
+#include <strings.h>
+#endif
+/* clang-format on */
+
 #if defined(_MSC_VER)
 #define NUM_FORMAT "%I64d"
 #else
@@ -59,8 +67,6 @@ extern "C" {
 
 #else
 
-#include <sys/param.h>
-
 #if _BSD_SOURCE || _XOPEN_SOURCE >= 500 || _ISOC99_SOURCE ||                   \
     _POSIX_C_SOURCE >= 200112L
 #define HAVE_SNPRINTF_H
@@ -90,9 +96,12 @@ extern "C" {
 
 #else
 
-#if !defined(__APPLE__) && !defined(__APPLE_CC__) && !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__CYGWIN__) && !defined(__WATCOMC__)
+#if !defined(__APPLE__) && !defined(__APPLE_CC__) && !defined(_MSC_VER) &&     \
+    !defined(__MINGW32__) && !defined(__CYGWIN__) && !defined(__WATCOMC__)
 typedef int errno_t;
-#endif /* !defined(__APPLE__) && !defined(__APPLE_CC__) && !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__CYGWIN__) && !defined(__WATCOMC__) */
+#endif /* !defined(__APPLE__) && !defined(__APPLE_CC__) && !defined(_MSC_VER)  \
+          && !defined(__MINGW32__) && !defined(__CYGWIN__) &&                  \
+          !defined(__WATCOMC__) */
 
 #if defined(__linux__) || defined(linux) || defined(__linux) || defined(ANY_BSD)
 #define strerror_s strerror_r
@@ -114,11 +123,6 @@ typedef int errno_t;
 #endif /* !defined(HAVE_ASPRINTF) && (defined(ANY_BSD) ||                      \
           defined(__APPLE__) && defined(__MACH__) ||                           \
           defined(_GNU_SOURCE) || defined(_BSD_SOURCE)) */
-
-#ifdef HAVE_STRINGS_H
-#include <strings.h>
-#endif /* HAVE_STRINGS_H */
-/* clang-format on */
 
 /**
  * @brief Compare at most n characters of two strings, ignoring case.

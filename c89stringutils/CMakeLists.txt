@@ -94,4 +94,3 @@ if (C89STRINGUTILS_BUILD_AMALGAMATION)
     install(FILES "${amalg_file}"
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 endif()
-

@@ -520,10 +520,27 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
 #endif
 
 #if !defined(HAVE_ASPRINTF)
+/**
+ * @brief Write formatted output to a dynamically allocated string using a
+ * va_list.
+ * @param str A pointer to a string pointer where the allocated string will be
+ * stored.
+ * @param fmt The format string.
+ * @param ap The va_list of arguments.
+ * @return The number of characters printed, or -1 on error.
+ */
 C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap) {
   return c89stringutils_vasprintf(str, fmt, ap);
 }
 
+/**
+ * @brief Write formatted output to a dynamically allocated string.
+ * @param str A pointer to a string pointer where the allocated string will be
+ * stored.
+ * @param fmt The format string.
+ * @param ... The arguments.
+ * @return The number of characters printed, or -1 on error.
+ */
 C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
   int rc;
   va_list args;
@@ -534,6 +551,14 @@ C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
 }
 #endif
 
+/**
+ * @brief `jasprintf`, a version of `asprintf` that concatenates on successive
+ * calls.
+ * @param unto The string to append to.
+ * @param fmt The format string.
+ * @param ... The arguments.
+ * @return The number of characters printed, or -1 on error.
+ */
 C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
   int rc;
   va_list args;
