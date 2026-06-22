@@ -16,6 +16,7 @@ extern "C" {
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #if defined(_MSC_VER)
 #define NUM_FORMAT "%I64d"
@@ -89,9 +90,9 @@ extern "C" {
 
 #else
 
-#if !defined(__APPLE__) && !defined(__APPLE_CC__)
+#if !defined(__APPLE__) && !defined(__APPLE_CC__) && !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__CYGWIN__) && !defined(__WATCOMC__)
 typedef int errno_t;
-#endif /* !defined(__APPLE__) && !defined(__APPLE_CC__) */
+#endif /* !defined(__APPLE__) && !defined(__APPLE_CC__) && !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__CYGWIN__) && !defined(__WATCOMC__) */
 
 #if defined(__linux__) || defined(linux) || defined(__linux) || defined(ANY_BSD)
 #define strerror_s strerror_r

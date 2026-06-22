@@ -347,8 +347,13 @@ TEST x_mock_failures(void) {
   g_mock_vsnprintf_fail_call = 0;
 
   s = malloc(10);
-  if (s)
+  if (s) {
+#if defined(_MSC_VER)
+    strcpy_s(s, 10, "123");
+#else
     strcpy(s, "123");
+#endif
+  }
   g_mock_realloc_fail = 1;
   ASSERT_EQ(-1, c89stringutils_jasprintf(&s, "test"));
   ASSERT_EQ(-1, jasprintf(&s, "test"));
