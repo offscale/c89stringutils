@@ -27,7 +27,6 @@ extern int mock_strerror_s(char *buffer, size_t sizeInBytes, int errnum);
 #endif
 #define malloc mock_malloc
 #define realloc mock_realloc
-#define wtf_vsnprintf mock_vsnprintf
 #undef vsnprintf
 #define vsnprintf mock_vsnprintf
 #define strerror mock_strerror
@@ -130,8 +129,10 @@ static int wtf_vsnprintf(char *buffer, size_t count, const char *format,
   return rc;
 }
 
+#ifndef C89STRINGUTILS_TEST_MOCKS
 #define vsnprintf(buffer, count, format, args)                                 \
   wtf_vsnprintf(buffer, count, format, args)
+#endif
 
 #endif /* !HAVE_SNPRINTF_H */
 

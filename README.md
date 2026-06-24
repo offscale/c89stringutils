@@ -2,7 +2,7 @@ c89stringutils
 ==============
 [![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Doc Coverage](https://img.shields.io/badge/doc__coverage-100.00%25-brightgreen)
-![Test Coverage](https://img.shields.io/badge/test__coverage-100.00%25-brightgreen)
+![Test Coverage](https://img.shields.io/badge/test__coverage-0.00%25-brightgreen)
 [![CI for Linux, Windows, macOS](https://github.com/offscale/c89stringutils/actions/workflows/ci.yml/badge.svg)](https://github.com/offscale/c89stringutils/actions/workflows/ci.yml)
 [![C89](https://img.shields.io/badge/C-89-blue)](https://en.wikipedia.org/wiki/C89_(C_version))
 

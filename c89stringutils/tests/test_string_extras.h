@@ -18,8 +18,8 @@ extern "C" {
 #include <errno.h>
 /* clang-format on */
 
-static const char *buffer = "hello world";
-static const char *target = "hello\0\0\0";
+static const char *test_buffer = "hello world";
+static const char *test_target = "hello\0\0\0";
 
 /**
  * @brief Test case
@@ -27,8 +27,8 @@ static const char *target = "hello\0\0\0";
  */
 TEST x_strnstr_should_succeed(void) {
   char *out;
-  out = c89stringutils_strnstr(buffer, target, strlen(buffer));
-  ASSERT_EQ_FMT(buffer, out, "%s");
+  out = c89stringutils_strnstr(test_buffer, test_target, strlen(test_buffer));
+  ASSERT_EQ_FMT(test_buffer, out, "%s");
   PASS();
 }
 
@@ -38,13 +38,13 @@ TEST x_strnstr_should_succeed(void) {
  */
 TEST x_strnstr_should_fail(void) {
   char *out;
-  out = c89stringutils_strnstr(buffer, "world", 5);
+  out = c89stringutils_strnstr(test_buffer, "world", 5);
   ASSERT_EQ(NULL, out);
-  out = c89stringutils_strnstr(buffer, "", 5);
-  ASSERT_EQ(buffer, out);
-  out = c89stringutils_strnstr(NULL, buffer, 5);
+  out = c89stringutils_strnstr(test_buffer, "", 5);
+  ASSERT_EQ(test_buffer, out);
+  out = c89stringutils_strnstr(NULL, test_buffer, 5);
   ASSERT_EQ(NULL, out);
-  out = c89stringutils_strnstr(buffer, NULL, 5);
+  out = c89stringutils_strnstr(test_buffer, NULL, 5);
   ASSERT_EQ(NULL, out);
   out = c89stringutils_strnstr("abcde", "abX", 5);
   ASSERT_EQ(NULL, out);
