@@ -3,10 +3,12 @@
  * @brief Implementations of safe CRT functions.
  */
 
+/* clang-format off */
 #include "c89stringutils_safecrt.h"
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+/* clang-format on */
 
 #if defined(_MSC_VER)
 #pragma warning(push)
@@ -241,8 +243,8 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
 #endif
 
 #if !defined(C89STRINGUTILS_HAVE_SET_CONSTRAINT_HANDLER_S)
-C89STRINGUTILS_EXPORT c89stringutils_constraint_handler_t
-c89stringutils_set_constraint_handler_s(
+C89STRINGUTILS_EXPORT
+c89stringutils_constraint_handler_t c89stringutils_set_constraint_handler_s(
     c89stringutils_constraint_handler_t handler) {
   c89stringutils_constraint_handler_t old = current_handler;
   current_handler =

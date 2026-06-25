@@ -1,12 +1,13 @@
 #ifndef TEST_SAFECRT_H
 #define TEST_SAFECRT_H
 
+/* clang-format off */
 #include <c89stringutils_safecrt.h>
 #include <errno.h>
 #include <greatest.h>
 #include <wchar.h>
-
 #include <setjmp.h>
+/* clang-format on */
 
 static int g_constraint_hit = 0;
 jmp_buf g_abort_env;

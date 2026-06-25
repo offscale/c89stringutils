@@ -19,6 +19,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#if defined(_MSC_VER)
+#include <crtdbg.h>
+#endif
 #include "test_string_extras.h"
 #include "test_safecrt.h"
 /* clang-format on */
@@ -284,7 +287,6 @@ FILE *mock_tmpfile(void) {
 }
 
 #if defined(_MSC_VER)
-#include <crtdbg.h>
 #if defined(C89STRINGUTILS_HAVE_WCHAR_H) || defined(_MSC_VER)
 /**
  * @brief Invalid parameter handler that does nothing.

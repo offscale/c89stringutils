@@ -66,19 +66,29 @@ if (C89STRINGUTILS_BUILD_AMALGAMATION)
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
         "c89stringutils_export_pregen.h"
         "c89stringutils_log.h"
+        "c89stringutils_safecrt.h"
         "c89stringutils_string_extras.h"
+        "c89stringutils_safecrt.c"
         "c89stringutils_string_extras.c")
 
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_export_pregen.h" amalg_export)
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_log.h" amalg_log)
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_safecrt.h" amalg_safecrt_header)
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_string_extras.h" amalg_header)
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_safecrt.c" amalg_safecrt_source)
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_string_extras.c" amalg_source)
     file(READ "${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.h" amalg_config)
 
     string(REPLACE "#include \"c89stringutils_export.h\"" "" amalg_header "${amalg_header}")
     string(REPLACE "#include \"c89stringutilsConfig.h\"" "" amalg_header "${amalg_header}")
     string(REPLACE "#include \"c89stringutils_export.h\"" "" amalg_log "${amalg_log}")
+    string(REPLACE "#include \"c89stringutilsConfig.h\"" "" amalg_log "${amalg_log}")
+    string(REPLACE "#include \"c89stringutils_safecrt.h\"" "" amalg_safecrt_source "${amalg_safecrt_source}")
+    string(REPLACE "#include \"c89stringutils_export.h\"" "" amalg_safecrt_header "${amalg_safecrt_header}")
+    string(REPLACE "#include \"c89stringutils_string_extras.h\"" "" amalg_safecrt_header "${amalg_safecrt_header}")
+    string(REPLACE "#include \"c89stringutils_log.h\"" "" amalg_safecrt_source "${amalg_safecrt_source}")
     string(REPLACE "#include \"c89stringutils_string_extras.h\"" "" amalg_source "${amalg_source}")
+    string(REPLACE "#include \"c89stringutils_safecrt.h\"" "" amalg_source "${amalg_source}")
     string(REPLACE "#include \"c89stringutils_log.h\"" "" amalg_source "${amalg_source}")
 
     set(amalgamation "/* c89stringutils Amalgamation STB-style */\n\n")
@@ -86,8 +96,10 @@ if (C89STRINGUTILS_BUILD_AMALGAMATION)
     string(APPEND amalgamation "${amalg_export}\n\n")
     string(APPEND amalgamation "${amalg_config}\n\n")
     string(APPEND amalgamation "${amalg_log}\n\n")
+    string(APPEND amalgamation "${amalg_safecrt_header}\n\n")
     string(APPEND amalgamation "${amalg_header}\n\n")
     string(APPEND amalgamation "#ifdef C89STRINGUTILS_IMPLEMENTATION\n\n")
+    string(APPEND amalgamation "${amalg_safecrt_source}\n\n")
     string(APPEND amalgamation "${amalg_source}\n\n")
     string(APPEND amalgamation "#endif /* C89STRINGUTILS_IMPLEMENTATION */\n\n")
     string(APPEND amalgamation "#endif /* C89STRINGUTILS_AMALGAMATION_H */\n")

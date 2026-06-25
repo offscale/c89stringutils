@@ -7,17 +7,22 @@
  * handlers.
  */
 
+/* clang-format off */
 #include "c89stringutils_string_extras.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <wchar.h>
+
+#if defined(C89STRINGUTILS_HAVE_SET_CONSTRAINT_HANDLER_S)
+#include <stdlib.h>
+#endif
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(C89STRINGUTILS_HAVE_SET_CONSTRAINT_HANDLER_S)
-#include <stdlib.h>
 #define c89stringutils_constraint_handler_t constraint_handler_t
 #define c89stringutils_set_constraint_handler_s set_constraint_handler_s
 #define c89stringutils_abort_handler_s abort_handler_s

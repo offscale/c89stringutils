@@ -66,7 +66,7 @@ include(FetchContent)
 FetchContent_Declare(
     c89stringutils
     GIT_REPOSITORY https://github.com/offscale/c89stringutils.git
-    GIT_TAG        main # Or specify a particular commit/tag
+    GIT_TAG        master
 )
 FetchContent_MakeAvailable(c89stringutils)
 

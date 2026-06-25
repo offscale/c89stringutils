@@ -23,7 +23,7 @@ endif (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 # Tests #
 #########
 
-set(Header_Files "test_string_extras.h")
+set(Header_Files "test_string_extras.h" "test_safecrt.h")
 source_group("Header Files" FILES "${Header_Files}")
 
 set(Source_Files "test.c" "${CMAKE_CURRENT_SOURCE_DIR}/../c89stringutils_string_extras.c" "${CMAKE_CURRENT_SOURCE_DIR}/../c89stringutils_safecrt.c")
@@ -46,3 +46,9 @@ target_include_directories(
 )
 
 add_test(NAME "${EXEC_NAME}" COMMAND "${EXEC_NAME}")
+
+if (C89STRINGUTILS_BUILD_AMALGAMATION)
+    add_executable("test_amalg" "${CMAKE_CURRENT_SOURCE_DIR}/../../test_amalg.c")
+    target_include_directories("test_amalg" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+    add_test(NAME "test_amalg" COMMAND "test_amalg")
+endif()
