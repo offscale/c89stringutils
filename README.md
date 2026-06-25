@@ -29,7 +29,9 @@ the one provided by this library.
 - **Windows Security:** Eradicates the inclusion of heavy platform headers like `<windows.h>`, and actively defaults to MSVC "Safe CRT" variants (e.g., `vsprintf_s`, `_vscprintf`) implicitly when building on Microsoft compilers.
 - **Quality Metrics:** Maintains 100% Doxygen documentation and 100% test coverage locally.
 
-### Single-File Header-Only Amalgamation (STB-style)
+## Integration Examples
+
+### 1. Single-File Header-Only Amalgamation (STB-style)
 
 If you don't want to link against a built `static` or `shared` library, you can generate a drop-in, STB-style single-header amalgamation!
 
@@ -54,6 +56,65 @@ int main(void) {
 }
 ```
 
+### 2. CMake FetchContent
+
+You can automatically download and integrate `c89stringutils` into your CMake project using `FetchContent`:
+
+```cmake
+include(FetchContent)
+
+FetchContent_Declare(
+    c89stringutils
+    GIT_REPOSITORY https://github.com/offscale/c89stringutils.git
+    GIT_TAG        main # Or specify a particular commit/tag
+)
+FetchContent_MakeAvailable(c89stringutils)
+
+# Link against the target
+target_link_libraries(your_target PRIVATE c89stringutils)
+```
+
+### 3. vcpkg (Custom Registry)
+
+You can manage `c89stringutils` via vcpkg using a custom registry pointing to the `project0` branch of the `SamuelMarks/vcpkg` fork. In your project root, create a `vcpkg-configuration.json` file:
+
+```json
+{
+  "default-registry": {
+    "kind": "git",
+    "repository": "https://github.com/SamuelMarks/vcpkg.git",
+    "reference": "project0"
+  },
+  "registries": [
+    {
+      "kind": "git",
+      "repository": "https://github.com/microsoft/vcpkg.git",
+      "reference": "master",
+      "packages": [ "*" ]
+    }
+  ]
+}
+```
+
+Add the dependency to your `vcpkg.json`:
+
+```json
+{
+  "name": "your-project",
+  "version": "1.0.0",
+  "dependencies": [
+    "c89stringutils"
+  ]
+}
+```
+
+Then locate and link the package in your `CMakeLists.txt`:
+
+```cmake
+find_package(c89stringutils CONFIG REQUIRED)
+target_link_libraries(your_target PRIVATE c89stringutils::c89stringutils)
+```
+
 ### String functions implemented
 
 | Function                                                                | Citation                     |
@@ -61,9 +122,9 @@ int main(void) {
 | [`strcasestr`](https://www.freebsd.org/cgi/man.cgi?query=strcasestr)    | From MUSL                    |
 | [`strncasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strncasecmp)  | Alias for MSVC's `_strnicmp` |
 | [`strcasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strcasecmp)    | Alias for MSVC's `_stricmp`  |
-| [`snprintf`](https://www.freebsd.org/cgi/man.cgi?query=snprintf)        | Mostly from WTF_StringExtras |
-| [`vsnprintf`](https://www.freebsd.org/cgi/man.cgi?query=vsnprintf)      | Mostly from WTF_StringExtras |
-| [`strnstr`](https://www.freebsd.org/cgi/man.cgi?query=strnstr)          | Mostly from WTF_StringExtras |
+| [`snprintf`](https://www.freebsd.org/cgi/man.cgi?query=snprintf)        | Custom C89 polyfill          |
+| [`vsnprintf`](https://www.freebsd.org/cgi/man.cgi?query=vsnprintf)      | Custom C89 polyfill          |
+| [`strnstr`](https://www.freebsd.org/cgi/man.cgi?query=strnstr)          | Custom C89 polyfill          |
 | [`strerrorlen_s`](https://en.cppreference.com/w/c/string/byte/strerror) | From Safe C Library          |
 | [`asprintf`](https://www.freebsd.org/cgi/man.cgi?query=asprintf)        | From libressl-portable       |
 

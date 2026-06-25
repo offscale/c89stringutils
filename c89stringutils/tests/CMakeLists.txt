@@ -26,7 +26,7 @@ endif (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 set(Header_Files "test_string_extras.h")
 source_group("Header Files" FILES "${Header_Files}")
 
-set(Source_Files "test.c" "${CMAKE_CURRENT_SOURCE_DIR}/../c89stringutils_string_extras.c")
+set(Source_Files "test.c" "${CMAKE_CURRENT_SOURCE_DIR}/../c89stringutils_string_extras.c" "${CMAKE_CURRENT_SOURCE_DIR}/../c89stringutils_safecrt.c")
 source_group("Source Files" FILES "${Source_Files}")
 
 add_executable("${EXEC_NAME}" "${Header_Files}" "${Source_Files}")

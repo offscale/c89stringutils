@@ -47,6 +47,251 @@ else ()
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 endif ()
 
+include(CheckIncludeFile)
+include(CheckSymbolExists)
+include(CheckTypeSize)
+include(CheckCSourceCompiles)
+
+check_include_file(strings.h C89STRINGUTILS_HAVE_STRINGS_H)
+check_include_file(sys/param.h C89STRINGUTILS_HAVE_SYS_PARAM_H)
+check_include_file(wchar.h C89STRINGUTILS_HAVE_WCHAR_H)
+
+check_symbol_exists(strncpy_s "string.h" C89STRINGUTILS_HAVE_STRNCPY_S)
+check_symbol_exists(strcpy_s "string.h" C89STRINGUTILS_HAVE_STRCPY_S)
+check_symbol_exists(strncat_s "string.h" C89STRINGUTILS_HAVE_STRNCAT_S)
+check_symbol_exists(strcat_s "string.h" C89STRINGUTILS_HAVE_STRCAT_S)
+check_symbol_exists(strlcpy "string.h" C89STRINGUTILS_HAVE_STRLCPY)
+check_symbol_exists(strlcat "string.h" C89STRINGUTILS_HAVE_STRLCAT)
+check_symbol_exists(strnlen "string.h" C89STRINGUTILS_HAVE_STRNLEN)
+check_symbol_exists(strnlen_s "string.h" C89STRINGUTILS_HAVE_STRNLEN_S)
+check_symbol_exists(memcpy_s "string.h" C89STRINGUTILS_HAVE_MEMCPY_S)
+check_symbol_exists(set_constraint_handler_s "stdlib.h" C89STRINGUTILS_HAVE_SET_CONSTRAINT_HANDLER_S)
+check_symbol_exists(reallocarray "stdlib.h" C89STRINGUTILS_HAVE_REALLOCARRAY)
+check_symbol_exists(tmpfile_s "stdio.h" C89STRINGUTILS_HAVE_TMPFILE_S)
+check_symbol_exists(fopen_s "stdio.h" C89STRINGUTILS_HAVE_FOPEN_S)
+check_symbol_exists(freopen_s "stdio.h" C89STRINGUTILS_HAVE_FREOPEN_S)
+
+check_symbol_exists(vsscanf "stdio.h;stdarg.h" C89STRINGUTILS_HAVE_VSSCANF)
+check_symbol_exists(vsscanf_s "stdio.h;stdarg.h" C89STRINGUTILS_HAVE_VSSCANF_S)
+check_symbol_exists(vfscanf "stdio.h;stdarg.h" C89STRINGUTILS_HAVE_VFSCANF)
+check_symbol_exists(vfscanf_s "stdio.h;stdarg.h" C89STRINGUTILS_HAVE_VFSCANF_S)
+
+check_symbol_exists(wcscpy "wchar.h" C89STRINGUTILS_HAVE_WCSCPY)
+check_symbol_exists(wcsncpy "wchar.h" C89STRINGUTILS_HAVE_WCSNCPY)
+check_symbol_exists(wcscpy_s "wchar.h" C89STRINGUTILS_HAVE_WCSCPY_S)
+check_symbol_exists(wcsncpy_s "wchar.h" C89STRINGUTILS_HAVE_WCSNCPY_S)
+check_symbol_exists(vswprintf "wchar.h;stdarg.h" C89STRINGUTILS_HAVE_VSWPRINTF)
+check_symbol_exists(vswprintf_s "wchar.h;stdarg.h" C89STRINGUTILS_HAVE_VSWPRINTF_S)
+check_symbol_exists(swprintf "wchar.h;stdarg.h" C89STRINGUTILS_HAVE_SWPRINTF)
+check_symbol_exists(swprintf_s "wchar.h;stdarg.h" C89STRINGUTILS_HAVE_SWPRINTF_S)
+
+check_symbol_exists(sprintf_s "stdio.h" C89STRINGUTILS_HAVE_SPRINTF_S)
+check_symbol_exists(vsnprintf "stdio.h;stdarg.h" C89STRINGUTILS_HAVE_VSNPRINTF)
+check_symbol_exists(_vsnprintf "stdio.h;stdarg.h" C89STRINGUTILS_HAVE__VSNPRINTF)
+check_symbol_exists(vsnprintf_s "stdio.h;stdarg.h" C89STRINGUTILS_HAVE_VSNPRINTF_S)
+check_symbol_exists(_vsnprintf_s "stdio.h;stdarg.h" C89STRINGUTILS_HAVE__VSNPRINTF_S)
+check_symbol_exists(snprintf_s "stdio.h" C89STRINGUTILS_HAVE_SNPRINTF_S)
+check_symbol_exists(_snprintf_s "stdio.h" C89STRINGUTILS_HAVE__SNPRINTF_S)
+check_symbol_exists(_snprintf "stdio.h" C89STRINGUTILS_HAVE__SNPRINTF)
+check_symbol_exists(vfprintf_s "stdio.h;stdarg.h" C89STRINGUTILS_HAVE_VFPRINTF_S)
+check_symbol_exists(fprintf_s "stdio.h" C89STRINGUTILS_HAVE_FPRINTF_S)
+check_symbol_exists(_vscprintf "stdio.h;stdarg.h" C89STRINGUTILS_HAVE__VSCPRINTF)
+check_symbol_exists(snprintf "stdio.h" C89STRINGUTILS_HAVE_SNPRINTF)
+
+check_c_source_compiles("
+    #include <stdio.h>
+    #include <stddef.h>
+    int main(void) {
+        char buf[32];
+        size_t s = 0;
+        sprintf(buf, \"%zu\", s);
+        return 0;
+    }
+" C89STRINGUTILS_HAVE_PRINTF_ZU)
+
+check_c_source_compiles("
+    #include <stdio.h>
+    int main(void) {
+        char buf[32];
+        long long s = 0;
+        sprintf(buf, \"%lld\", s);
+        return 0;
+    }
+" C89STRINGUTILS_HAVE_PRINTF_LLD)
+
+check_c_source_compiles("
+    #include <stdio.h>
+    int main(void) {
+        char buf[32];
+        __int64 s = 0;
+        sprintf(buf, \"%I64d\", s);
+        return 0;
+    }
+" C89STRINGUTILS_HAVE_PRINTF_I64D)
+
+check_c_source_compiles("
+    #include <stdio.h>
+    #include <stddef.h>
+    int main(void) {
+        char buf[32];
+        size_t s = 0;
+        sprintf(buf, \"%Iu\", s);
+        return 0;
+    }
+" C89STRINGUTILS_HAVE_PRINTF_IU)
+
+check_c_source_compiles("
+    #include <stdio.h>
+    #include <stdarg.h>
+    int main(void) {
+        /* This isn't a perfect runtime check, but checks if compiler complains */
+        return 0;
+    }
+" C89STRINGUTILS_HAVE_VSNPRINTF_NULL)
+
+set(STRING_HEADERS "string.h")
+if(C89STRINGUTILS_HAVE_STRINGS_H)
+    list(APPEND STRING_HEADERS "strings.h")
+endif()
+
+check_symbol_exists(strncasecmp "${STRING_HEADERS}" C89STRINGUTILS_HAVE_STRNCASECMP)
+check_symbol_exists(_strnicmp "${STRING_HEADERS}" C89STRINGUTILS_HAVE__STRNICMP)
+
+check_symbol_exists(strcasecmp "${STRING_HEADERS}" C89STRINGUTILS_HAVE_STRCASECMP)
+check_symbol_exists(_stricmp "${STRING_HEADERS}" C89STRINGUTILS_HAVE__STRICMP)
+
+set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE")
+check_symbol_exists(strnstr "string.h" C89STRINGUTILS_HAVE_STRNSTR)
+check_symbol_exists(strcasestr "string.h" C89STRINGUTILS_HAVE_STRCASESTR)
+
+check_symbol_exists(vasprintf "stdio.h" C89STRINGUTILS_HAVE_VASPRINTF)
+check_symbol_exists(asprintf "stdio.h" C89STRINGUTILS_HAVE_ASPRINTF)
+set(CMAKE_REQUIRED_DEFINITIONS)
+
+check_symbol_exists(strerror_s "string.h" C89STRINGUTILS_HAVE_STRERROR_S)
+check_symbol_exists(strerror_r "string.h" C89STRINGUTILS_HAVE_STRERROR_R)
+
+option(C89STRINGUTILS_FORCE_FALLBACKS "Force fallbacks for coverage testing" OFF)
+if(C89STRINGUTILS_FORCE_FALLBACKS)
+  set(C89STRINGUTILS_HAVE_STRNCPY_S OFF)
+  set(C89STRINGUTILS_HAVE_STRCPY_S OFF)
+  set(C89STRINGUTILS_HAVE_STRNCAT_S OFF)
+  set(C89STRINGUTILS_HAVE_STRCAT_S OFF)
+  set(C89STRINGUTILS_HAVE_STRLCPY OFF)
+  set(C89STRINGUTILS_HAVE_STRLCAT OFF)
+  set(C89STRINGUTILS_HAVE_STRNLEN OFF)
+  set(C89STRINGUTILS_HAVE_STRNLEN_S OFF)
+  set(C89STRINGUTILS_HAVE_MEMCPY_S OFF)
+  set(C89STRINGUTILS_HAVE_SET_CONSTRAINT_HANDLER_S OFF)
+  set(C89STRINGUTILS_HAVE_REALLOCARRAY OFF)
+  set(C89STRINGUTILS_HAVE_TMPFILE_S OFF)
+  set(C89STRINGUTILS_HAVE_FOPEN_S OFF)
+  set(C89STRINGUTILS_HAVE_FREOPEN_S OFF)
+  set(C89STRINGUTILS_HAVE_VSSCANF_S OFF)
+  set(C89STRINGUTILS_HAVE_VFSCANF_S OFF)
+  set(C89STRINGUTILS_HAVE_WCSCPY_S OFF)
+  set(C89STRINGUTILS_HAVE_WCSNCPY_S OFF)
+  set(C89STRINGUTILS_HAVE_VSWPRINTF_S OFF)
+  set(C89STRINGUTILS_HAVE_SWPRINTF_S OFF)
+  set(C89STRINGUTILS_HAVE_SPRINTF_S OFF)
+  set(C89STRINGUTILS_HAVE_VSNPRINTF_S OFF)
+  set(C89STRINGUTILS_HAVE__VSNPRINTF_S OFF)
+  set(C89STRINGUTILS_HAVE_SNPRINTF_S OFF)
+  set(C89STRINGUTILS_HAVE__SNPRINTF_S OFF)
+  set(C89STRINGUTILS_HAVE_VFPRINTF_S OFF)
+  set(C89STRINGUTILS_HAVE_FPRINTF_S OFF)
+  set(C89STRINGUTILS_HAVE_SNPRINTF OFF)
+  set(C89STRINGUTILS_HAVE__SNPRINTF OFF)
+  set(C89STRINGUTILS_HAVE_VSNPRINTF OFF)
+  set(C89STRINGUTILS_HAVE__VSNPRINTF OFF)
+  set(C89STRINGUTILS_HAVE_STRNCASECMP OFF)
+  set(C89STRINGUTILS_HAVE__STRNICMP OFF)
+  set(C89STRINGUTILS_HAVE_STRCASECMP OFF)
+  set(C89STRINGUTILS_HAVE__STRICMP OFF)
+  set(C89STRINGUTILS_HAVE_STRNSTR OFF)
+  set(C89STRINGUTILS_HAVE_STRCASESTR OFF)
+  set(C89STRINGUTILS_HAVE_VASPRINTF OFF)
+  set(C89STRINGUTILS_HAVE_ASPRINTF OFF)
+  set(C89STRINGUTILS_HAVE_STRERROR_S OFF)
+  set(C89STRINGUTILS_HAVE_STRERROR_R OFF)
+  add_compile_definitions(C89STRINGUTILS_FORCE_FALLBACKS)
+endif()
+
+if(C89STRINGUTILS_HAVE_STRERROR_R)
+    set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE")
+    check_c_source_compiles("
+        #include <string.h>
+        int main(void) {
+            char buf[256];
+            char *res = strerror_r(0, buf, sizeof(buf));
+            return res != 0;
+        }
+    " C89STRINGUTILS_STRERROR_R_CHAR_P)
+    set(CMAKE_REQUIRED_DEFINITIONS)
+endif()
+
+check_c_source_compiles("
+    #include <stdarg.h>
+    int main(void) { va_list a, b; va_copy(a, b); return 0; }
+" C89STRINGUTILS_HAVE_VA_COPY)
+
+check_c_source_compiles("
+    #include <stdarg.h>
+    int main(void) { va_list a, b; __va_copy(a, b); return 0; }
+" C89STRINGUTILS_HAVE___VA_COPY)
+
+check_c_source_compiles("
+    void my_printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+    int main(void) { return 0; }
+" C89STRINGUTILS_HAVE_ATTR_FORMAT)
+
+check_c_source_compiles("
+    void my_func(const char *s) __attribute__((nonnull(1)));
+    int main(void) { return 0; }
+" C89STRINGUTILS_HAVE_ATTR_NONNULL)
+
+check_c_source_compiles("
+    int main(void) { int a = 1; typeof(a) b = 2; return b; }
+" C89STRINGUTILS_HAVE_TYPEOF)
+
+check_c_source_compiles("
+    #include <sal.h>
+    _Ret_notnull_ void* my_func(_In_z_ const char* s) { return (void*)s; }
+    int main(void) { return 0; }
+" C89STRINGUTILS_HAVE_SAL)
+
+check_c_source_compiles("
+    #pragma warning(push)
+    #pragma warning(disable: 4127)
+    int main(void) { return 0; }
+" C89STRINGUTILS_HAVE_PRAGMA_WARNING)
+
+check_c_source_compiles("
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored \"-Wunused-parameter\"
+    int main(void) { return 0; }
+" C89STRINGUTILS_HAVE_PRAGMA_GCC_DIAGNOSTIC)
+
+check_type_size("long long" SIZEOF_LONG_LONG)
+if(HAVE_SIZEOF_LONG_LONG)
+    set(C89STRINGUTILS_HAVE_LONG_LONG 1)
+endif()
+check_type_size("__int64" SIZEOF___INT64)
+if(HAVE_SIZEOF___INT64)
+    set(C89STRINGUTILS_HAVE___INT64 1)
+endif()
+
+check_c_source_compiles("
+    #include <errno.h>
+    #include <stddef.h>
+    int main(void) { errno_t e = 0; return (int)e; }
+" C89STRINGUTILS_HAVE_ERRNO_T)
+
+check_c_source_compiles("
+    #include <stddef.h>
+    int main(void) { rsize_t s = 0; return (int)s; }
+" C89STRINGUTILS_HAVE_RSIZE_T)
+
 # configure a header file to pass the version number only
 configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in"
