@@ -20,7 +20,6 @@
 #include <errno.h>
 #include <ctype.h>
 #include <limits.h> /* for INT_MAX */
-/* clang-format on */
 #ifndef RSIZE_MAX
 #define RSIZE_MAX ((size_t) - 1 >> 1)
 #endif
@@ -255,6 +254,7 @@ C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...) {
     disable : 4244 4702) /* conversion from int to char, unreachable code */
 #endif
 #include "stb_sprintf.h"
+/* clang-format on */
 #if defined(_MSC_VER) && _MSC_VER >= 1300
 #pragma warning(pop)
 #endif

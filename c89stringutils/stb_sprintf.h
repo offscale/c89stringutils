@@ -1,3 +1,6 @@
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 /* clang-format off */
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
@@ -1920,3 +1923,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma GCC diagnostic pop
 #endif
 /* clang-format on */
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
