@@ -300,7 +300,11 @@ configure_file(
 
 add_subdirectory("${PROJECT_NAME}")
 
-option(BUILD_TESTING_${PROJECT_NAME} "Build the tests" ON)
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    option(BUILD_TESTING_${PROJECT_NAME} "Build the tests" ON)
+else()
+    option(BUILD_TESTING_${PROJECT_NAME} "Build the tests" OFF)
+endif()
 
 set(CDD_CHARSET "Unicode" CACHE STRING "Charset to use: Unicode or ANSI")
 set(CDD_THREADING "Multi-threaded" CACHE STRING "Threading: Multi-threaded or Single-threaded")
