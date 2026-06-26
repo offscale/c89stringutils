@@ -208,8 +208,16 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
           return -1;
         strncpy(token, start, len);
         token[len] = '\0';
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
         if (fscanf(stream, token) < 0)
           return count;
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
         continue;
       }
       /* regular argument */
@@ -473,7 +481,9 @@ C89STRINGUTILS_EXPORT int c89stringutils_vswprintf_s(wchar_t *buffer,
                                                      rsize_t sizeOfBuffer,
                                                      const wchar_t *format,
                                                      va_list argptr) {
+#if defined(C89STRINGUTILS_HAVE_VSWPRINTF)
   int ret;
+#endif
   if (!buffer || sizeOfBuffer == 0 || !format) {
     c89stringutils_invoke_constraint_handler_s("vswprintf_s: invalid arguments",
                                                NULL, EINVAL);
@@ -489,6 +499,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_vswprintf_s(wchar_t *buffer,
   }
   return ret;
 #else
+  (void)argptr;
   /* Fallback for missing vswprintf */
   c89stringutils_invoke_constraint_handler_s("vswprintf not supported natively",
                                              NULL, ENOTSUP);

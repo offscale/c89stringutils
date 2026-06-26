@@ -1,4 +1,10 @@
 /* clang-format off */
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wlong-long"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+
 /* stb_sprintf - v1.10 - public domain snprintf() implementation */
 /* originally by Jeff Roberts / RAD Game Tools, 2015/10/20 */
 /* http://github.com/nothings/stb */
@@ -224,6 +230,11 @@ STBSP__PUBLICDEC void STB_SPRINTF_DECORATE(set_separators)(char comma, char peri
 #ifdef _MSC_VER
 #define stbsp__uint64 unsigned __int64
 #define stbsp__int64 signed __int64
+#elif defined(__GNUC__) || defined(__clang__)
+__extension__ typedef unsigned long long stbsp__uint64_type;
+__extension__ typedef signed long long stbsp__int64_type;
+#define stbsp__uint64 stbsp__uint64_type
+#define stbsp__int64 stbsp__int64_type
 #else
 #define stbsp__uint64 unsigned long long
 #define stbsp__int64 signed long long
@@ -1905,4 +1916,7 @@ ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 */
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 /* clang-format on */

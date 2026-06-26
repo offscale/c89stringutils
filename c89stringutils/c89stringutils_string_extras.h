@@ -196,10 +196,15 @@ extern "C" {
 /* clang-format on */
 
 #if defined(C89STRINGUTILS_HAVE_LONG_LONG)
+#if defined(__GNUC__) || defined(__clang__)
+__extension__ typedef long long c89stringutils_int64_t;
+__extension__ typedef unsigned long long c89stringutils_uint64_t;
+#else
 /** @brief 64-bit signed integer type */
 typedef long long c89stringutils_int64_t;
 /** @brief 64-bit unsigned integer type */
 typedef unsigned long long c89stringutils_uint64_t;
+#endif
 /** @brief 64-bit integer literal macro */
 #define C89STRINGUTILS_INT64_C(c) c##LL
 /** @brief 64-bit unsigned integer literal macro */
