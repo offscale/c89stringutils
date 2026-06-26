@@ -25,7 +25,7 @@ jobs:
           cmake --build build
 
       - name: Compile Test Amalgamation
-        run: gcc -Wall -Wextra -Werror -Ibuild/c89stringutils -o test_amalg c89stringutils/tests/test_amalg.c
+        run: gcc -Wall -Wextra -Werror -Ibuild -o test_amalg c89stringutils/tests/test_amalg.c
 
       - name: Run Test Amalgamation
         run: ./test_amalg

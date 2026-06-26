@@ -11,7 +11,10 @@
 #include "c89stringutils_string_extras.h"
 #include <stddef.h>
 #include <stdio.h>
+
+#if defined(C89STRINGUTILS_HAVE_WCHAR_H)
 #include <wchar.h>
+#endif
 
 #if defined(C89STRINGUTILS_HAVE_SET_CONSTRAINT_HANDLER_S)
 #include <stdlib.h>
@@ -20,7 +23,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #if defined(C89STRINGUTILS_HAVE_SET_CONSTRAINT_HANDLER_S)
 #define c89stringutils_constraint_handler_t constraint_handler_t
