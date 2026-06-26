@@ -196,6 +196,6 @@ C89STRINGUTILS_EXPORT int c89stringutils_vswprintf_s(wchar_t *buffer,
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
-#endif
+#endif /* !C89STRINGUTILS_SAFECRT_H */

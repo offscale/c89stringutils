@@ -881,122 +881,127 @@ C89STRINGUTILS_EXPORT size_t c89stringutils_strerrorlen_s(errno_t errnum) {
  */
 C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
                                                    va_list ap) {
-#if defined(C89STRINGUTILS_HAVE_VASPRINTF)
-  return vasprintf(str, fmt, ap);
-#else
-  int rc;
-  va_list ap2;
-  char *string, *newstr;
-  size_t len;
-
   if (str == NULL || fmt == NULL) {
     LOG_DEBUG("str or fmt is NULL");
     return -1;
   }
 
-  string = (char *)malloc(INIT_SZ);
-  if (string == NULL) {
-    rc = -1;
-    goto fail;
+#if defined(C89STRINGUTILS_HAVE_VASPRINTF)
+  {
+    int rc = vasprintf(str, fmt, ap);
+    return (rc >= 0) ? 0 : -1;
   }
+#else
+  {
+    int rc;
+    va_list ap2;
+    char *string, *newstr;
+    size_t len;
 
-  VA_COPY(ap2, ap);
-  rc = vsnprintf(string, INIT_SZ, fmt, ap2);
-  va_end(ap2);
+    string = (char *)malloc(INIT_SZ);
+    if (string == NULL) {
+      rc = -1;
+      goto fail;
+    }
 
-  if (rc < 0) { /* Bad length or legacy compiler truncation */
-    size_t current_sz = INIT_SZ;
-    while (
-        rc < 0 &&
-        current_sz <=
-            (size_t)1048576) { /* Cap at 1MB to avoid runaway on real errors */
-      char *t;
-      current_sz *= 2;
-      t = (char *)realloc(string, current_sz);
-      if (t == NULL) {
+    VA_COPY(ap2, ap);
+    rc = vsnprintf(string, INIT_SZ, fmt, ap2);
+    va_end(ap2);
+
+    if (rc < 0) { /* Bad length or legacy compiler truncation */
+      size_t current_sz = INIT_SZ;
+      while (rc < 0 &&
+             current_sz <= (size_t)1048576) { /* Cap at 1MB to avoid runaway on
+                                                 real errors */
+        char *t;
+        current_sz *= 2;
+        t = (char *)realloc(string, current_sz);
+        if (t == NULL) {
+          free(string);
+          rc = -1;
+          goto fail;
+        }
+        string = t;
+        VA_COPY(ap2, ap);
+        rc = vsnprintf(string, current_sz, fmt, ap2);
+        va_end(ap2);
+      }
+      if (rc < 0 || (size_t)rc >= current_sz) {
         free(string);
         rc = -1;
         goto fail;
       }
-      string = t;
+      *str = string;
+      return 0;
+    } else if (rc == INT_MAX) { /* Bad length */
+      free(string);
+      rc = -1;
+      goto fail;
+    } else if (rc < INIT_SZ) { /* succeeded with initial alloc */
+      *str = string;
+    } else { /* bigger than initial, realloc allowing for nul */
+      len = (size_t)rc + 1;
+      newstr = (char *)realloc(string, len);
+      if (newstr == NULL) {
+        free(string);
+        rc = -1;
+        goto fail;
+      }
       VA_COPY(ap2, ap);
-      rc = vsnprintf(string, current_sz, fmt, ap2);
+      rc = vsnprintf(newstr, len, fmt, ap2);
       va_end(ap2);
+      if (rc < 0) { /* failed with realloc'ed string */
+        free(newstr);
+        rc = -1;
+        goto fail;
+      } else if ((size_t)rc >= len) {
+        free(newstr);
+        rc = -1;
+        goto fail;
+      }
+      *str = newstr;
     }
-    if (rc < 0 || (size_t)rc >= current_sz) {
-      free(string);
-      rc = -1;
-      goto fail;
-    }
-    *str = string;
-    return rc;
-  } else if (rc == INT_MAX) { /* Bad length */
-    free(string);
-    rc = -1;
-    goto fail;
-  } else if (rc < INIT_SZ) { /* succeeded with initial alloc */
-    *str = string;
-  } else { /* bigger than initial, realloc allowing for nul */
-    len = (size_t)rc + 1;
-    newstr = (char *)realloc(string, len);
-    if (newstr == NULL) {
-      free(string);
-      rc = -1;
-      goto fail;
-    }
-    VA_COPY(ap2, ap);
-    rc = vsnprintf(newstr, len, fmt, ap2);
-    va_end(ap2);
-    if (rc < 0) { /* failed with realloc'ed string */
-      free(newstr);
-      rc = -1;
-      goto fail;
-    } else if ((size_t)rc >= len) {
-      free(newstr);
-      rc = -1;
-      goto fail;
-    }
-    *str = newstr;
-  }
-  return rc;
+    return 0;
 
-fail:
+  fail:
 #if defined(C89STRINGUTILS_HAVE_STRERROR_S)
-{
-  char errbuf[256];
-  int err_rc = strerror_s(errbuf, sizeof(errbuf), errno);
-  if (err_rc != 0) {
-    LOG_DEBUG("strerror_s failed with rc=%d", err_rc);
-    errbuf[0] = '\0';
+  {
+    char errbuf[256];
+    int err_rc = strerror_s(errbuf, sizeof(errbuf), errno);
+    if (err_rc != 0) {
+      LOG_DEBUG("strerror_s failed with rc=%d", err_rc);
+      errbuf[0] = '\0';
+    }
+    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errbuf);
   }
-  LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errbuf);
-}
 #elif defined(C89STRINGUTILS_HAVE_STRERROR_R)
-{
-  char errbuf[256];
+  {
+    char errbuf[256];
 #if defined(C89STRINGUTILS_STRERROR_R_CHAR_P)
-  char *res = strerror_r(errno, errbuf, sizeof(errbuf));
-  LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, res ? res : "");
+    char *res = strerror_r(errno, errbuf, sizeof(errbuf));
+    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, res ? res : "");
 #else
-  int err_rc;
-  errbuf[0] = '\0';
-  err_rc = strerror_r(errno, errbuf, sizeof(errbuf));
-  errbuf[sizeof(errbuf) - 1] = '\0';
-  if (err_rc != 0) {
+    int err_rc;
     errbuf[0] = '\0';
+    err_rc = strerror_r(errno, errbuf, sizeof(errbuf));
+    errbuf[sizeof(errbuf) - 1] = '\0';
+    if (err_rc != 0) {
+      errbuf[0] = '\0';
+    }
+    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errbuf);
+#endif
   }
-  LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errbuf);
-#endif
-}
 #else
-{
-  const char *errstr = strerror(errno);
-  LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errstr ? errstr : "");
-}
+  {
+    const char *errstr = strerror(errno);
+    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc,
+              errstr ? errstr : "");
+  }
 #endif
-  *str = NULL;
-  errno = ENOMEM;
-  return -1;
+    *str = NULL;
+    errno = ENOMEM;
+    return -1;
+  }
 #endif
 }
 
@@ -1080,7 +1085,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
   rc = c89stringutils_vasprintf(&new_part, fmt, args);
   va_end(args);
 
-  if (rc < 0 || new_part == NULL) {
+  if (rc != 0 || new_part == NULL) {
     return -1;
   }
 
@@ -1092,10 +1097,11 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
   {
 #if defined(C89STRINGUTILS_HAVE_STRNLEN_S)
     size_t base_length = strnlen_s(*unto, RSIZE_MAX);
+    size_t new_length = strnlen_s(new_part, RSIZE_MAX);
 #else
     size_t base_length = strlen(*unto);
+    size_t new_length = strlen(new_part);
 #endif
-    size_t new_length = (size_t)rc;
     char *result;
 
 #if defined(C89STRINGUTILS_HAVE_REALLOCARRAY)
@@ -1183,7 +1189,7 @@ C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
   rc = c89stringutils_vasprintf(&new_part, fmt, args);
   va_end(args);
 
-  if (rc < 0 || new_part == NULL) {
+  if (rc != 0 || new_part == NULL) {
     return -1;
   }
 
@@ -1195,10 +1201,11 @@ C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
   {
 #if defined(C89STRINGUTILS_HAVE_STRNLEN_S)
     size_t base_length = strnlen_s(*unto, RSIZE_MAX);
+    size_t new_length = strnlen_s(new_part, RSIZE_MAX);
 #else
     size_t base_length = strlen(*unto);
+    size_t new_length = strlen(new_part);
 #endif
-    size_t new_length = (size_t)rc;
     char *result;
 
 #if defined(C89STRINGUTILS_HAVE_REALLOCARRAY)

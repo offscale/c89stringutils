@@ -378,7 +378,17 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_tmpfile_s(FILE **pFile) {
     return EINVAL;
   }
 #if defined(C89STRINGUTILS_HAVE_TMPFILE_S)
-  return tmpfile_s(pFile);
+  {
+    errno_t rc = tmpfile_s(pFile);
+    /* Workaround for MinGW bug where tmpfile_s returns 0 but leaves pFile NULL
+     */
+    if (rc == 0 && *pFile == NULL) {
+      *pFile = tmpfile();
+      if (*pFile == NULL)
+        return errno ? errno : 5; /* EIO fallback */
+    }
+    return rc;
+  }
 #else
   *pFile = tmpfile();
   if (*pFile == NULL)

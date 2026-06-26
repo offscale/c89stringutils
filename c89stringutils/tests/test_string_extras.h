@@ -67,7 +67,7 @@ TEST x_asprintf_should_succeed(void) {
   char *s = NULL;
   int rc;
   rc = c89stringutils_asprintf(&s, "foo%s", "bar");
-  ASSERT_EQ(6, rc);
+  ASSERT_EQ(0, rc);
   ASSERT_STR_EQ("foobar", s);
   free(s);
   PASS();
@@ -248,14 +248,14 @@ TEST x_snprintf_should_succeed(void) {
   char buf[20];
   int rc;
   rc = c89stringutils_snprintf(buf, sizeof(buf), "test %d", 123);
-  ASSERT(rc == 8);
+  ASSERT_EQ(8, rc);
   ASSERT_STR_EQ("test 123", buf);
 
   rc = c89stringutils_snprintf(NULL, 0, "test");
   ASSERT(rc >= 0); /* standard snprintf behavior */
 
   rc = test_vsnprintf_wrapper(buf, sizeof(buf), "test %d", 123);
-  ASSERT(rc == 8);
+  ASSERT_EQ(8, rc);
   ASSERT_STR_EQ("test 123", buf);
 
   rc = test_vsnprintf_wrapper(NULL, 0, "test");
@@ -324,18 +324,19 @@ TEST x_vasprintf_should_succeed(void) {
   char *s = NULL;
   int rc;
   rc = test_vasprintf_wrapper(&s, "test %d", 123);
-  ASSERT_EQ(8, rc);
+  ASSERT_EQ(0, rc);
   ASSERT_STR_EQ("test 123", s);
   free(s);
-#if !defined(C89STRINGUTILS_HAVE_ASPRINTF) || defined(C89STRINGUTILS_TEST_MOCKS)
+#if !defined(C89STRINGUTILS_HAVE_ASPRINTF) ||                                  \
+    defined(C89STRINGUTILS_FORCE_FALLBACKS)
   /* Test aliases if they are compiled in this environment */
   rc = asprintf(&s, "alias %d", 456);
-  ASSERT_EQ(9, rc);
+  ASSERT_EQ(0, rc);
   ASSERT_STR_EQ("alias 456", s);
   free(s);
 
   rc = test_alias_vasprintf_wrapper(&s, "valias %d", 789);
-  ASSERT_EQ(10, rc);
+  ASSERT_EQ(0, rc);
   ASSERT_STR_EQ("valias 789", s);
   free(s);
 #endif
@@ -552,7 +553,7 @@ TEST x_asprintf_realloc_path(void) {
   memset(big, 'A', 199);
   big[199] = '\0';
   rc = c89stringutils_asprintf(&s, "%s", big);
-  ASSERT_EQ(199, rc);
+  ASSERT_EQ(0, rc);
   ASSERT_STR_EQ(big, s);
   free(s);
   PASS();
@@ -589,6 +590,8 @@ TEST x_mock_failures(void) {
 #endif
   int rc;
 
+#if !defined(C89STRINGUTILS_HAVE_VASPRINTF) ||                                 \
+    defined(C89STRINGUTILS_FORCE_FALLBACKS)
   printf("Testing malloc fail\n");
   g_mock_malloc_fail = 1;
   ASSERT_EQ(-1, c89stringutils_asprintf(&s, "test"));
@@ -618,7 +621,7 @@ TEST x_mock_failures(void) {
   g_mock_vsnprintf_ret = -1;
   g_mock_vsnprintf_ret2 = 5;
   rc = c89stringutils_asprintf(&s, "test");
-  ASSERT_EQ(5, rc);
+  ASSERT_EQ(0, rc);
   if (s)
     free(s);
   s = NULL;
@@ -661,7 +664,7 @@ TEST x_mock_failures(void) {
 
     g_mock_vsnprintf_fail_on_large_size = 0;
   }
-
+#endif
   s = malloc(10);
   if (s) {
 #if defined(_MSC_VER)

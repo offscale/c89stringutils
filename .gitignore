@@ -3,5 +3,5 @@
 *build*
 *_export.h
 
-test_amalg.c
+
 cmake/scripts/

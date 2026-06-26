@@ -48,7 +48,7 @@ target_include_directories(
 add_test(NAME "${EXEC_NAME}" COMMAND "${EXEC_NAME}")
 
 if (C89STRINGUTILS_BUILD_AMALGAMATION)
-    add_executable("test_amalg" "${CMAKE_CURRENT_SOURCE_DIR}/../../test_amalg.c")
-    target_include_directories("test_amalg" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+    add_executable("test_amalg" "${CMAKE_CURRENT_SOURCE_DIR}/test_amalg.c")
+    target_include_directories("test_amalg" PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/..")
     add_test(NAME "test_amalg" COMMAND "test_amalg")
 endif()
