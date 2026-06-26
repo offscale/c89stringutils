@@ -160,10 +160,13 @@ TEST x_strcasestr_should_succeed(void) {
   ASSERT(out == haystack);
   out = c89stringutils_strcasestr("", "");
   ASSERT(out != NULL);
+#if !defined(C89STRINGUTILS_HAVE_STRCASESTR) ||                                \
+    defined(C89STRINGUTILS_FORCE_FALLBACKS)
   out = c89stringutils_strcasestr(NULL, haystack);
   ASSERT(out == NULL);
   out = c89stringutils_strcasestr(haystack, NULL);
   ASSERT(out == NULL);
+#endif
 
   out = c89stringutils_strcasestr("abcde", "abX");
   ASSERT_EQ(NULL, out);
@@ -297,7 +300,8 @@ static int test_vasprintf_wrapper(char **str, const char *fmt, ...) {
   return rc;
 }
 
-#if !defined(C89STRINGUTILS_HAVE_ASPRINTF) || defined(C89STRINGUTILS_TEST_MOCKS)
+#if !defined(C89STRINGUTILS_HAVE_ASPRINTF) ||                                  \
+    defined(C89STRINGUTILS_FORCE_FALLBACKS)
 /**
  * @brief Wrapper for alias vasprintf for testing.
  * @param str A pointer to a string pointer where the allocated string will be
@@ -588,13 +592,15 @@ TEST x_mock_failures(void) {
 #if !defined(C89STRINGUTILS_HAVE_STRERROR_S)
   size_t len;
 #endif
-  int rc;
 
 #if !defined(C89STRINGUTILS_HAVE_VASPRINTF) ||                                 \
     defined(C89STRINGUTILS_FORCE_FALLBACKS)
+  int rc;
   printf("Testing malloc fail\n");
   g_mock_malloc_fail = 1;
   ASSERT_EQ(-1, c89stringutils_asprintf(&s, "test"));
+  ASSERT_EQ(-1, c89stringutils_jasprintf(&s, "test"));
+  ASSERT_EQ(-1, jasprintf(&s, "test"));
   g_mock_malloc_fail = 0;
 
   printf("Testing realloc fail\n");
@@ -685,16 +691,29 @@ TEST x_mock_failures(void) {
   /* Cover missing paths */
   {
     char dummy[10];
-    char *sptr = NULL;
-    va_list empty_va;
-    memset(&empty_va, 0, sizeof(empty_va));
     snprintf(dummy, 10, "test");
+#if !defined(C89STRINGUTILS_HAVE_STRCASESTR) ||                                \
+    defined(C89STRINGUTILS_FORCE_FALLBACKS)
     c89stringutils_strcasestr(NULL, "a");
     c89stringutils_strcasestr("a", NULL);
+#endif
+#if !defined(C89STRINGUTILS_HAVE_STRNSTR) ||                                   \
+    defined(C89STRINGUTILS_FORCE_FALLBACKS)
     c89stringutils_strnstr(NULL, "a", 1);
     c89stringutils_strnstr("a", NULL, 1);
-    c89stringutils_vasprintf(NULL, "a", empty_va);
-    c89stringutils_vasprintf(&sptr, NULL, empty_va);
+#endif
+#if !defined(C89STRINGUTILS_HAVE_VASPRINTF) ||                                 \
+    defined(C89STRINGUTILS_FORCE_FALLBACKS)
+    {
+      char *sptr = NULL;
+      va_list empty_va;
+      const char *null_fmt = NULL;
+      memset(&empty_va, 0, sizeof(empty_va));
+      c89stringutils_vasprintf(NULL, "a", empty_va);
+      c89stringutils_vasprintf(&sptr, null_fmt, empty_va);
+      (void)sptr;
+    }
+#endif
   }
 
 #if !defined(C89STRINGUTILS_HAVE_STRERROR_S)

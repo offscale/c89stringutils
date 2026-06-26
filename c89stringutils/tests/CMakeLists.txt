@@ -31,7 +31,7 @@ source_group("Source Files" FILES "${Source_Files}")
 
 add_executable("${EXEC_NAME}" "${Header_Files}" "${Source_Files}")
 
-target_compile_definitions("${EXEC_NAME}" PRIVATE C89STRINGUTILS_TEST_MOCKS C89STRINGUTILS_STATIC_DEFINE)
+target_compile_definitions("${EXEC_NAME}" PRIVATE C89STRINGUTILS_TEST_MOCKS C89STRINGUTILS_STATIC_DEFINE DEBUG)
 
 if (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
     target_link_libraries("${EXEC_NAME}" PRIVATE "${PROJECT_NAME}_compiler_flags")

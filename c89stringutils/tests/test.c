@@ -2,9 +2,8 @@
  * @file test.c
  * @brief Main entry point for greatest tests.
  */
-/* clang-format off */
 #if defined(_MSC_VER)
-#pragma warning(disable: 4127) /* conditional expression is constant */
+#pragma warning(disable : 4127) /* conditional expression is constant */
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -12,6 +11,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+/* clang-format off */
 #include <greatest.h>
 #include <c89stringutils_log.h>
 #include <c89stringutils_safecrt.h>
@@ -60,6 +60,17 @@ void *mock_realloc(void *ptr, size_t size) {
   if (g_mock_realloc_fail)
     return NULL;
   return realloc(ptr, size);
+}
+
+void *mock_reallocarray(void *ptr, size_t nmemb, size_t size) {
+  if (g_mock_realloc_fail)
+    return NULL;
+#if defined(C89STRINGUTILS_HAVE_REALLOCARRAY) &&                               \
+    !defined(C89STRINGUTILS_FORCE_FALLBACKS)
+  return reallocarray(ptr, nmemb, size);
+#else
+  return realloc(ptr, nmemb * size);
+#endif
 }
 
 /** @brief Mock state for vsnprintf call count trigger */
@@ -260,6 +271,22 @@ char *mock_strerror(int errnum) {
     return NULL;
   return strerror(errnum);
 }
+
+#if defined(C89STRINGUTILS_HAVE_STRERROR_R)
+#if defined(C89STRINGUTILS_STRERROR_R_CHAR_P)
+char *mock_strerror_r(int errnum, char *buf, size_t buflen) {
+  if (g_mock_strerror_null)
+    return NULL;
+  return strerror_r(errnum, buf, buflen);
+}
+#else
+int mock_strerror_r(int errnum, char *buf, size_t buflen) {
+  if (g_mock_strerror_null)
+    return -1;
+  return strerror_r(errnum, buf, buflen);
+}
+#endif
+#endif
 
 int g_mock_fopen_fail = 0;
 FILE *mock_fopen(const char *filename, const char *mode) {

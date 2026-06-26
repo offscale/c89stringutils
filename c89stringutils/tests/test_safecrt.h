@@ -1,6 +1,10 @@
 #ifndef TEST_SAFECRT_H
 #define TEST_SAFECRT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /* clang-format off */
 #include <c89stringutils_safecrt.h>
 #include <errno.h>
@@ -253,6 +257,10 @@ TEST test_wcsncpy_s(void) {
   rc = c89stringutils_wcsncpy_s(dest, 10, L"test", 8);
   ASSERT_EQ(0, rc);
 
+  rc = c89stringutils_wcsncpy_s(dest, 10, L"test", 2);
+  ASSERT_EQ(0, rc);
+  ASSERT(wcscmp(dest, L"te") == 0);
+
   rc = c89stringutils_wcsncpy_s(dest, 10, L"test", (size_t)-1);
   ASSERT_EQ(0, rc);
 
@@ -320,4 +328,9 @@ SUITE(safecrt_suite) {
   RUN_TEST(test_wcsncpy_s);
   RUN_TEST(test_swprintf_s);
 }
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
 #endif

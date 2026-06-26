@@ -89,6 +89,25 @@ extern int mock_strerror_s(char *buffer, size_t sizeInBytes, int errnum);
 /** @brief Mock macro for strerror_s */
 #define strerror_s mock_strerror_s
 #endif
+#if defined(C89STRINGUTILS_HAVE_STRERROR_R)
+#if defined(C89STRINGUTILS_STRERROR_R_CHAR_P)
+/** @brief External mock for strerror_r (GNU)
+ * @param errnum error number
+ * @param buf buffer
+ * @param buflen size
+ */
+extern char *mock_strerror_r(int errnum, char *buf, size_t buflen);
+#else
+/** @brief External mock for strerror_r (POSIX)
+ * @param errnum error number
+ * @param buf buffer
+ * @param buflen size
+ */
+extern int mock_strerror_r(int errnum, char *buf, size_t buflen);
+#endif
+/** @brief Mock macro for strerror_r */
+#define strerror_r mock_strerror_r
+#endif
 #if defined(C89STRINGUTILS_HAVE_VFPRINTF_S)
 /** @brief External mock for vfprintf_s
  * @param stream stream
@@ -108,6 +127,16 @@ extern int mock_vfprintf_s(FILE *stream, const char *format, va_list ap);
 extern int mock_fprintf_s(FILE *stream, const char *format, ...);
 /** @brief Mock macro for fprintf_s */
 #define fprintf_s mock_fprintf_s
+#endif
+#if defined(C89STRINGUTILS_HAVE_REALLOCARRAY)
+/** @brief External mock for reallocarray
+ * @param ptr pointer
+ * @param nmemb number of members
+ * @param size size
+ */
+extern void *mock_reallocarray(void *ptr, size_t nmemb, size_t size);
+/** @brief Mock macro for reallocarray */
+#define reallocarray mock_reallocarray
 #endif
 /** @brief Mock macro for malloc */
 #define malloc mock_malloc
@@ -137,7 +166,11 @@ extern int mock_fprintf_s(FILE *stream, const char *format, ...);
 #pragma warning(disable : 4100) /* unreferenced formal parameter */
 #elif defined(__clang__)
 #pragma clang diagnostic push
+#if defined(__has_warning)
+#if __has_warning("-Wnonnull-compare")
 #pragma clang diagnostic ignored "-Wnonnull-compare"
+#endif
+#endif
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #elif defined(__GNUC__) && __GNUC__ >= 7
 #pragma GCC diagnostic push
@@ -222,7 +255,7 @@ C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...) {
     disable : 4244 4702) /* conversion from int to char, unreachable code */
 #endif
 #include "stb_sprintf.h"
-#if defined(C89STRINGUTILS_HAVE_PRAGMA_WARNING)
+#if defined(_MSC_VER) && _MSC_VER >= 1300
 #pragma warning(pop)
 #endif
 #define C89STRINGUTILS_USE_STB_SPRINTF 1
@@ -308,6 +341,9 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strerror_s(char *s,
   {
     char *res = strerror_r(errnum, s, maxsize);
     if (res != s) {
+      if (res == NULL) {
+        return 22; /* EINVAL */
+      }
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
       strncpy_s(s, maxsize, res, maxsize - 1);
 #else
@@ -318,7 +354,13 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strerror_s(char *s,
     return 0;
   }
 #else
-  return strerror_r(errnum, s, maxsize);
+  {
+    int rc = strerror_r(errnum, s, maxsize);
+    if (rc != 0) {
+      return 22; /* EINVAL */
+    }
+    return 0;
+  }
 #endif
 #else
   {
@@ -1127,7 +1169,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
   return 0;
 }
 
-#if defined(C89STRINGUTILS_HAVE_PRAGMA_WARNING)
+#if defined(_MSC_VER) && _MSC_VER >= 1300
 #pragma warning(pop)
 #elif defined(__clang__)
 #pragma clang diagnostic pop

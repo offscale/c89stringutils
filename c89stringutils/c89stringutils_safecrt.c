@@ -354,11 +354,11 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_freopen_s(FILE **pFile,
                                                        const char *filename,
                                                        const char *mode,
                                                        FILE *stream) {
-  if (!pFile || !mode || !stream) {
+  if (!pFile || !filename || !mode || !stream) {
     if (pFile)
       *pFile = NULL;
     c89stringutils_invoke_constraint_handler_s(
-        "freopen_s: pFile, mode, or stream is null", NULL, EINVAL);
+        "freopen_s: pFile, filename, mode, or stream is null", NULL, EINVAL);
     return EINVAL;
   }
 #if defined(C89STRINGUTILS_HAVE_FREOPEN_S)
