@@ -15,7 +15,7 @@ target_include_directories(
         "${LIBRARY_NAME}"
         PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-        "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>"
+        "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
 )
 
@@ -27,7 +27,7 @@ set_target_properties(
 )
 
 include(GenerateExportHeader)
-set(_export_file "${CMAKE_BINARY_DIR}/${LIBRARY_NAME}_export.h")
+set(_export_file "${PROJECT_BINARY_DIR}/${LIBRARY_NAME}_export.h")
 generate_export_header("${LIBRARY_NAME}" EXPORT_FILE_NAME "${_export_file}")
 
 #################
@@ -62,7 +62,7 @@ install(FILES ${Header_Files} "${_export_file}"
 
 option(C89STRINGUTILS_BUILD_AMALGAMATION "Generate STB-style single-file header amalgamation" OFF)
 if (C89STRINGUTILS_BUILD_AMALGAMATION)
-    set(amalg_file "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_amalgamation.h")
+    set(amalg_file "${PROJECT_BINARY_DIR}/${PROJECT_NAME}_amalgamation.h")
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
         "c89stringutils_export_pregen.h"
         "c89stringutils_log.h"
@@ -78,7 +78,7 @@ if (C89STRINGUTILS_BUILD_AMALGAMATION)
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_safecrt.c" amalg_safecrt_source)
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stb_sprintf.h" amalg_stb)
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/c89stringutils_string_extras.c" amalg_source)
-    file(READ "${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.h" amalg_config)
+    file(READ "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.h" amalg_config)
 
     string(REPLACE "#include \"c89stringutils_export.h\"" "" amalg_header "${amalg_header}")
     string(REPLACE "#include \"c89stringutilsConfig.h\"" "" amalg_header "${amalg_header}")

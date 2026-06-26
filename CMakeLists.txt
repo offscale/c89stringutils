@@ -13,11 +13,11 @@ if (NOT DEFINED MSVC_VERSION
 elseif ((MSVC_VERSION STRLESS_EQUAL "1900"
          OR CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom"
          OR CYGWIN)
-        AND NOT EXISTS "${CMAKE_BINARY_DIR}/c89stringutils_export.h")
-    file(COPY "${CMAKE_SOURCE_DIR}/c89stringutils/c89stringutils_export_pregen.h"
-            DESTINATION "${CMAKE_BINARY_DIR}")
-    file(RENAME "${CMAKE_BINARY_DIR}/c89stringutils_export_pregen.h"
-            "${CMAKE_BINARY_DIR}/c89stringutils_export.h")
+        AND NOT EXISTS "${PROJECT_BINARY_DIR}/c89stringutils_export.h")
+    file(COPY "${PROJECT_SOURCE_DIR}/c89stringutils/c89stringutils_export_pregen.h"
+            DESTINATION "${PROJECT_BINARY_DIR}")
+    file(RENAME "${PROJECT_BINARY_DIR}/c89stringutils_export_pregen.h"
+            "${PROJECT_BINARY_DIR}/c89stringutils_export.h")
 endif ()
 if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
     set(gcc_like "$<COMPILE_LANG_AND_ID:C,CXX,ARMClang,AppleClang,Clang,GNU,LCC>")
