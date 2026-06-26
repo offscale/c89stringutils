@@ -490,9 +490,17 @@ c89stringutils_vsnprintf(char *s, size_t n, const char *format, va_list arg)
  * respectively, to be less than, to match, or be greater than s2.
  */
 #if defined(C89STRINGUTILS_HAVE__STRNICMP)
-#define c89stringutils_strncasecmp _strnicmp
+#define c89stringutils_strncasecmp(s1, s2, n)                                  \
+  (((s1) == NULL && (s2) == NULL) ? 0                                          \
+   : ((s1) == NULL)               ? -1                                         \
+   : ((s2) == NULL)               ? 1                                          \
+                                  : _strnicmp((s1), (s2), (n)))
 #elif defined(C89STRINGUTILS_HAVE_STRNCASECMP)
-#define c89stringutils_strncasecmp strncasecmp
+#define c89stringutils_strncasecmp(s1, s2, n)                                  \
+  (((s1) == NULL && (s2) == NULL) ? 0                                          \
+   : ((s1) == NULL)               ? -1                                         \
+   : ((s2) == NULL)               ? 1                                          \
+                                  : strncasecmp((s1), (s2), (n)))
 #else
 extern C89STRINGUTILS_EXPORT int
 c89stringutils_strncasecmp(const char *s1, const char *s2, size_t n);
@@ -506,9 +514,17 @@ c89stringutils_strncasecmp(const char *s1, const char *s2, size_t n);
  * respectively, to be less than, to match, or be greater than s2.
  */
 #if defined(C89STRINGUTILS_HAVE__STRICMP)
-#define c89stringutils_strcasecmp _stricmp
+#define c89stringutils_strcasecmp(s1, s2)                                      \
+  (((s1) == NULL && (s2) == NULL) ? 0                                          \
+   : ((s1) == NULL)               ? -1                                         \
+   : ((s2) == NULL)               ? 1                                          \
+                                  : _stricmp((s1), (s2)))
 #elif defined(C89STRINGUTILS_HAVE_STRCASECMP)
-#define c89stringutils_strcasecmp strcasecmp
+#define c89stringutils_strcasecmp(s1, s2)                                      \
+  (((s1) == NULL && (s2) == NULL) ? 0                                          \
+   : ((s1) == NULL)               ? -1                                         \
+   : ((s2) == NULL)               ? 1                                          \
+                                  : strcasecmp((s1), (s2)))
 #else
 extern C89STRINGUTILS_EXPORT int c89stringutils_strcasecmp(const char *s1,
                                                            const char *s2);
@@ -524,7 +540,8 @@ extern C89STRINGUTILS_EXPORT int c89stringutils_strcasecmp(const char *s1,
  * found.
  */
 #if defined(C89STRINGUTILS_HAVE_STRNSTR)
-#define c89stringutils_strnstr strnstr
+#define c89stringutils_strnstr(b, t, l)                                        \
+  (((b) == NULL || (t) == NULL) ? NULL : strnstr((b), (t), (l)))
 #else
 extern C89STRINGUTILS_EXPORT char *c89stringutils_strnstr(const char *buffer,
                                                           const char *target,
@@ -539,7 +556,8 @@ extern C89STRINGUTILS_EXPORT char *c89stringutils_strnstr(const char *buffer,
  * found.
  */
 #if defined(C89STRINGUTILS_HAVE_STRCASESTR)
-#define c89stringutils_strcasestr strcasestr
+#define c89stringutils_strcasestr(h, n)                                        \
+  (((h) == NULL || (n) == NULL) ? NULL : strcasestr((h), (n)))
 #else
 extern C89STRINGUTILS_EXPORT char *c89stringutils_strcasestr(const char *h,
                                                              const char *n);

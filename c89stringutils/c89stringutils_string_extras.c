@@ -884,6 +884,7 @@ C89STRINGUTILS_EXPORT size_t c89stringutils_strerrorlen_s(errno_t errnum) {
     return res ? strlen(res) : 0;
 #endif
 #else
+    int rc;
     errbuf[0] = '\0';
     rc = strerror_r(errnum, errbuf, sizeof(errbuf));
     errbuf[sizeof(errbuf) - 1] = '\0';
