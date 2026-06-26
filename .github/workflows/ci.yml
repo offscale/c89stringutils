@@ -27,6 +27,7 @@ jobs:
       - name: Create Test File
         run: |
           cat << 'EOF' > test_amalg.c
+          #define _GNU_SOURCE
           #define C89STRINGUTILS_IMPLEMENTATION
           #include "build/c89stringutils/c89stringutils_amalgamation.h"
           #include <stdio.h>
@@ -35,7 +36,7 @@ jobs:
           int main(void) {
             char* x = NULL;
             int rc = c89stringutils_asprintf(&x, "hello %s", "world");
-            if (rc > 0 && x != NULL) {
+            if (rc == 0 && x != NULL) {
               printf("%s\n", x);
               free(x);
               return 0;

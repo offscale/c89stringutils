@@ -560,7 +560,7 @@ c89stringutils_strerrorlen_s(errno_t errnum);
  * stored.
  * @param fmt The format string.
  * @param ap The va_list of arguments.
- * @return The number of characters printed, or -1 on error.
+ * @return 0 on success, or -1 on error.
  */
 extern C89STRINGUTILS_EXPORT int
 c89stringutils_vasprintf(char **str, const char *fmt, va_list ap)
@@ -572,7 +572,7 @@ c89stringutils_vasprintf(char **str, const char *fmt, va_list ap)
  * stored.
  * @param fmt The format string.
  * @param ... The arguments.
- * @return The number of characters printed, or -1 on error.
+ * @return 0 on success, or -1 on error.
  */
 extern C89STRINGUTILS_EXPORT int c89stringutils_asprintf(char **str,
                                                          const char *fmt, ...)
@@ -600,7 +600,7 @@ extern C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto,
  * stored.
  * @param fmt The format string.
  * @param ap The va_list of arguments.
- * @return The number of characters printed, or -1 on error.
+ * @return 0 on success, or -1 on error.
  */
 extern C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt,
                                            va_list ap)
@@ -612,7 +612,7 @@ extern C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt,
  * stored.
  * @param fmt The format string.
  * @param ... The arguments.
- * @return The number of characters printed, or -1 on error.
+ * @return 0 on success, or -1 on error.
  */
 extern C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...)
     C89STRINGUTILS_FORMAT_PRINTF(2, 3);
@@ -624,7 +624,7 @@ extern C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...)
  * @param unto The string to append to.
  * @param fmt The format string.
  * @param ... The arguments.
- * @return The number of characters printed, or -1 on error.
+ * @return 0 on success, or -1 on error.
  */
 extern C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...)
     C89STRINGUTILS_FORMAT_PRINTF(2, 3);
