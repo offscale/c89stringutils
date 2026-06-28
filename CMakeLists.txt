@@ -295,7 +295,7 @@ check_c_source_compiles("
 # configure a header file to pass the version number only
 configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in"
-        "${PROJECT_NAME}Config.h"
+        "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.h"
 )
 
 add_subdirectory("${PROJECT_NAME}")
