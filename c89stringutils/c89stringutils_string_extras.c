@@ -1044,6 +1044,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
 #else
   {
     const char *errstr = strerror(errno);
+    (void)errstr;
     LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc,
               errstr ? errstr : "");
   }
@@ -1104,6 +1105,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_asprintf(char **str, const char *fmt,
 #endif
 #else
     const char *errstr = strerror(errno);
+    (void)errstr;
     LOG_DEBUG("asprintf failed with rc=%d, error=%s", rc, errstr ? errstr : "");
 #endif
   }
