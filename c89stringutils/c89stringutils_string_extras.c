@@ -270,6 +270,10 @@ C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...) {
  * @param args The va_list of arguments.
  * @return The number of characters written, or a negative value on error.
  */
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
 static int fallback_vsnprintf(char *buffer, size_t count, const char *format,
                               va_list args) {
 #ifdef C89STRINGUTILS_TEST_MOCKS
@@ -329,6 +333,9 @@ static int fallback_vsnprintf(char *buffer, size_t count, const char *format,
   return rc;
 #endif
 }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #if !defined(C89STRINGUTILS_HAVE_STRERROR_S)
 C89STRINGUTILS_EXPORT errno_t c89stringutils_strerror_s(char *s,
