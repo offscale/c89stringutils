@@ -10,13 +10,23 @@ file(MAKE_DIRECTORY "${DOWNLOAD_DIR}")
 
 if (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
     include(FetchContent)
-    FetchContent_Declare(
-            greatest
-            URL "https://raw.githubusercontent.com/SamuelMarks/greatest/master/greatest.h"
-            DOWNLOAD_NO_EXTRACT TRUE
-    )
-    FetchContent_MakeAvailable(greatest)
-    file(COPY "${greatest_SOURCE_DIR}/greatest.h" DESTINATION "${DOWNLOAD_DIR}")
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../../greatest")
+        message(STATUS "Fetching greatest from local directory")
+        FetchContent_Declare(
+                greatest
+                SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../greatest"
+        )
+        FetchContent_MakeAvailable(greatest)
+        file(COPY "${greatest_SOURCE_DIR}/greatest.h" DESTINATION "${DOWNLOAD_DIR}")
+    else()
+        FetchContent_Declare(
+                greatest
+                URL "https://raw.githubusercontent.com/SamuelMarks/greatest/master/greatest.h"
+                DOWNLOAD_NO_EXTRACT TRUE
+        )
+        FetchContent_MakeAvailable(greatest)
+        file(COPY "${greatest_SOURCE_DIR}/greatest.h" DESTINATION "${DOWNLOAD_DIR}")
+    endif()
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 
 #########
@@ -47,7 +57,7 @@ target_include_directories(
 
 add_test(NAME "${EXEC_NAME}" COMMAND "${EXEC_NAME}")
 
-if (C89STRINGUTILS_BUILD_AMALGAMATION)
+if (${PROJECT_PREFIX}_BUILD_AMALGAMATION)
     add_executable("test_amalg" "${CMAKE_CURRENT_SOURCE_DIR}/test_amalg.c")
     target_include_directories("test_amalg" PRIVATE "${PROJECT_BINARY_DIR}")
     add_test(NAME "test_amalg" COMMAND "test_amalg")

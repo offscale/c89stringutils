@@ -198,6 +198,8 @@ TEST x_strerror_s_should_succeed(void) {
 /**
  * @brief Wrapper for vsnprintf_s for testing.
  */
+static int test_vsnprintf_s_wrapper(char *s, size_t n, const char *format, ...)
+    C89STRINGUTILS_FORMAT_PRINTF(3, 4);
 static int test_vsnprintf_s_wrapper(char *s, size_t n, const char *format,
                                     ...) {
   int rc;
@@ -211,6 +213,8 @@ static int test_vsnprintf_s_wrapper(char *s, size_t n, const char *format,
 /**
  * @brief Wrapper for vsnprintf for testing.
  */
+static int test_vsnprintf_wrapper(char *s, size_t n, const char *format, ...)
+    C89STRINGUTILS_FORMAT_PRINTF(3, 4);
 static int test_vsnprintf_wrapper(char *s, size_t n, const char *format, ...) {
   int rc;
   va_list args;
@@ -291,6 +295,8 @@ TEST x_strerrorlen_s_should_succeed(void) {
  * @param ... The arguments.
  * @return exit code
  */
+static int test_vasprintf_wrapper(char **str, const char *fmt, ...)
+    C89STRINGUTILS_FORMAT_PRINTF(2, 3);
 static int test_vasprintf_wrapper(char **str, const char *fmt, ...) {
   int rc;
   va_list ap;

@@ -144,6 +144,7 @@ extern void *mock_reallocarray(void *ptr, size_t nmemb, size_t size);
 /** @brief Mock macro for strerror */
 #define strerror mock_strerror
 /** @brief Mock macro for vsnprintf */
+#undef vsnprintf
 #define vsnprintf mock_vsnprintf
 /** @brief Mock macro for _vsnprintf */
 #define _vsnprintf mock_vsnprintf
@@ -152,6 +153,7 @@ extern void *mock_reallocarray(void *ptr, size_t nmemb, size_t size);
 /** @brief Mock macro for _vsnprintf_s */
 #define _vsnprintf_s mock_vsnprintf_s
 /** @brief Mock macro for vsprintf */
+#undef vsprintf
 #define vsprintf mock_vsprintf
 /** @brief Mock macro for vfprintf */
 #define vfprintf mock_vfprintf
@@ -160,21 +162,8 @@ extern void *mock_reallocarray(void *ptr, size_t nmemb, size_t size);
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER >= 1300
-#pragma warning(push)
-#pragma warning(disable : 4127) /* conditional expression is constant */
-#pragma warning(disable : 4100) /* unreferenced formal parameter */
 #elif defined(__clang__)
-#pragma clang diagnostic push
-#if defined(__has_warning)
-#if __has_warning("-Wnonnull-compare")
-#pragma clang diagnostic ignored "-Wnonnull-compare"
-#endif
-#endif
-#pragma clang diagnostic ignored "-Wunused-parameter"
 #elif defined(__GNUC__) && __GNUC__ >= 7
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnonnull-compare"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 #elif defined(__SUNPRO_C)
 #pragma error_messages(off, E_STATEMENT_NOT_REACHED)
 #endif
@@ -249,14 +238,10 @@ C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...) {
  * if available */
 #undef STB_SPRINTF_NOFLOAT
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(                                                               \
-    disable : 4244 4702) /* conversion from int to char, unreachable code */
 #endif
 #include "stb_sprintf.h"
 /* clang-format on */
 #if defined(_MSC_VER) && _MSC_VER >= 1300
-#pragma warning(pop)
 #endif
 #define C89STRINGUTILS_USE_STB_SPRINTF 1
 #endif
@@ -271,9 +256,9 @@ C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...) {
  * @return The number of characters written, or a negative value on error.
  */
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4996)
 #endif
+static int fallback_vsnprintf(char *buffer, size_t count, const char *format,
+                              va_list args) C89STRINGUTILS_FORMAT_PRINTF(3, 0);
 static int fallback_vsnprintf(char *buffer, size_t count, const char *format,
                               va_list args) {
 #ifdef C89STRINGUTILS_TEST_MOCKS
@@ -334,7 +319,6 @@ static int fallback_vsnprintf(char *buffer, size_t count, const char *format,
 #endif
 }
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
 
 #if !defined(C89STRINGUTILS_HAVE_STRERROR_S)
@@ -638,8 +622,6 @@ C89STRINGUTILS_EXPORT int c89stringutils_vsnprintf_s(char *s, rsize_t n,
 #endif
 
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4996) /* disable secure warnings for fallbacks */
 #endif
 C89STRINGUTILS_EXPORT int
 c89stringutils_vsnprintf(char *s, size_t n, const char *format, va_list arg) {
@@ -655,7 +637,6 @@ c89stringutils_vsnprintf(char *s, size_t n, const char *format, va_list arg) {
 #endif
 }
 #if defined(_MSC_VER)
-#pragma warning(pop)
 #endif
 
 #if !defined(C89STRINGUTILS_HAVE_SNPRINTF_S) || defined(_WIN32)
@@ -1180,11 +1161,8 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
 }
 
 #if defined(_MSC_VER) && _MSC_VER >= 1300
-#pragma warning(pop)
 #elif defined(__clang__)
-#pragma clang diagnostic pop
 #elif defined(C89STRINGUTILS_HAVE_PRAGMA_GCC_DIAGNOSTIC)
-#pragma GCC diagnostic pop
 #endif
 
 #if !defined(C89STRINGUTILS_HAVE_VASPRINTF) ||                                 \

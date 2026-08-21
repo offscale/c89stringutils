@@ -11,8 +11,6 @@
 /* clang-format on */
 
 #if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4996) /* disable secure warnings for fallbacks */
 #endif
 
 #ifdef C89STRINGUTILS_TEST_MOCKS
@@ -154,6 +152,8 @@ static int minimal_vsscanf(const char *buffer, const char *format,
  * @param args The va_list of arguments.
  * @return The number of items scanned, or -1 on error.
  */
+static int minimal_vfscanf(FILE *stream, const char *format, va_list args)
+    C89STRINGUTILS_FORMAT_SCANF(2, 0);
 static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
   int count = 0;
   const char *p = format;
@@ -209,14 +209,10 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
         strncpy(token, start, len);
         token[len] = '\0';
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#pragma GCC diagnostic ignored "-Wformat-security"
 #endif
         if (fscanf(stream, token) < 0)
           return count;
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
 #endif
         continue;
       }
@@ -307,12 +303,9 @@ C89STRINGUTILS_EXPORT int c89stringutils_sscanf_s(const char *buffer,
    */
 #if defined(C89STRINGUTILS_HAVE_VSSCANF)
 #if defined(__clang__) || defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #endif
   ret = vsscanf(buffer, format, args);
 #if defined(__clang__) || defined(__GNUC__)
-#pragma GCC diagnostic pop
 #endif
 #else
   ret = minimal_vsscanf(buffer, format, args);
@@ -337,12 +330,9 @@ C89STRINGUTILS_EXPORT int c89stringutils_fscanf_s(FILE *stream,
 #else
 #if defined(C89STRINGUTILS_HAVE_VFSCANF)
 #if defined(__clang__) || defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #endif
   ret = vfscanf(stream, format, args);
 #if defined(__clang__) || defined(__GNUC__)
-#pragma GCC diagnostic pop
 #endif
 #else
   ret = minimal_vfscanf(stream, format, args);

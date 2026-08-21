@@ -86,7 +86,8 @@ c89stringutils_invoke_constraint_handler_s(const char *msg, void *ptr,
  * @return The number of items scanned.
  */
 C89STRINGUTILS_EXPORT int c89stringutils_sscanf_s(const char *buffer,
-                                                  const char *format, ...);
+                                                  const char *format, ...)
+    C89STRINGUTILS_FORMAT_SCANF(2, 3);
 
 /**
  * @brief Safe fscanf wrapper.
@@ -96,7 +97,8 @@ C89STRINGUTILS_EXPORT int c89stringutils_sscanf_s(const char *buffer,
  * @return The number of items scanned.
  */
 C89STRINGUTILS_EXPORT int c89stringutils_fscanf_s(FILE *stream,
-                                                  const char *format, ...);
+                                                  const char *format, ...)
+    C89STRINGUTILS_FORMAT_SCANF(2, 3);
 
 /**
  * @brief Safe fopen wrapper.

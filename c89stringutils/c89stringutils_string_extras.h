@@ -234,8 +234,11 @@ typedef unsigned long c89stringutils_uint64_t;
 #if defined(C89STRINGUTILS_HAVE_ATTR_FORMAT)
 #define C89STRINGUTILS_FORMAT_PRINTF(fmt_idx, arg_idx)                         \
   __attribute__((format(printf, fmt_idx, arg_idx)))
+#define C89STRINGUTILS_FORMAT_SCANF(fmt_idx, arg_idx)                          \
+  __attribute__((format(scanf, fmt_idx, arg_idx)))
 #else
 #define C89STRINGUTILS_FORMAT_PRINTF(fmt_idx, arg_idx)
+#define C89STRINGUTILS_FORMAT_SCANF(fmt_idx, arg_idx)
 #endif
 
 #if defined(C89STRINGUTILS_HAVE_ATTR_NONNULL)

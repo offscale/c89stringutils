@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.11...3.28)
 project(c89stringutils VERSION 0.0.2 LANGUAGES C)
 
+string(TOUPPER "${PROJECT_NAME}" PROJECT_PREFIX)
+string(REPLACE "-" "_" PROJECT_PREFIX "${PROJECT_PREFIX}")
+
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 set(CMAKE_C_STANDARD 90)
@@ -25,7 +28,7 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
     target_compile_options(
             "${PROJECT_NAME}_compiler_flags"
             INTERFACE
-            "$<$<AND:${gcc_like},$<CONFIG:Debug>>:$<BUILD_INTERFACE:-Wshadow;-Wformat=2;-Wall;-Wno-missing-braces;-Wno-long-long;-pedantic;>>"
+            "$<$<AND:${gcc_like},$<CONFIG:Debug>>:$<BUILD_INTERFACE:-Wshadow;-Wformat=2;-Wall;-pedantic;>>"
             "$<${msvc}:$<BUILD_INTERFACE:-W4;-WX;-Zi;-permissive->>"
     )
     target_link_options(
@@ -268,7 +271,6 @@ check_c_source_compiles("
 
 check_c_source_compiles("
     #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored \"-Wunused-parameter\"
     int main(void) { return 0; }
 " C89STRINGUTILS_HAVE_PRAGMA_GCC_DIAGNOSTIC)
 
@@ -301,34 +303,33 @@ configure_file(
 add_subdirectory("${PROJECT_NAME}")
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    option(BUILD_TESTING_${PROJECT_NAME} "Build the tests" ON)
+    option(BUILD_TESTING_${PROJECT_PREFIX} "Build the tests" ON)
 else()
-    option(BUILD_TESTING_${PROJECT_NAME} "Build the tests" OFF)
+    option(BUILD_TESTING_${PROJECT_PREFIX} "Build the tests" OFF)
 endif()
 
-set(CDD_CHARSET "Unicode" CACHE STRING "Charset to use: Unicode or ANSI")
-set(CDD_THREADING "Multi-threaded" CACHE STRING "Threading: Multi-threaded or Single-threaded")
-set(CDD_MSVC_RTC "" CACHE STRING "MSVC Runtime Checks: RTC1, RTCs, RTCu, or empty")
-set(CDD_LTO OFF CACHE BOOL "Enable Link-Time Optimization (LTO)")
-set(CDD_DEPS "System" CACHE STRING "Dependency resolution strategy")
+set(${PROJECT_PREFIX}_CHARSET "Unicode" CACHE STRING "Charset to use: Unicode or ANSI")
+set(${PROJECT_PREFIX}_THREADING "Multi-threaded" CACHE STRING "Threading: Multi-threaded or Single-threaded")
+set(${PROJECT_PREFIX}_MSVC_RTC "" CACHE STRING "MSVC Runtime Checks: RTC1, RTCs, RTCu, or empty")
+set(${PROJECT_PREFIX}_LTO OFF CACHE BOOL "Enable Link-Time Optimization (LTO)")
+set(${PROJECT_PREFIX}_DEPS "System" CACHE STRING "Dependency resolution strategy")
 
-set(CDD_CRT_LINKAGE "Shared" CACHE STRING "MSVC CRT Linkage: Static or Shared")
+set(${PROJECT_PREFIX}_CRT_LINKAGE "Shared" CACHE STRING "MSVC CRT Linkage: Static or Shared")
 if (MSVC)
-    if (CDD_CRT_LINKAGE STREQUAL "Static")
+    if (${PROJECT_PREFIX}_CRT_LINKAGE STREQUAL "Static")
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 endif()
 
-
-if (CDD_CHARSET STREQUAL "Unicode")
+if (${PROJECT_PREFIX}_CHARSET STREQUAL "Unicode")
     add_compile_definitions(UNICODE _UNICODE)
 endif()
-if (MSVC AND CDD_MSVC_RTC)
-    add_compile_options("/${CDD_MSVC_RTC}")
+if (MSVC AND ${PROJECT_PREFIX}_MSVC_RTC)
+    add_compile_options("/${${PROJECT_PREFIX}_MSVC_RTC}")
 endif()
-if (CDD_LTO)
+if (${PROJECT_PREFIX}_LTO)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT ipo_supported)
     if(ipo_supported)
@@ -336,12 +337,13 @@ if (CDD_LTO)
     endif()
 endif()
 
-if (BUILD_TESTING_${PROJECT_NAME})
+if (BUILD_TESTING_${PROJECT_PREFIX})
+    enable_testing()
     include(CTest)
     if (BUILD_TESTING)
         add_subdirectory("${PROJECT_NAME}/tests")
-    endif (BUILD_TESTING)
-endif (BUILD_TESTING_${PROJECT_NAME})
+    endif()
+endif()
 
 ###########
 # Install #

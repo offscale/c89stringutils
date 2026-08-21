@@ -3,7 +3,6 @@
  * @brief Main entry point for greatest tests.
  */
 #if defined(_MSC_VER)
-#pragma warning(disable : 4127) /* conditional expression is constant */
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -113,6 +112,29 @@ static int do_mock_vsnprintf(size_t size, int ret) {
  * @param ap the va_list
  * @return the written length
  */
+int mock_vsnprintf(char *str, size_t size, const char *format, va_list ap)
+    C89STRINGUTILS_FORMAT_PRINTF(3, 0);
+int mock_vscprintf(const char *format, va_list ap)
+    C89STRINGUTILS_FORMAT_PRINTF(1, 0);
+int mock_vsnprintf_s(char *buffer, size_t sizeOfBuffer, size_t count,
+                     const char *format, va_list ap)
+    C89STRINGUTILS_FORMAT_PRINTF(4, 0);
+int mock_vsprintf(char *buffer, const char *format, va_list ap)
+    C89STRINGUTILS_FORMAT_PRINTF(2, 0);
+int mock_vfprintf(FILE *stream, const char *format, va_list ap)
+    C89STRINGUTILS_FORMAT_PRINTF(2, 0);
+int mock_fprintf(FILE *stream, const char *format, ...)
+    C89STRINGUTILS_FORMAT_PRINTF(2, 3);
+int mock_vfprintf_s(FILE *stream, const char *format, va_list ap)
+    C89STRINGUTILS_FORMAT_PRINTF(2, 0);
+int mock_fprintf_s(FILE *stream, const char *format, ...)
+    C89STRINGUTILS_FORMAT_PRINTF(2, 3);
+
+#undef vsnprintf
+#undef vsprintf
+#undef vfprintf
+#undef vscprintf
+
 int mock_vsnprintf(char *str, size_t size, const char *format, va_list ap) {
   int ret = -1;
   if (str == NULL) {

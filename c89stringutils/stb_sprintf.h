@@ -3,9 +3,6 @@ extern "C" {
 #endif /* __cplusplus */
 /* clang-format off */
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wlong-long"
-#pragma GCC diagnostic ignored "-Wsign-compare"
 #endif
 
 /* stb_sprintf - v1.10 - public domain snprintf() implementation */
@@ -1920,7 +1917,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 */
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
 #endif
 /* clang-format on */
 
