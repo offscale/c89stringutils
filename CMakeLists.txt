@@ -263,17 +263,6 @@ check_c_source_compiles("
     int main(void) { return 0; }
 " C89STRINGUTILS_HAVE_SAL)
 
-check_c_source_compiles("
-    #pragma warning(push)
-    #pragma warning(disable: 4127)
-    int main(void) { return 0; }
-" C89STRINGUTILS_HAVE_PRAGMA_WARNING)
-
-check_c_source_compiles("
-    #pragma GCC diagnostic push
-    int main(void) { return 0; }
-" C89STRINGUTILS_HAVE_PRAGMA_GCC_DIAGNOSTIC)
-
 check_type_size("long long" SIZEOF_LONG_LONG)
 if(HAVE_SIZEOF_LONG_LONG)
     set(C89STRINGUTILS_HAVE_LONG_LONG 1)

@@ -161,13 +161,6 @@ extern void *mock_reallocarray(void *ptr, size_t nmemb, size_t size);
 #define fprintf mock_fprintf
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER >= 1300
-#elif defined(__clang__)
-#elif defined(__GNUC__) && __GNUC__ >= 7
-#elif defined(__SUNPRO_C)
-#pragma error_messages(off, E_STATEMENT_NOT_REACHED)
-#endif
-
 #ifndef VA_COPY
 #if defined(C89STRINGUTILS_HAVE_VA_COPY)
 /** @brief Safely copy va_list */
@@ -1159,11 +1152,6 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
 
   return 0;
 }
-
-#if defined(_MSC_VER) && _MSC_VER >= 1300
-#elif defined(__clang__)
-#elif defined(C89STRINGUTILS_HAVE_PRAGMA_GCC_DIAGNOSTIC)
-#endif
 
 #if !defined(C89STRINGUTILS_HAVE_VASPRINTF) ||                                 \
     !defined(C89STRINGUTILS_HAVE_ASPRINTF)

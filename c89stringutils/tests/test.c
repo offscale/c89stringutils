@@ -2,11 +2,6 @@
  * @file test.c
  * @brief Main entry point for greatest tests.
  */
-#if defined(_MSC_VER)
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-#endif
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -202,7 +197,13 @@ int mock_vsnprintf_s(char *buffer, size_t sizeOfBuffer, size_t count,
  * @return the written length
  */
 int mock_vsprintf(char *buffer, const char *format, va_list ap) {
-  int ret = vsprintf(buffer, format, ap);
+  int ret;
+#if defined(__APPLE__) || defined(__CYGWIN__) || defined(__linux__) ||         \
+    defined(_WIN32)
+  ret = vsnprintf(buffer, 9999, format, ap);
+#else
+  ret = vsprintf(buffer, format, ap);
+#endif
   return do_mock_vsnprintf(9999, ret); /* size unknown, pass large */
 }
 
@@ -291,7 +292,17 @@ int mock_strerror_s(char *buffer, size_t sizeInBytes, int errnum) {
 char *mock_strerror(int errnum) {
   if (g_mock_strerror_null)
     return NULL;
+#if defined(_MSC_VER)
+  {
+    static char buf[256];
+    if (strerror_s(buf, sizeof(buf), errnum) != 0) {
+      return NULL;
+    }
+    return buf;
+  }
+#else
   return strerror(errnum);
+#endif
 }
 
 #if defined(C89STRINGUTILS_HAVE_STRERROR_R)
@@ -316,7 +327,16 @@ FILE *mock_fopen(const char *filename, const char *mode) {
     errno = 12;
     return NULL;
   }
+#if defined(_MSC_VER)
+  {
+    FILE *f = NULL;
+    if (fopen_s(&f, filename, mode) != 0)
+      return NULL;
+    return f;
+  }
+#else
   return fopen(filename, mode);
+#endif
 }
 
 FILE *mock_freopen(const char *filename, const char *mode, FILE *stream) {
@@ -324,7 +344,16 @@ FILE *mock_freopen(const char *filename, const char *mode, FILE *stream) {
     errno = 12;
     return NULL;
   }
+#if defined(_MSC_VER)
+  {
+    FILE *f = NULL;
+    if (freopen_s(&f, filename, mode, stream) != 0)
+      return NULL;
+    return f;
+  }
+#else
   return freopen(filename, mode, stream);
+#endif
 }
 
 FILE *mock_tmpfile(void) {
@@ -332,7 +361,17 @@ FILE *mock_tmpfile(void) {
     errno = 12;
     return NULL;
   }
+#if defined(_MSC_VER)
+  {
+    FILE *f = NULL;
+    if (tmpfile_s(&f) != 0) {
+      return NULL;
+    }
+    return f;
+  }
+#else
   return tmpfile();
+#endif
 }
 
 #if defined(_MSC_VER)

@@ -392,6 +392,7 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_tmpfile_s(FILE **pFile) {
 #if defined(C89STRINGUTILS_HAVE_TMPFILE_S)
   {
     errno_t rc = tmpfile_s(pFile);
+#ifdef __MINGW32__
     /* Workaround for MinGW bug where tmpfile_s returns 0 but leaves pFile NULL
      */
     if (rc == 0 && *pFile == NULL) {
@@ -399,10 +400,16 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_tmpfile_s(FILE **pFile) {
       if (*pFile == NULL)
         return errno ? errno : 5; /* EIO fallback */
     }
+#endif
     return rc;
   }
 #else
+#if defined(_MSC_VER)
+  if (tmpfile_s(pFile) != 0)
+    *pFile = NULL;
+#else
   *pFile = tmpfile();
+#endif
   if (*pFile == NULL)
     return errno;
   return 0;
