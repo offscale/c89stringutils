@@ -225,14 +225,17 @@ STBSP__PUBLICDEC void STB_SPRINTF_DECORATE(set_separators)(char comma, char peri
 #ifdef _MSC_VER
 #define stbsp__uint64 unsigned __int64
 #define stbsp__int64 signed __int64
+#define STBSP_UINT64_LITERAL(x) x ## ui64
 #elif defined(__GNUC__) || defined(__clang__)
 __extension__ typedef unsigned long long stbsp__uint64_type;
 __extension__ typedef signed long long stbsp__int64_type;
 #define stbsp__uint64 stbsp__uint64_type
 #define stbsp__int64 stbsp__int64_type
+#define STBSP_UINT64_LITERAL(x) __extension__ x ## ULL
 #else
 #define stbsp__uint64 unsigned long long
 #define stbsp__int64 signed long long
+#define STBSP_UINT64_LITERAL(x) x ## ULL
 #endif
 #define stbsp__uint16 unsigned short
 
@@ -1589,18 +1592,18 @@ static stbsp__uint64 const stbsp__powten[20] = {
    10000000,
    100000000,
    1000000000,
-   10000000000ULL,
-   100000000000ULL,
-   1000000000000ULL,
-   10000000000000ULL,
-   100000000000000ULL,
-   1000000000000000ULL,
-   10000000000000000ULL,
-   100000000000000000ULL,
-   1000000000000000000ULL,
-   10000000000000000000ULL
+   STBSP_UINT64_LITERAL(10000000000),
+   STBSP_UINT64_LITERAL(100000000000),
+   STBSP_UINT64_LITERAL(1000000000000),
+   STBSP_UINT64_LITERAL(10000000000000),
+   STBSP_UINT64_LITERAL(100000000000000),
+   STBSP_UINT64_LITERAL(1000000000000000),
+   STBSP_UINT64_LITERAL(10000000000000000),
+   STBSP_UINT64_LITERAL(100000000000000000),
+   STBSP_UINT64_LITERAL(1000000000000000000),
+   STBSP_UINT64_LITERAL(10000000000000000000)
 };
-#define stbsp__tento19th (1000000000000000000ULL)
+#define stbsp__tento19th (STBSP_UINT64_LITERAL(1000000000000000000))
 #endif
 
 #define stbsp__ddmulthi(oh, ol, xh, yh)                            \
