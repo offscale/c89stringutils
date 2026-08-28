@@ -135,10 +135,9 @@ int mock_vsnprintf(char *str, size_t size, const char *format, va_list ap) {
   if (str == NULL) {
     /* Need a valid buffer for vsprintf if vsnprintf is missing, but cygwin has
      * vsnprintf */
-#if defined(_MSC_VER)
+#if defined(_WIN32)
     ret = _vscprintf(format, ap);
-#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__) ||       \
-    defined(_WIN32)
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
     ret = vsnprintf(NULL, 0, format, ap);
 #else
     char dummy[1024];
@@ -165,7 +164,7 @@ int mock_vsnprintf(char *str, size_t size, const char *format, va_list ap) {
  */
 int mock_vscprintf(const char *format, va_list ap) {
   int ret = -1;
-#ifdef _MSC_VER
+#if defined(_WIN32)
   ret = _vscprintf(format, ap);
 #else
   ret = vsnprintf(NULL, 0, format, ap);

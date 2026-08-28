@@ -272,7 +272,14 @@ static int fallback_vsnprintf(char *buffer, size_t count, const char *format,
 #if defined(C89STRINGUTILS_HAVE_VSNPRINTF)
     rc = vsnprintf(NULL, 0, format, args);
 #elif defined(C89STRINGUTILS_HAVE__VSNPRINTF)
+#if !defined(_MSC_VER)
     rc = _vsnprintf(NULL, 0, format, args);
+#else
+    /* _vsnprintf(NULL, 0) crashes on older MSVC by invoking the invalid
+       parameter handler. If _vscprintf is not available, we should fallback to
+       a safe mechanism or return -1. */
+    rc = -1;
+#endif
 #endif
 #endif
     if (rc < 0) {
@@ -623,6 +630,11 @@ C89STRINGUTILS_EXPORT int c89stringutils_vsnprintf_s(char *s, rsize_t n,
 #endif
 C89STRINGUTILS_EXPORT int
 c89stringutils_vsnprintf(char *s, size_t n, const char *format, va_list arg) {
+#if defined(_WIN32)
+  if (s == NULL || n == 0) {
+    return fallback_vsnprintf(s, n, format, arg);
+  }
+#endif
 #if defined(C89STRINGUTILS_HAVE_VSNPRINTF)
   return vsnprintf(s, n, format, arg);
 #elif defined(C89STRINGUTILS_HAVE__VSNPRINTF)
