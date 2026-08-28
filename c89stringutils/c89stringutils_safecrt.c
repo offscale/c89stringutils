@@ -104,11 +104,23 @@ static int minimal_vsscanf(const char *buffer, const char *format,
         len = (size_t)(p - start);
         if (len > 60)
           return -1;
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
+        strncpy_s(token, sizeof(token), start, len);
+#else
         strncpy(token, start, len);
         token[len] = '\0';
+#endif
+#if defined(C89STRINGUTILS_HAVE_STRCAT_S)
+        strcat_s(token, sizeof(token), "%n");
+#else
         strcat(token, "%n");
+#endif
         consumed = 0;
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+        if (sscanf_s(b, token, &consumed) < 0 || consumed == 0)
+#else
         if (sscanf(b, token, &consumed) < 0 || consumed == 0)
+#endif
           return count;
         b += consumed;
         continue;
@@ -125,19 +137,44 @@ static int minimal_vsscanf(const char *buffer, const char *format,
         while (*p && *p != ']')
           p++;
       }
-      if (*p)
-        p++;
-      len = (size_t)(p - start);
-      if (len > 60)
-        return -1;
-      strncpy(token, start, len);
-      token[len] = '\0';
-      strcat(token, "%n");
-
-      ptr = va_arg(args, void *);
-      consumed = 0;
-      if (sscanf(b, token, ptr, &consumed) <= 0 || consumed == 0)
-        return count;
+      {
+        char spec = *(p - 1);
+        unsigned sz = 0;
+        if (*p)
+          p++;
+        len = (size_t)(p - start);
+        if (len > 60)
+          return -1;
+        spec = *(p - 1); /* get the specifier */
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
+        strncpy_s(token, sizeof(token), start, len);
+#else
+        strncpy(token, start, len);
+        token[len] = '\0';
+#endif
+#if defined(C89STRINGUTILS_HAVE_STRCAT_S)
+        strcat_s(token, sizeof(token), "%n");
+#else
+        strcat(token, "%n");
+#endif
+        ptr = va_arg(args, void *);
+        if (spec == 's' || spec == 'c' || spec == '[') {
+          sz = va_arg(args, unsigned);
+        }
+        consumed = 0;
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+        if (spec == 's' || spec == 'c' || spec == '[') {
+          if (sscanf_s(b, token, ptr, sz, &consumed) <= 0 || consumed == 0)
+            return count;
+        } else {
+          if (sscanf_s(b, token, ptr, &consumed) <= 0 || consumed == 0)
+            return count;
+        }
+#else
+        if (sscanf(b, token, ptr, &consumed) <= 0 || consumed == 0)
+          return count;
+#endif
+      }
       b += consumed;
       count++;
     }
@@ -206,11 +243,17 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
         len = (size_t)(p - start);
         if (len > 60)
           return -1;
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
+        strncpy_s(token, sizeof(token), start, len);
+#else
         strncpy(token, start, len);
         token[len] = '\0';
-#if defined(__GNUC__) || defined(__clang__)
 #endif
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+        if (fscanf_s(stream, token) < 0)
+#else
         if (fscanf(stream, token) < 0)
+#endif
           return count;
 #if defined(__GNUC__) || defined(__clang__)
 #endif
@@ -228,17 +271,38 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
         while (*p && *p != ']')
           p++;
       }
-      if (*p)
-        p++;
-      len = (size_t)(p - start);
-      if (len > 60)
-        return -1;
-      strncpy(token, start, len);
-      token[len] = '\0';
-
-      ptr = va_arg(args, void *);
-      if (fscanf(stream, token, ptr) <= 0)
-        return count;
+      {
+        char spec = *(p - 1);
+        unsigned sz = 0;
+        if (*p)
+          p++;
+        len = (size_t)(p - start);
+        if (len > 60)
+          return -1;
+        spec = *(p - 1);
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
+        strncpy_s(token, sizeof(token), start, len);
+#else
+        strncpy(token, start, len);
+        token[len] = '\0';
+#endif
+        ptr = va_arg(args, void *);
+        if (spec == 's' || spec == 'c' || spec == '[') {
+          sz = va_arg(args, unsigned);
+        }
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+        if (spec == 's' || spec == 'c' || spec == '[') {
+          if (fscanf_s(stream, token, ptr, sz) <= 0)
+            return count;
+        } else {
+          if (fscanf_s(stream, token, ptr) <= 0)
+            return count;
+        }
+#else
+        if (fscanf(stream, token, ptr) <= 0)
+          return count;
+#endif
+      }
       count++;
     }
   }

@@ -697,7 +697,7 @@ TEST x_mock_failures(void) {
   /* Cover missing paths */
   {
     char dummy[10];
-    snprintf(dummy, 10, "test");
+    c89stringutils_snprintf(dummy, 10, "test");
 #if !defined(C89STRINGUTILS_HAVE_STRCASESTR) ||                                \
     defined(C89STRINGUTILS_FORCE_FALLBACKS)
     c89stringutils_strcasestr(NULL, "a");

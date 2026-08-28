@@ -13,6 +13,11 @@
 #include "c89stringutils_safecrt.h"
 #include "c89stringutils_log.h"
 
+#if defined(_MSC_VER)
+#undef C89STRINGUTILS_HAVE_VSNPRINTF
+#undef C89STRINGUTILS_HAVE__VSNPRINTF
+#endif
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

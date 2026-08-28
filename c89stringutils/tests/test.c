@@ -135,7 +135,9 @@ int mock_vsnprintf(char *str, size_t size, const char *format, va_list ap) {
   if (str == NULL) {
     /* Need a valid buffer for vsprintf if vsnprintf is missing, but cygwin has
      * vsnprintf */
-#if defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__) ||         \
+#if defined(_MSC_VER)
+    ret = _vscprintf(format, ap);
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__) ||       \
     defined(_WIN32)
     ret = vsnprintf(NULL, 0, format, ap);
 #else
@@ -143,7 +145,9 @@ int mock_vsnprintf(char *str, size_t size, const char *format, va_list ap) {
     ret = vsprintf(dummy, format, ap);
 #endif
   } else {
-#if defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__) ||         \
+#if defined(_MSC_VER)
+    ret = _vsnprintf_s(str, size, (size_t)-1, format, ap);
+#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__) ||       \
     defined(_WIN32)
     ret = vsnprintf(str, size, format, ap);
 #else
@@ -198,7 +202,9 @@ int mock_vsnprintf_s(char *buffer, size_t sizeOfBuffer, size_t count,
  */
 int mock_vsprintf(char *buffer, const char *format, va_list ap) {
   int ret;
-#if defined(__APPLE__) || defined(__CYGWIN__) || defined(__linux__) ||         \
+#if defined(_MSC_VER)
+  ret = _vsnprintf_s(buffer, 9999, (size_t)-1, format, ap);
+#elif defined(__APPLE__) || defined(__CYGWIN__) || defined(__linux__) ||       \
     defined(_WIN32)
   ret = vsnprintf(buffer, 9999, format, ap);
 #else
