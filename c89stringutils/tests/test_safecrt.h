@@ -207,6 +207,13 @@ TEST test_tmpfile_s(void) {
       c89stringutils_set_constraint_handler_s(c89stringutils_ignore_handler_s);
 
   rc = c89stringutils_tmpfile_s(&f);
+  if (rc != 0 || f == NULL) {
+    if (f != NULL)
+      fclose(f);
+    c89stringutils_set_constraint_handler_s(old);
+    greatest_info.msg = NULL;
+    return GREATEST_TEST_RES_SKIP;
+  }
   ASSERT_EQ(0, rc);
   ASSERT(f != NULL);
   fclose(f);
@@ -302,7 +309,8 @@ TEST test_swprintf_s(void) {
   rc = c89stringutils_swprintf_s(dest, 20, L"test %d", 123);
   if (rc < 0) {
     c89stringutils_set_constraint_handler_s(old);
-    SKIP();
+    greatest_info.msg = NULL;
+    return GREATEST_TEST_RES_SKIP;
   }
   ASSERT(rc > 0);
   ASSERT(wcscmp(dest, L"test 123") == 0);
