@@ -362,7 +362,7 @@ TEST x_vasprintf_should_fail(void) {
   int rc;
   rc = test_vasprintf_wrapper(NULL, "test %d", 123);
   ASSERT_EQ(-1, rc);
-  rc = test_vasprintf_wrapper(&s, NULL, 123);
+  rc = test_vasprintf_wrapper(&s, NULL);
   ASSERT_EQ(-1, rc);
   PASS();
 }

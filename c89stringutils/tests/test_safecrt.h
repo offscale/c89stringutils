@@ -17,6 +17,7 @@ static int g_constraint_hit = 0;
 jmp_buf g_abort_env;
 int g_aborted = 0;
 
+extern void mock_abort(void);
 void mock_abort(void) {
   g_aborted = 1;
   longjmp(g_abort_env, 1);

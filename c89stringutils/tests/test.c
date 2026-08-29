@@ -33,6 +33,22 @@ int g_mock_strerror_null = 0;
 /** @brief Mock state for log_debug failure */
 int g_mock_log_debug_fail = 0;
 
+void *mock_malloc(size_t size);
+void *mock_realloc(void *ptr, size_t size);
+void *mock_reallocarray(void *ptr, size_t nmemb, size_t size);
+int mock_strerror_s(char *buffer, size_t sizeInBytes, int errnum);
+char *mock_strerror(int errnum);
+#if defined(C89STRINGUTILS_HAVE_STRERROR_R)
+#if defined(C89STRINGUTILS_STRERROR_R_CHAR_P)
+char *mock_strerror_r(int errnum, char *buf, size_t buflen);
+#else
+int mock_strerror_r(int errnum, char *buf, size_t buflen);
+#endif
+#endif
+FILE *mock_fopen(const char *filename, const char *mode);
+FILE *mock_freopen(const char *filename, const char *mode, FILE *stream);
+FILE *mock_tmpfile(void);
+
 /**
  * @brief Mock for malloc
  * @param size the size

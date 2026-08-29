@@ -28,8 +28,8 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
     target_compile_options(
             "${PROJECT_NAME}_compiler_flags"
             INTERFACE
-            "$<$<AND:${gcc_like},$<CONFIG:Debug>>:$<BUILD_INTERFACE:-Wshadow;-Wformat=2;-Wall;-pedantic;>>"
-            "$<${msvc}:$<BUILD_INTERFACE:-W4;-WX;-Zi;-permissive->>"
+            "$<${gcc_like}:$<BUILD_INTERFACE:-Werror;-Wall;-Wextra;-Wpedantic;-Wshadow;-Wformat=2;-Wconversion;-Wcast-align;-Wstrict-prototypes;-Wold-style-definition;-Wmissing-prototypes;-Wmissing-declarations;-Wundef;-Wpointer-arith;-Wcast-qual;-Wwrite-strings>>"
+            "$<${msvc}:$<BUILD_INTERFACE:-W4;-WX;-Zi;$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,19.10>:-permissive->>>"
     )
     target_link_options(
             "${PROJECT_NAME}_compiler_flags"

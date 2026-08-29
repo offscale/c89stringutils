@@ -1206,7 +1206,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
             sn = lead + 1;
             while (lead[0]) {
                stbsp__cb_buf_clamp(i, lead[0]);
-               lead[0] -= (char)i;
+               lead[0] = (char)(lead[0] - i);
                while (i) {
                   *bf++ = *sn++;
                   --i;
@@ -1251,7 +1251,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          while (lead[0]) {
             stbsp__int32 i;
             stbsp__cb_buf_clamp(i, lead[0]);
-            lead[0] -= (char)i;
+            lead[0] = (char)(lead[0] - i);
             while (i) {
                *bf++ = *sn++;
                --i;
