@@ -745,6 +745,9 @@ C89STRINGUTILS_EXPORT int c89stringutils_strcasecmp(const char *s1,
 }
 #endif
 
+/* Helper to remove const without triggering -Wcast-qual */
+#define C89STRINGUTILS_UNCONST(type, ptr) ((type)(size_t)(const void *)(ptr))
+
 #if !defined(C89STRINGUTILS_HAVE_STRNSTR)
 /**
  * @brief Locate a substring in a string, looking at no more than len
@@ -772,7 +775,7 @@ C89STRINGUTILS_EXPORT char *c89stringutils_strnstr(const char *buffer,
   targetLength = strlen(target);
 #endif
   if (targetLength == 0) {
-    return (char *)buffer;
+    return C89STRINGUTILS_UNCONST(char *, buffer);
   }
   remaining = bufferLength;
   for (start = buffer; *start && remaining >= targetLength;
@@ -780,7 +783,7 @@ C89STRINGUTILS_EXPORT char *c89stringutils_strnstr(const char *buffer,
     if (*start == *target) {
       rc = strncmp(start + 1, target + 1, targetLength - 1);
       if (rc == 0) {
-        return (char *)(start);
+        return C89STRINGUTILS_UNCONST(char *, start);
       }
     }
   }
@@ -810,12 +813,12 @@ C89STRINGUTILS_EXPORT char *c89stringutils_strcasestr(const char *h,
   l = strlen(n);
 #endif
   if (l == 0) {
-    return (char *)h;
+    return C89STRINGUTILS_UNCONST(char *, h);
   }
   for (; *h; h++) {
     cmp = c89stringutils_strncasecmp(h, n, l);
     if (cmp == 0) {
-      return (char *)h;
+      return C89STRINGUTILS_UNCONST(char *, h);
     }
   }
   return NULL;

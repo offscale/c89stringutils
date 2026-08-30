@@ -598,7 +598,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          /* get the string */
          s = va_arg(va, char *);
          if (s == 0)
-            s = (char *)"null";
+            s = (char *)(size_t)(const void *)"null";
          /* get the length, limited to desired precision */
          /* always limit to ~0u chars since our counts are 32b */
          l = stbsp__strlen_limited(s, (pr >= 0) ? pr : ~0u);
@@ -637,7 +637,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
       case 'e':              /* float */
       case 'f':              /* float */
          va_arg(va, double); /* eat it */
-         s = (char *)"No float";
+         s = (char *)(size_t)(const void *)"No float";
          l = 8;
          lead[0] = 0;
          tail[0] = 0;
@@ -768,7 +768,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          tail[0] = 0;
          stbsp__lead_sign(fl, lead);
          if (dp == STBSP__SPECIAL) {
-            s = (char *)sn;
+            s = (char *)(size_t)(const void *)sn;
             cs = 0;
             pr = 0;
             goto scopy;
@@ -837,7 +837,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          tail[0] = 0;
          stbsp__lead_sign(fl, lead);
          if (dp == STBSP__SPECIAL) {
-            s = (char *)sn;
+            s = (char *)(size_t)(const void *)sn;
             cs = 0;
             pr = 0;
             goto scopy;

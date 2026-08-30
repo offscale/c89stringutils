@@ -1,4 +1,6 @@
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #define C89STRINGUTILS_IMPLEMENTATION
 /* clang-format off */
 #include "c89stringutils_amalgamation.h"
