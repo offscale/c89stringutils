@@ -630,6 +630,10 @@ C89STRINGUTILS_EXPORT int c89stringutils_vsnprintf_s(char *s, rsize_t n,
 #endif
 C89STRINGUTILS_EXPORT int
 c89stringutils_vsnprintf(char *s, size_t n, const char *format, va_list arg) {
+#if defined(C89STRINGUTILS_HAVE__VSNPRINTF) &&                                 \
+    !defined(C89STRINGUTILS_HAVE_VSNPRINTF)
+  int rc;
+#endif
 #if defined(_WIN32)
   if (s == NULL || n == 0) {
     return fallback_vsnprintf(s, n, format, arg);
@@ -638,7 +642,7 @@ c89stringutils_vsnprintf(char *s, size_t n, const char *format, va_list arg) {
 #if defined(C89STRINGUTILS_HAVE_VSNPRINTF)
   return vsnprintf(s, n, format, arg);
 #elif defined(C89STRINGUTILS_HAVE__VSNPRINTF)
-  int rc = _vsnprintf(s, n, format, arg);
+  rc = _vsnprintf(s, n, format, arg);
   if (rc < 0 && s && n > 0)
     s[n - 1] = '\0';
   return rc;

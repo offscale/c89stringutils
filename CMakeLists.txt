@@ -23,8 +23,8 @@ elseif ((MSVC_VERSION STRLESS_EQUAL "1900"
             "${PROJECT_BINARY_DIR}/c89stringutils_export.h")
 endif ()
 if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
-    set(gcc_like "$<COMPILE_LANG_AND_ID:C,CXX,ARMClang,AppleClang,Clang,GNU,LCC>")
-    set(msvc "$<COMPILE_LANG_AND_ID:C,CXX,MSVC>")
+    set(gcc_like "$<OR:$<C_COMPILER_ID:ARMClang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:LCC>>")
+    set(msvc "$<C_COMPILER_ID:MSVC>")
     target_compile_options(
             "${PROJECT_NAME}_compiler_flags"
             INTERFACE
