@@ -279,7 +279,7 @@ TEST x_strerrorlen_s_should_succeed(void) {
   out = c89stringutils_strerrorlen_s(ENOMEM);
   ASSERT(out > 0);
   out = c89stringutils_strerrorlen_s(400);
-  ASSERT(out == 8); /* ESNULLP */
+  ASSERT(out == 8); /* 400 */
   out = c89stringutils_strerrorlen_s(99999);
   ASSERT(out > 0 || out == 0); /* Unknown error string */
   PASS();
@@ -512,18 +512,28 @@ TEST x_strncat_s_should_succeed(void) {
   ASSERT_EQ(0, rc);
   ASSERT_STR_EQ("hello world", buf);
 
-  c89stringutils_strcpy_s(buf, sizeof(buf), "hello");
+  {
+    errno_t cpy_rc = c89stringutils_strcpy_s(buf, sizeof(buf), "hello");
+    ASSERT_EQ(0, cpy_rc);
+  }
   rc = c89stringutils_strncat_s(buf, sizeof(buf), " world!", 6);
   ASSERT_EQ(0, rc);
   ASSERT_STR_EQ("hello world", buf);
 
-  c89stringutils_strcpy_s(buf, sizeof(buf), "hello");
+  {
+    errno_t cpy_rc = c89stringutils_strcpy_s(buf, sizeof(buf), "hello");
+    ASSERT_EQ(0, cpy_rc);
+  }
   rc = c89stringutils_strncat_s(buf, sizeof(buf), " world",
                                 (rsize_t)-1); /* _TRUNCATE */
   ASSERT_EQ(0, rc);
   ASSERT_STR_EQ("hello world", buf);
 
-  c89stringutils_strcpy_s(buf, sizeof(buf), "12345678901234");
+  {
+    errno_t cpy_rc =
+        c89stringutils_strcpy_s(buf, sizeof(buf), "12345678901234");
+    ASSERT_EQ(0, cpy_rc);
+  }
   rc = c89stringutils_strncat_s(buf, sizeof(buf), "567890",
                                 (rsize_t)-1); /* _TRUNCATE */
   ASSERT_EQ(80, rc);                          /* STRUNCATE */
@@ -538,7 +548,11 @@ TEST x_strncat_s_should_succeed(void) {
   rc = c89stringutils_strncat_s(buf, sizeof(buf), NULL, 1);
   ASSERT_EQ(22, rc);
 
-  c89stringutils_strcpy_s(buf, sizeof(buf), "1234567890123456789");
+  {
+    errno_t cpy_rc =
+        c89stringutils_strcpy_s(buf, sizeof(buf), "1234567890123456789");
+    ASSERT_EQ(0, cpy_rc);
+  }
   rc = c89stringutils_strncat_s(buf, sizeof(buf), "!", 1);
   ASSERT_EQ(34, rc); /* ERANGE */
   ASSERT_EQ('\0', buf[0]);
@@ -680,7 +694,10 @@ TEST x_mock_failures(void) {
   s = malloc(10);
   if (s) {
 #if defined(_MSC_VER)
-    strcpy_s(s, 10, "123");
+    {
+      errno_t cpy_rc = strcpy_s(s, 10, "123");
+      ASSERT_EQ(0, cpy_rc);
+    }
 #else
     strcpy(s, "123");
 #endif
@@ -697,16 +714,19 @@ TEST x_mock_failures(void) {
   /* Cover missing paths */
   {
     char dummy[10];
-    c89stringutils_snprintf(dummy, 10, "test");
+    {
+      int sn_rc = c89stringutils_snprintf(dummy, 10, "test");
+      ASSERT(sn_rc >= 0);
+    }
 #if !defined(C89STRINGUTILS_HAVE_STRCASESTR) ||                                \
     defined(C89STRINGUTILS_FORCE_FALLBACKS)
-    c89stringutils_strcasestr(NULL, "a");
-    c89stringutils_strcasestr("a", NULL);
+    ASSERT_EQ(NULL, c89stringutils_strcasestr(NULL, "a"));
+    ASSERT_EQ(NULL, c89stringutils_strcasestr("a", NULL));
 #endif
 #if !defined(C89STRINGUTILS_HAVE_STRNSTR) ||                                   \
     defined(C89STRINGUTILS_FORCE_FALLBACKS)
-    c89stringutils_strnstr(NULL, "a", 1);
-    c89stringutils_strnstr("a", NULL, 1);
+    ASSERT_EQ(NULL, c89stringutils_strnstr(NULL, "a", 1));
+    ASSERT_EQ(NULL, c89stringutils_strnstr("a", NULL, 1));
 #endif
 #if !defined(C89STRINGUTILS_HAVE_VASPRINTF) ||                                 \
     defined(C89STRINGUTILS_FORCE_FALLBACKS)
@@ -747,8 +767,12 @@ TEST x_jasprintf_realloc_path(void) {
   char big[200];
   memset(big, 'A', 199);
   big[199] = '\0';
-  c89stringutils_jasprintf(&s, "%s", big);
-  c89stringutils_jasprintf(&s, "%s", big);
+  {
+    int jas_rc1 = c89stringutils_jasprintf(&s, "%s", big);
+    int jas_rc2 = c89stringutils_jasprintf(&s, "%s", big);
+    ASSERT(jas_rc1 >= 0);
+    ASSERT(jas_rc2 >= 0);
+  }
   ASSERT_EQ(398, strlen(s));
   free(s);
   PASS();
@@ -789,7 +813,90 @@ TEST x_jasprintf_alias_should_succeed(void) {
 /**
  * @brief Test suite
  */
+
+extern int g_mock_strncpy_s_countdown;
+extern int g_mock_memcpy_s_countdown;
+extern int g_mock_strcpy_s_countdown;
+extern int g_mock_strcat_s_countdown;
+extern int g_mock_ungetc_countdown;
+extern int g_mock_fprintf_countdown;
+
+static void mock_reset_cb(void *data) {
+  (void)data;
+  g_mock_strncpy_s_countdown = -1;
+  g_mock_memcpy_s_countdown = -1;
+  g_mock_strcpy_s_countdown = -1;
+  g_mock_strcat_s_countdown = -1;
+  g_mock_ungetc_countdown = -1;
+  g_mock_fprintf_countdown = -1;
+}
+
+TEST x_mock_strncpy_s_failure(void) {
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
+  char buf[256];
+  int rc;
+  g_mock_strncpy_s_countdown = 0;
+  rc = c89stringutils_strerror_s(buf, sizeof(buf), 9999);
+  ASSERT(rc == 34); /* ERANGE */
+
+  g_mock_strncpy_s_countdown = 0;
+  rc = c89stringutils_strerror_s(buf, sizeof(buf), 400);
+  ASSERT(rc == 34); /* ERANGE */
+#endif
+  PASS();
+}
+
+TEST x_mock_memcpy_s_failure(void) {
+#if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
+  char buf[256];
+  int rc;
+
+  c89stringutils_strcpy_s(buf, sizeof(buf), "hello");
+  g_mock_memcpy_s_countdown = 0;
+  rc = c89stringutils_strncat_s(buf, sizeof(buf), " world!", 6);
+  ASSERT(rc == 34); /* ERANGE */
+
+  g_mock_memcpy_s_countdown = 0;
+  rc = c89stringutils_strncat_s(buf, sizeof(buf), " world!", (rsize_t)-1);
+  ASSERT(rc == 34); /* ERANGE */
+
+  g_mock_memcpy_s_countdown = 1;
+  rc = c89stringutils_strncat_s(buf, 15, "01234567890", (rsize_t)-1);
+  ASSERT(rc == 34 || rc == 80);
+
+  c89stringutils_strcpy_s(buf, sizeof(buf), "hello");
+  g_mock_memcpy_s_countdown = 0;
+  rc = c89stringutils_strcat_s(buf, sizeof(buf), " world!");
+  ASSERT(rc == 34);
+#endif
+  PASS();
+}
+
+TEST x_mock_strcpy_s_failure(void) {
+#if defined(C89STRINGUTILS_HAVE_STRCPY_S)
+  char buf[256];
+  int rc;
+
+  g_mock_strcpy_s_countdown = 0;
+  rc = c89stringutils_strcpy_s(buf, sizeof(buf), "hello");
+  ASSERT(rc == 34); /* ERANGE */
+#endif
+  PASS();
+}
+
+TEST x_mock_jasprintf_memcpy_failure(void) {
+#if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
+  char *s = NULL;
+  int rc;
+  g_mock_memcpy_s_countdown = 0;
+  rc = c89stringutils_jasprintf(&s, "hello");
+  ASSERT_EQ(-1, rc);
+#endif
+  PASS();
+}
+
 SUITE(strnstr_suite) {
+  SET_SETUP(mock_reset_cb, NULL);
   RUN_TEST(x_strnstr_should_succeed);
   RUN_TEST(x_strnstr_should_fail);
   RUN_TEST(x_asprintf_should_succeed);
@@ -814,6 +921,18 @@ SUITE(strnstr_suite) {
   RUN_TEST(x_strncpy_s_should_succeed);
   RUN_TEST(x_strcat_s_should_succeed);
   RUN_TEST(x_strncat_s_should_succeed);
+#if defined(C89STRINGUTILS_FORCE_FALLBACKS)
+  RUN_TEST(x_mock_strncpy_s_failure);
+#endif
+#if defined(C89STRINGUTILS_FORCE_FALLBACKS)
+  RUN_TEST(x_mock_memcpy_s_failure);
+#endif
+#if defined(C89STRINGUTILS_FORCE_FALLBACKS)
+  RUN_TEST(x_mock_strcpy_s_failure);
+#endif
+#if defined(C89STRINGUTILS_FORCE_FALLBACKS)
+  RUN_TEST(x_mock_jasprintf_memcpy_failure);
+#endif
 }
 
 #ifdef __cplusplus

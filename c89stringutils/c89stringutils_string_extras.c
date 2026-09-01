@@ -8,6 +8,9 @@
 #define _GNU_SOURCE
 #endif
 
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 /* clang-format off */
 #include "c89stringutils_string_extras.h"
 #include "c89stringutils_safecrt.h"
@@ -141,6 +144,18 @@ extern int mock_fprintf_s(FILE *stream, const char *format, ...);
 extern void *mock_reallocarray(void *ptr, size_t nmemb, size_t size);
 /** @brief Mock macro for reallocarray */
 #define reallocarray mock_reallocarray
+#endif
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
+extern int mock_strncpy_s(char *dest, size_t destsz, const char *src, size_t count);
+#define strncpy_s mock_strncpy_s
+#endif
+#if defined(C89STRINGUTILS_HAVE_STRCPY_S)
+extern int mock_strcpy_s(char *dest, size_t destsz, const char *src);
+#define strcpy_s mock_strcpy_s
+#endif
+#if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
+extern int mock_memcpy_s(void *dest, size_t destsz, const void *src, size_t count);
+#define memcpy_s mock_memcpy_s
 #endif
 /** @brief Mock macro for malloc */
 #define malloc mock_malloc
@@ -341,7 +356,12 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strerror_s(char *s,
         return 22; /* EINVAL */
       }
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
-      strncpy_s(s, maxsize, res, maxsize - 1);
+      {
+        errno_t rc_cpy = strncpy_s(s, maxsize, res, maxsize - 1);
+        if (rc_cpy != 0) {
+          return rc_cpy;
+        }
+      }
 #else
       strncpy(s, res, maxsize);
       s[maxsize - 1] = '\0';
@@ -363,7 +383,12 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strerror_s(char *s,
     const char *errstr = strerror(errnum);
     if (errstr) {
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
-      strncpy_s(s, maxsize, errstr, maxsize - 1);
+      {
+        errno_t rc_cpy = strncpy_s(s, maxsize, errstr, maxsize - 1);
+        if (rc_cpy != 0) {
+          return rc_cpy;
+        }
+      }
 #else
       strncpy(s, errstr, maxsize);
       s[maxsize - 1] = '\0';
@@ -412,7 +437,12 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strcpy_s(char *dest,
     }
 
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
-    memcpy_s(dest, destsz, src, srclen + 1);
+    {
+      errno_t rc_cpy = memcpy_s(dest, destsz, src, srclen + 1);
+      if (rc_cpy != 0) {
+        return rc_cpy;
+      }
+    }
 #elif defined(C89STRINGUTILS_HAVE_STRLCPY)
     strlcpy(dest, src, destsz);
 #else
@@ -457,7 +487,12 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strncpy_s(char *dest,
       if (to_copy >= destsz) {
         to_copy = destsz - 1;
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
-        memcpy_s(dest, destsz, src, to_copy);
+        {
+          errno_t rc_cpy = memcpy_s(dest, destsz, src, to_copy);
+          if (rc_cpy != 0) {
+            return rc_cpy;
+          }
+        }
 #else
         memcpy(dest, src, to_copy);
 #endif
@@ -465,7 +500,12 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strncpy_s(char *dest,
         return 80; /* STRUNCATE / ERANGE */
       }
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
-      memcpy_s(dest, destsz, src, to_copy + 1);
+      {
+        errno_t rc_cpy = memcpy_s(dest, destsz, src, to_copy + 1);
+        if (rc_cpy != 0) {
+          return rc_cpy;
+        }
+      }
 #else
       memcpy(dest, src, to_copy + 1);
 #endif
@@ -486,7 +526,12 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strncpy_s(char *dest,
         return 34; /* ERANGE */
       }
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
-      memcpy_s(dest, destsz, src, to_copy);
+      {
+        errno_t rc_cpy = memcpy_s(dest, destsz, src, to_copy);
+        if (rc_cpy != 0) {
+          return rc_cpy;
+        }
+      }
 #else
       memcpy(dest, src, to_copy);
 #endif
@@ -539,7 +584,13 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strcat_s(char *dest,
       return 34; /* ERANGE */
     }
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
-    memcpy_s(dest + destlen, destsz - destlen, src, srclen + 1);
+    {
+      errno_t rc_cpy =
+          memcpy_s(dest + destlen, destsz - destlen, src, srclen + 1);
+      if (rc_cpy != 0) {
+        return rc_cpy;
+      }
+    }
 #elif defined(C89STRINGUTILS_HAVE_STRLCAT)
     strlcat(dest, src, destsz);
 #else
@@ -1166,7 +1217,16 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
     }
 
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
-    memcpy_s(result + base_length, new_length + 1, new_part, new_length + 1);
+    {
+      errno_t rc_cpy = memcpy_s(result + base_length, new_length + 1, new_part,
+                                new_length + 1);
+      if (rc_cpy != 0) {
+        free(new_part);
+        free(result);
+        *unto = NULL;
+        return -1;
+      }
+    }
 #else
     memcpy(result + base_length, new_part, new_length + 1);
 #endif
@@ -1261,7 +1321,16 @@ C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
     }
 
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
-    memcpy_s(result + base_length, new_length + 1, new_part, new_length + 1);
+    {
+      errno_t rc_cpy = memcpy_s(result + base_length, new_length + 1, new_part,
+                                new_length + 1);
+      if (rc_cpy != 0) {
+        free(new_part);
+        free(result);
+        *unto = NULL;
+        return -1;
+      }
+    }
 #else
     memcpy(result + base_length, new_part, new_length + 1);
 #endif

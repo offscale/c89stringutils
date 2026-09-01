@@ -3,6 +3,9 @@
  * @brief Implementations of safe CRT functions.
  */
 
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 /* clang-format off */
 #include "c89stringutils_safecrt.h"
 #include <stdarg.h>
@@ -19,15 +22,29 @@ __attribute__((noreturn))
 #elif defined(_MSC_VER)
 __declspec(noreturn)
 #endif
-extern void
-mock_abort(void);
+extern void mock_abort(void);
 extern FILE *mock_fopen(const char *filename, const char *mode);
 extern FILE *mock_freopen(const char *filename, const char *mode, FILE *stream);
 extern FILE *mock_tmpfile(void);
+extern int mock_ungetc(int c, FILE *stream);
+#define ungetc mock_ungetc
+extern int mock_fprintf(FILE *stream, const char *format, ...);
+#define fprintf mock_fprintf
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
+extern int mock_strncpy_s(char *dest, size_t destsz, const char *src,
+                          size_t count);
+#define strncpy_s mock_strncpy_s
+#endif
+#if defined(C89STRINGUTILS_HAVE_STRCAT_S)
+extern int mock_strcat_s(char *dest, size_t destsz, const char *src);
+#define strcat_s mock_strcat_s
+#endif
 #define abort mock_abort
 #define fopen mock_fopen
 #define freopen mock_freopen
 #define tmpfile mock_tmpfile
+extern int mock_tmpfile_s(FILE **pFile);
+#define tmpfile_s mock_tmpfile_s
 #endif
 
 /**
@@ -87,6 +104,10 @@ static int minimal_vsscanf(const char *buffer, const char *format,
     {
       const char *start = p;
       size_t len;
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S) ||                                  \
+    defined(C89STRINGUTILS_HAVE_STRCAT_S)
+      errno_t rc;
+#endif
       p++;
       if (*p == '%') {
         if (*b != '%')
@@ -105,13 +126,19 @@ static int minimal_vsscanf(const char *buffer, const char *format,
         if (len > 60)
           return -1;
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
-        strncpy_s(token, sizeof(token), start, len);
+        rc = strncpy_s(token, sizeof(token), start, len);
+        if (rc != 0) {
+          return -1;
+        }
 #else
         strncpy(token, start, len);
         token[len] = '\0';
 #endif
 #if defined(C89STRINGUTILS_HAVE_STRCAT_S)
-        strcat_s(token, sizeof(token), "%n");
+        rc = strcat_s(token, sizeof(token), "%n");
+        if (rc != 0) {
+          return -1;
+        }
 #else
         strcat(token, "%n");
 #endif
@@ -147,13 +174,19 @@ static int minimal_vsscanf(const char *buffer, const char *format,
           return -1;
         spec = *(p - 1); /* get the specifier */
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
-        strncpy_s(token, sizeof(token), start, len);
+        rc = strncpy_s(token, sizeof(token), start, len);
+        if (rc != 0) {
+          return -1;
+        }
 #else
         strncpy(token, start, len);
         token[len] = '\0';
 #endif
 #if defined(C89STRINGUTILS_HAVE_STRCAT_S)
-        strcat_s(token, sizeof(token), "%n");
+        rc = strcat_s(token, sizeof(token), "%n");
+        if (rc != 0) {
+          return -1;
+        }
 #else
         strcat(token, "%n");
 #endif
@@ -204,16 +237,24 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
              (c == ' ' || c == '\t' || c == '\n')) {
         /* consume whitespace */
       }
-      if (c != EOF)
-        ungetc(c, stream);
+      if (c != EOF) {
+        int unget_rc = ungetc(c, stream);
+        if (unget_rc == EOF) {
+          return -1;
+        }
+      }
       p++;
       continue;
     }
     if (*p != '%') {
       int c = fgetc(stream);
       if (c != *p) {
-        if (c != EOF)
-          ungetc(c, stream);
+        if (c != EOF) {
+          int unget_rc = ungetc(c, stream);
+          if (unget_rc == EOF) {
+            return -1;
+          }
+        }
         return count;
       }
       p++;
@@ -223,12 +264,20 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
     {
       const char *start = p;
       size_t len;
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S) ||                                  \
+    defined(C89STRINGUTILS_HAVE_STRCAT_S)
+      errno_t rc;
+#endif
       p++;
       if (*p == '%') {
         int c = fgetc(stream);
         if (c != '%') {
-          if (c != EOF)
-            ungetc(c, stream);
+          if (c != EOF) {
+            int unget_rc = ungetc(c, stream);
+            if (unget_rc == EOF) {
+              return -1;
+            }
+          }
           return count;
         }
         p++;
@@ -244,7 +293,10 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
         if (len > 60)
           return -1;
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
-        strncpy_s(token, sizeof(token), start, len);
+        rc = strncpy_s(token, sizeof(token), start, len);
+        if (rc != 0) {
+          return -1;
+        }
 #else
         strncpy(token, start, len);
         token[len] = '\0';
@@ -281,7 +333,10 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
           return -1;
         spec = *(p - 1);
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
-        strncpy_s(token, sizeof(token), start, len);
+        rc = strncpy_s(token, sizeof(token), start, len);
+        if (rc != 0) {
+          return -1;
+        }
 #else
         strncpy(token, start, len);
         token[len] = '\0';

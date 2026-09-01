@@ -33,6 +33,13 @@ int g_mock_strerror_null = 0;
 /** @brief Mock state for log_debug failure */
 int g_mock_log_debug_fail = 0;
 
+int g_mock_strncpy_s_countdown = -1;
+int g_mock_memcpy_s_countdown = -1;
+int g_mock_strcpy_s_countdown = -1;
+int g_mock_strcat_s_countdown = -1;
+int g_mock_ungetc_countdown = -1;
+int g_mock_fprintf_countdown = -1;
+
 void *mock_malloc(size_t size);
 void *mock_realloc(void *ptr, size_t size);
 void *mock_reallocarray(void *ptr, size_t nmemb, size_t size);
@@ -48,6 +55,20 @@ int mock_strerror_r(int errnum, char *buf, size_t buflen);
 FILE *mock_fopen(const char *filename, const char *mode);
 FILE *mock_freopen(const char *filename, const char *mode, FILE *stream);
 FILE *mock_tmpfile(void);
+
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
+int mock_strncpy_s(char *dest, size_t destsz, const char *src, size_t count);
+#endif
+#if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
+int mock_memcpy_s(void *dest, size_t destsz, const void *src, size_t count);
+#endif
+#if defined(C89STRINGUTILS_HAVE_STRCPY_S)
+int mock_strcpy_s(char *dest, size_t destsz, const char *src);
+#endif
+#if defined(C89STRINGUTILS_HAVE_STRCAT_S)
+int mock_strcat_s(char *dest, size_t destsz, const char *src);
+#endif
+int mock_ungetc(int c, FILE *stream);
 
 /**
  * @brief Mock for malloc
@@ -253,6 +274,11 @@ int mock_fprintf(FILE *stream, const char *format, ...) {
   va_list ap;
   if (g_mock_log_debug_fail)
     return -1;
+  if (g_mock_fprintf_countdown >= 0) {
+    if (g_mock_fprintf_countdown == 0)
+      return -1;
+    g_mock_fprintf_countdown--;
+  }
   va_start(ap, format);
   ret = vfprintf(stream, format, ap);
   va_end(ap);
@@ -377,7 +403,16 @@ FILE *mock_freopen(const char *filename, const char *mode, FILE *stream) {
 #endif
 }
 
+int mock_tmpfile_s(FILE **pFile) {
+  if (g_mock_fopen_fail) {
+    *pFile = NULL;
+    return 12;
+  }
+  return tmpfile_s(pFile);
+}
+
 FILE *mock_tmpfile(void) {
+
   if (g_mock_fopen_fail) {
     errno = 12;
     return NULL;
@@ -418,6 +453,59 @@ void myInvalidParameterHandler(const wchar_t *expression,
 #endif
 #endif
 
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
+int mock_strncpy_s(char *dest, size_t destsz, const char *src, size_t count) {
+  if (g_mock_strncpy_s_countdown >= 0) {
+    if (g_mock_strncpy_s_countdown == 0)
+      return 34; /* ERANGE */
+    g_mock_strncpy_s_countdown--;
+  }
+  return strncpy_s(dest, destsz, src, count);
+}
+#endif
+
+#if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
+int mock_memcpy_s(void *dest, size_t destsz, const void *src, size_t count) {
+  if (g_mock_memcpy_s_countdown >= 0) {
+    if (g_mock_memcpy_s_countdown == 0)
+      return 34; /* ERANGE */
+    g_mock_memcpy_s_countdown--;
+  }
+  return memcpy_s(dest, destsz, src, count);
+}
+#endif
+
+#if defined(C89STRINGUTILS_HAVE_STRCPY_S)
+int mock_strcpy_s(char *dest, size_t destsz, const char *src) {
+  if (g_mock_strcpy_s_countdown >= 0) {
+    if (g_mock_strcpy_s_countdown == 0)
+      return 34; /* ERANGE */
+    g_mock_strcpy_s_countdown--;
+  }
+  return strcpy_s(dest, destsz, src);
+}
+#endif
+
+#if defined(C89STRINGUTILS_HAVE_STRCAT_S)
+int mock_strcat_s(char *dest, size_t destsz, const char *src) {
+  if (g_mock_strcat_s_countdown >= 0) {
+    if (g_mock_strcat_s_countdown == 0)
+      return 34; /* ERANGE */
+    g_mock_strcat_s_countdown--;
+  }
+  return strcat_s(dest, destsz, src);
+}
+#endif
+
+int mock_ungetc(int c, FILE *stream) {
+  if (g_mock_ungetc_countdown >= 0) {
+    if (g_mock_ungetc_countdown == 0)
+      return EOF;
+    g_mock_ungetc_countdown--;
+  }
+  return ungetc(c, stream);
+}
+
 /* Add definitions that need to be in the test runner's main file. */
 GREATEST_MAIN_DEFS();
 
@@ -427,14 +515,49 @@ GREATEST_MAIN_DEFS();
  * @param argv Argument values.
  * @return Exit status.
  */
-int main(int argc, char **argv) {
+
 #if defined(_MSC_VER)
-  _set_invalid_parameter_handler(myInvalidParameterHandler);
-  _CrtSetReportMode(_CRT_ASSERT, 0);
+int g_mock_CrtSetReportMode_fail = 0;
+int mock_CrtSetReportMode(int reportType, int reportMode) {
+  if (g_mock_CrtSetReportMode_fail)
+    return -1;
+  return _CrtSetReportMode(reportType, reportMode);
+}
+#define _CrtSetReportMode mock_CrtSetReportMode
 #endif
-  c89stringutils_set_constraint_handler_s(c89stringutils_ignore_handler_s);
+
+int real_main(int argc, char **argv) {
+#if defined(_MSC_VER)
+  {
+    _invalid_parameter_handler old_handler =
+        _set_invalid_parameter_handler(myInvalidParameterHandler);
+    int old_mode = _CrtSetReportMode(_CRT_ASSERT, 0);
+    if (old_mode == -1) {
+      return 1;
+    }
+    (void)old_handler;
+  }
+#endif
+  {
+    c89stringutils_constraint_handler_t old_handler =
+        c89stringutils_set_constraint_handler_s(
+            c89stringutils_ignore_handler_s);
+    (void)old_handler;
+  }
   GREATEST_MAIN_BEGIN();
   RUN_SUITE(strnstr_suite);
   RUN_SUITE(safecrt_suite);
   GREATEST_MAIN_END();
+}
+
+#undef _CrtSetReportMode
+
+int main(int argc, char **argv) {
+#if defined(_MSC_VER)
+  g_mock_CrtSetReportMode_fail = 1;
+  if (real_main(argc, argv) != 1)
+    return 1;
+  g_mock_CrtSetReportMode_fail = 0;
+#endif
+  return real_main(argc, argv);
 }
