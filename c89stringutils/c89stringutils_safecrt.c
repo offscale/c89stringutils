@@ -22,7 +22,8 @@ __attribute__((noreturn))
 #elif defined(_MSC_VER)
 __declspec(noreturn)
 #endif
-extern void mock_abort(void);
+extern void
+mock_abort(void);
 extern FILE *mock_fopen(const char *filename, const char *mode);
 extern FILE *mock_freopen(const char *filename, const char *mode, FILE *stream);
 extern FILE *mock_tmpfile(void);
