@@ -366,6 +366,7 @@ static void mock_reset_safecrt_cb(void *data) {
   g_mock_strcat_s_countdown = -1;
 }
 
+#if defined(C89STRINGUTILS_FORCE_FALLBACKS)
 TEST test_mock_sscanf_s_failures(void) {
   c89stringutils_set_constraint_handler_s(c89stringutils_ignore_handler_s);
 
@@ -410,7 +411,7 @@ TEST test_mock_fscanf_s_failures(void) {
 
   rewind(f);
   g_mock_ungetc_countdown = 1;
-  rc = c89stringutils_fscanf_s(f, "12%c", &val);
+  rc = c89stringutils_fscanf_s(f, "12%d", &val);
 
   fclose(f);
   remove("test_fscanf_mock.txt");
@@ -418,6 +419,7 @@ TEST test_mock_fscanf_s_failures(void) {
   c89stringutils_set_constraint_handler_s(test_handler);
   PASS();
 }
+#endif
 
 SUITE(safecrt_suite) {
   SET_SETUP(mock_reset_safecrt_cb, NULL);

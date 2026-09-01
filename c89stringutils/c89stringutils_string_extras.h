@@ -358,9 +358,8 @@ typedef size_t rsize_t;
 #if defined(C89STRINGUTILS_HAVE_STRERROR_S)
 #define c89stringutils_strerror_s strerror_s
 #else
-extern C89STRINGUTILS_EXPORT errno_t c89stringutils_strerror_s(char *s,
-                                                               rsize_t maxsize,
-                                                               errno_t errnum);
+extern C89STRINGUTILS_EXPORT
+    errno_t c89stringutils_strerror_s(char *s, rsize_t maxsize, errno_t errnum);
 #endif
 
 /**
@@ -496,13 +495,13 @@ c89stringutils_vsnprintf(char *s, size_t n, const char *format, va_list arg)
 #define c89stringutils_strncasecmp(s1, s2, n)                                  \
   ((((const void *)(s1)) == NULL && ((const void *)(s2)) == NULL) ? 0          \
    : (((const void *)(s1)) == NULL)                               ? -1         \
-   : (((const void *)(s2)) == NULL)                               ? 1          \
+   : (((const void *)(s2)) == NULL) ? 1                                        \
                                     : _strnicmp((s1), (s2), (n)))
 #elif defined(C89STRINGUTILS_HAVE_STRNCASECMP)
 #define c89stringutils_strncasecmp(s1, s2, n)                                  \
   ((((const void *)(s1)) == NULL && ((const void *)(s2)) == NULL) ? 0          \
    : (((const void *)(s1)) == NULL)                               ? -1         \
-   : (((const void *)(s2)) == NULL)                               ? 1          \
+   : (((const void *)(s2)) == NULL) ? 1                                        \
                                     : strncasecmp((s1), (s2), (n)))
 #else
 extern C89STRINGUTILS_EXPORT int
@@ -520,13 +519,13 @@ c89stringutils_strncasecmp(const char *s1, const char *s2, size_t n);
 #define c89stringutils_strcasecmp(s1, s2)                                      \
   ((((const void *)(s1)) == NULL && ((const void *)(s2)) == NULL) ? 0          \
    : (((const void *)(s1)) == NULL)                               ? -1         \
-   : (((const void *)(s2)) == NULL)                               ? 1          \
+   : (((const void *)(s2)) == NULL) ? 1                                        \
                                     : _stricmp((s1), (s2)))
 #elif defined(C89STRINGUTILS_HAVE_STRCASECMP)
 #define c89stringutils_strcasecmp(s1, s2)                                      \
   ((((const void *)(s1)) == NULL && ((const void *)(s2)) == NULL) ? 0          \
    : (((const void *)(s1)) == NULL)                               ? -1         \
-   : (((const void *)(s2)) == NULL)                               ? 1          \
+   : (((const void *)(s2)) == NULL) ? 1                                        \
                                     : strcasecmp((s1), (s2)))
 #else
 extern C89STRINGUTILS_EXPORT int c89stringutils_strcasecmp(const char *s1,

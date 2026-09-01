@@ -13,17 +13,13 @@
 #include <string.h>
 /* clang-format on */
 
-#if defined(_MSC_VER)
-#endif
-
 #ifdef C89STRINGUTILS_TEST_MOCKS
 #if defined(__GNUC__) || defined(__clang__)
 __attribute__((noreturn))
 #elif defined(_MSC_VER)
 __declspec(noreturn)
 #endif
-extern void
-mock_abort(void);
+extern void mock_abort(void);
 extern FILE *mock_fopen(const char *filename, const char *mode);
 extern FILE *mock_freopen(const char *filename, const char *mode, FILE *stream);
 extern FILE *mock_tmpfile(void);
@@ -44,8 +40,6 @@ extern int mock_strcat_s(char *dest, size_t destsz, const char *src);
 #define fopen mock_fopen
 #define freopen mock_freopen
 #define tmpfile mock_tmpfile
-extern int mock_tmpfile_s(FILE **pFile);
-#define tmpfile_s mock_tmpfile_s
 #endif
 
 /**

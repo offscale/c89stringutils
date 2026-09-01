@@ -16,26 +16,19 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
                 greatest
                 SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../greatest"
         )
-        FetchContent_MakeAvailable(greatest)
-        if (MSVC)
-            file(READ "${greatest_SOURCE_DIR}/greatest.h" _greatest_content)
-            string(REPLACE "while (0)" "while (0,0)" _greatest_content "${_greatest_content}")
-            file(WRITE "${greatest_SOURCE_DIR}/greatest.h" "${_greatest_content}")
-        endif()
-        file(COPY "${greatest_SOURCE_DIR}/greatest.h" DESTINATION "${DOWNLOAD_DIR}")
     else()
         FetchContent_Declare(
                 greatest
                 URL "https://raw.githubusercontent.com/SamuelMarks/greatest/master/greatest.h"
                 DOWNLOAD_NO_EXTRACT TRUE
         )
-        FetchContent_MakeAvailable(greatest)
-        if (MSVC)
-            file(READ "${greatest_SOURCE_DIR}/greatest.h" _greatest_content)
-            string(REPLACE "while (0)" "while (0,0)" _greatest_content "${_greatest_content}")
-            file(WRITE "${greatest_SOURCE_DIR}/greatest.h" "${_greatest_content}")
-        endif()
-        file(COPY "${greatest_SOURCE_DIR}/greatest.h" DESTINATION "${DOWNLOAD_DIR}")
+    endif()
+    FetchContent_MakeAvailable(greatest)
+    file(COPY "${greatest_SOURCE_DIR}/greatest.h" DESTINATION "${DOWNLOAD_DIR}")
+    if (MSVC)
+        file(READ "${DOWNLOAD_DIR}/greatest.h" _greatest_content)
+        string(REPLACE "while (0)" "while (0,0)" _greatest_content "${_greatest_content}")
+        file(WRITE "${DOWNLOAD_DIR}/greatest.h" "${_greatest_content}")
     endif()
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
 
@@ -51,7 +44,7 @@ source_group("Source Files" FILES "${Source_Files}")
 
 add_executable("${EXEC_NAME}" "${Header_Files}" "${Source_Files}")
 
-target_compile_definitions("${EXEC_NAME}" PRIVATE C89STRINGUTILS_TEST_MOCKS C89STRINGUTILS_STATIC_DEFINE DEBUG _CRT_SECURE_NO_WARNINGS)
+target_compile_definitions("${EXEC_NAME}" PRIVATE C89STRINGUTILS_TEST_MOCKS C89STRINGUTILS_STATIC_DEFINE DEBUG)
 
 if (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
     target_link_libraries("${EXEC_NAME}" PRIVATE "${PROJECT_NAME}_compiler_flags")

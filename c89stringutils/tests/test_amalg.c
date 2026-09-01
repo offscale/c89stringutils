@@ -6,8 +6,8 @@
 #include "c89stringutils_amalgamation.h"
 #include <stdio.h>
 #include <stdlib.h>
-/* clang-format on */
 #include <stdarg.h>
+/* clang-format on */
 
 int g_mock_printf_fail = 0;
 int mock_printf(const char *format, ...) {

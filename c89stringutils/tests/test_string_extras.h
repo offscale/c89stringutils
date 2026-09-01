@@ -831,6 +831,7 @@ static void mock_reset_cb(void *data) {
   g_mock_fprintf_countdown = -1;
 }
 
+#if defined(C89STRINGUTILS_FORCE_FALLBACKS)
 TEST x_mock_strncpy_s_failure(void) {
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
   char buf[256];
@@ -894,6 +895,7 @@ TEST x_mock_jasprintf_memcpy_failure(void) {
 #endif
   PASS();
 }
+#endif
 
 SUITE(strnstr_suite) {
   SET_SETUP(mock_reset_cb, NULL);

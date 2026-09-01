@@ -55,6 +55,7 @@ int mock_strerror_r(int errnum, char *buf, size_t buflen);
 FILE *mock_fopen(const char *filename, const char *mode);
 FILE *mock_freopen(const char *filename, const char *mode, FILE *stream);
 FILE *mock_tmpfile(void);
+int real_main(int argc, char **argv);
 
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
 int mock_strncpy_s(char *dest, size_t destsz, const char *src, size_t count);
@@ -401,14 +402,6 @@ FILE *mock_freopen(const char *filename, const char *mode, FILE *stream) {
 #else
   return freopen(filename, mode, stream);
 #endif
-}
-
-int mock_tmpfile_s(FILE **pFile) {
-  if (g_mock_fopen_fail) {
-    *pFile = NULL;
-    return 12;
-  }
-  return tmpfile_s(pFile);
 }
 
 FILE *mock_tmpfile(void) {
