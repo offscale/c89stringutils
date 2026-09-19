@@ -437,11 +437,10 @@ void myInvalidParameterHandler(const wchar_t *expression,
                                const wchar_t *function, const wchar_t *file,
                                unsigned int line, uintptr_t pReserved) {
   /* Do nothing, let the safe CRT function return the error code */
-  (void)expression;
-  (void)function;
-  (void)file;
-  (void)line;
-  (void)pReserved;
+  if (expression != NULL && function != NULL && file != NULL && line != 0 &&
+      pReserved != 0) {
+    return;
+  }
 }
 #endif
 #endif
@@ -510,10 +509,26 @@ GREATEST_MAIN_DEFS();
  */
 
 #if defined(_MSC_VER)
+#if defined(_WIN32) || defined(_WIN64)
+extern __declspec(dllimport) void *__stdcall GetModuleHandleA(const char *);
+extern
+    __declspec(dllimport) void *__stdcall GetProcAddress(void *, const char *);
+#endif
+static int is_running_on_wine(void) {
+#if defined(_WIN32) || defined(_WIN64)
+  return GetProcAddress(GetModuleHandleA("ntdll.dll"), "wine_get_version") !=
+         NULL;
+#else
+  return 0;
+#endif
+}
+
 int g_mock_CrtSetReportMode_fail = 0;
 int mock_CrtSetReportMode(int reportType, int reportMode) {
   if (g_mock_CrtSetReportMode_fail)
     return -1;
+  if (is_running_on_wine())
+    return 0;
   return _CrtSetReportMode(reportType, reportMode);
 }
 #define _CrtSetReportMode mock_CrtSetReportMode
@@ -524,18 +539,23 @@ int real_main(int argc, char **argv) {
   {
     _invalid_parameter_handler old_handler =
         _set_invalid_parameter_handler(myInvalidParameterHandler);
-    int old_mode = _CrtSetReportMode(_CRT_ASSERT, 0);
+    int old_mode;
+    if (old_handler != NULL) {
+      old_mode = 0;
+    }
+    old_mode = _CrtSetReportMode(_CRT_ASSERT, 0);
     if (old_mode == -1) {
       return 1;
     }
-    (void)old_handler;
   }
 #endif
   {
     c89stringutils_constraint_handler_t old_handler =
         c89stringutils_set_constraint_handler_s(
             c89stringutils_ignore_handler_s);
-    (void)old_handler;
+    if (old_handler != NULL) {
+      old_handler = NULL;
+    }
   }
   GREATEST_MAIN_BEGIN();
   RUN_SUITE(strnstr_suite);

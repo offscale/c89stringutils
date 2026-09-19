@@ -316,6 +316,8 @@ static int test_vasprintf_wrapper(char **str, const char *fmt, ...) {
  * @param ... The arguments.
  * @return exit code
  */
+static int test_alias_vasprintf_wrapper(char **str, const char *fmt, ...)
+    C89STRINGUTILS_FORMAT_PRINTF(2, 3);
 static int test_alias_vasprintf_wrapper(char **str, const char *fmt, ...) {
   int rc;
   va_list ap;
@@ -372,8 +374,11 @@ TEST x_vasprintf_should_fail(void) {
  * @return enum test result
  */
 TEST x_log_debug_should_succeed(void) {
-  LOG_DEBUG("test log debug: %d", 1);
-  c89stringutils_log_debug("direct call %s", "test");
+  int rc;
+  rc = LOG_DEBUG("test log debug: %d", 1);
+  ASSERT(rc >= 0);
+  rc = c89stringutils_log_debug("direct call %s", "test");
+  ASSERT(rc >= 0);
   PASS();
 }
 
@@ -386,9 +391,12 @@ extern int g_mock_log_debug_fail;
  */
 TEST x_log_debug_should_fail(void) {
 #ifdef C89STRINGUTILS_TEST_MOCKS
+  int rc;
   g_mock_log_debug_fail = 1;
-  LOG_DEBUG("this should fail gracefully: %d", 1);
-  c89stringutils_log_debug("this should also fail gracefully");
+  rc = LOG_DEBUG("this should fail gracefully: %d", 1);
+  ASSERT_EQ(-1, rc);
+  rc = c89stringutils_log_debug("this should also fail gracefully");
+  ASSERT_EQ(-1, rc);
   g_mock_log_debug_fail = 0;
 #endif
   PASS();
@@ -495,7 +503,7 @@ TEST x_strcat_s_should_succeed(void) {
   /* buffer not null terminated */
   memset(buf, 'A', sizeof(buf));
   rc = c89stringutils_strcat_s(buf, sizeof(buf), "!");
-  ASSERT_EQ(22, rc); /* EINVAL */
+  ASSERT(rc == 22 || rc == 34); /* EINVAL or ERANGE */
 
   PASS();
 }
@@ -731,13 +739,17 @@ TEST x_mock_failures(void) {
 #if !defined(C89STRINGUTILS_HAVE_VASPRINTF) ||                                 \
     defined(C89STRINGUTILS_FORCE_FALLBACKS)
     {
+      int (*vasprintf_fn)(char **, const char *, va_list) =
+          c89stringutils_vasprintf;
       char *sptr = NULL;
       va_list empty_va;
-      const char *null_fmt = NULL;
+      int vrc;
       memset(&empty_va, 0, sizeof(empty_va));
-      c89stringutils_vasprintf(NULL, "a", empty_va);
-      c89stringutils_vasprintf(&sptr, null_fmt, empty_va);
-      (void)sptr;
+      vrc = vasprintf_fn(NULL, "a", empty_va);
+      ASSERT_EQ(-1, vrc);
+      vrc = vasprintf_fn(&sptr, NULL, empty_va);
+      ASSERT_EQ(-1, vrc);
+      ASSERT_EQ(NULL, sptr);
     }
 #endif
   }
@@ -822,7 +834,9 @@ extern int g_mock_ungetc_countdown;
 extern int g_mock_fprintf_countdown;
 
 static void mock_reset_cb(void *data) {
-  (void)data;
+  if (data != NULL) {
+    *(int *)data = 0;
+  }
   g_mock_strncpy_s_countdown = -1;
   g_mock_memcpy_s_countdown = -1;
   g_mock_strcpy_s_countdown = -1;

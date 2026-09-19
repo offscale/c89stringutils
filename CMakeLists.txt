@@ -331,6 +331,9 @@ endif()
 if (BUILD_TESTING_${PROJECT_PREFIX})
     enable_testing()
     include(CTest)
+    file(WRITE "${PROJECT_BINARY_DIR}/CTestCustom.cmake"
+        "set(CTEST_CUSTOM_COVERAGE_EXCLUDE \".*tests/.*\" \".*test_.*\" \".*CMakeFiles.*\" \".*greatest.*\")\n"
+    )
     if (BUILD_TESTING)
         add_subdirectory("${PROJECT_NAME}/tests")
     endif()

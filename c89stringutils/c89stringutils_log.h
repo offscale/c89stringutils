@@ -22,27 +22,16 @@ extern "C" {
 #endif
 
 #ifndef LOG_DEBUG
-#ifdef DEBUG
 /**
  * @brief Log debug message
  * @param fmt The format string.
  * @param ... The arguments.
+ * @return Number of characters printed, or -1 on error.
  */
-C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...)
+C89STRINGUTILS_EXPORT int c89stringutils_log_debug(const char *fmt, ...)
     C89STRINGUTILS_LOG_FORMAT_PRINTF(1, 2);
 /** @brief Macro for debug logging */
 #define LOG_DEBUG c89stringutils_log_debug
-#else
-/**
- * @brief Log debug message
- * @param fmt The format string.
- * @param ... The arguments.
- */
-C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...)
-    C89STRINGUTILS_LOG_FORMAT_PRINTF(1, 2);
-/** @brief Macro for debug logging (disabled) */
-#define LOG_DEBUG 1 ? (void)0 : c89stringutils_log_debug
-#endif /* DEBUG */
 #endif /* !LOG_DEBUG */
 
 #ifdef __cplusplus

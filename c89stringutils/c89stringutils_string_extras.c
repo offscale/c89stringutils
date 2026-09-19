@@ -8,9 +8,6 @@
 #define _GNU_SOURCE
 #endif
 
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
 /* clang-format off */
 #include "c89stringutils_string_extras.h"
 #include "c89stringutils_safecrt.h"
@@ -208,8 +205,9 @@ extern int mock_memcpy_s(void *dest, size_t destsz, const void *src, size_t coun
  * @param fmt The format string.
  * @param ... The arguments.
  */
-C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...) {
-  int rc;
+C89STRINGUTILS_EXPORT int c89stringutils_log_debug(const char *fmt, ...) {
+  int rc = -1;
+  int newline_rc = -1;
   va_list args;
   va_start(args, fmt);
 #if defined(C89STRINGUTILS_HAVE_VFPRINTF_S)
@@ -217,18 +215,16 @@ C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...) {
 #else
   rc = vfprintf(stderr, fmt, args);
 #endif
-  if (rc < 0) {
-    /* ignore error in log */
-  }
-#if defined(C89STRINGUTILS_HAVE_FPRINTF_S)
-  rc = fprintf_s(stderr, "\n");
-#else
-  rc = fprintf(stderr, "\n");
-#endif
-  if (rc < 0) {
-    /* ignore error in log */
-  }
   va_end(args);
+#if defined(C89STRINGUTILS_HAVE_FPRINTF_S)
+  newline_rc = fprintf_s(stderr, "\n");
+#else
+  newline_rc = fprintf(stderr, "\n");
+#endif
+  if (rc < 0 || newline_rc < 0) {
+    return -1;
+  }
+  return rc + newline_rc;
 }
 
 /* stb_sprintf integration for portability */
@@ -243,13 +239,8 @@ C89STRINGUTILS_EXPORT void c89stringutils_log_debug(const char *fmt, ...) {
     !defined(C89STRINGUTILS_HAVE_VSNPRINTF)
 #define STB_SPRINTF_IMPLEMENTATION
 #define STB_SPRINTF_DECORATE(name) c89stringutils_stbsp_##name
-/* avoid pulling in extra headers in stb_sprintf */
-#define STB_SPRINTF_NOFLOAT /* Keep binary small, disable float if not         \
-                               strictly needed, or we can keep it if float is  \
-                               used */
-/* Actually, let's keep float support just in case, but rely on standard library
- * if available */
-#undef STB_SPRINTF_NOFLOAT
+/* avoid pulling in extra headers in stb_sprintf and keep binary small */
+#define STB_SPRINTF_NOFLOAT
 #if defined(_MSC_VER)
 #endif
 #include "stb_sprintf.h"
@@ -279,7 +270,7 @@ static int fallback_vsnprintf(char *buffer, size_t count, const char *format,
 #elif defined(C89STRINGUTILS_USE_STB_SPRINTF)
   return c89stringutils_stbsp_vsnprintf(buffer, (int)count, format, args);
 #else
-  int rc;
+  int rc = -1;
   if (buffer == NULL || count == 0) {
 #if defined(C89STRINGUTILS_HAVE__VSCPRINTF)
     rc = _vscprintf(format, args);
@@ -384,8 +375,9 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strerror_s(char *s,
     if (errstr) {
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
       {
-        errno_t rc_cpy = strncpy_s(s, maxsize, errstr, maxsize - 1);
-        if (rc_cpy != 0) {
+        errno_t rc_cpy;
+        rc_cpy = strncpy_s(s, maxsize, errstr, maxsize - 1);
+        if (rc_cpy != (errno_t)C89STRINGUTILS_SUCCESS) {
           return rc_cpy;
         }
       }
@@ -438,8 +430,9 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strcpy_s(char *dest,
 
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
     {
-      errno_t rc_cpy = memcpy_s(dest, destsz, src, srclen + 1);
-      if (rc_cpy != 0) {
+      errno_t rc_cpy;
+      rc_cpy = memcpy_s(dest, destsz, src, srclen + 1);
+      if (rc_cpy != (errno_t)C89STRINGUTILS_SUCCESS) {
         return rc_cpy;
       }
     }
@@ -488,8 +481,9 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strncpy_s(char *dest,
         to_copy = destsz - 1;
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
         {
-          errno_t rc_cpy = memcpy_s(dest, destsz, src, to_copy);
-          if (rc_cpy != 0) {
+          errno_t rc_cpy;
+          rc_cpy = memcpy_s(dest, destsz, src, to_copy);
+          if (rc_cpy != (errno_t)C89STRINGUTILS_SUCCESS) {
             return rc_cpy;
           }
         }
@@ -501,8 +495,9 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strncpy_s(char *dest,
       }
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
       {
-        errno_t rc_cpy = memcpy_s(dest, destsz, src, to_copy + 1);
-        if (rc_cpy != 0) {
+        errno_t rc_cpy;
+        rc_cpy = memcpy_s(dest, destsz, src, to_copy + 1);
+        if (rc_cpy != (errno_t)C89STRINGUTILS_SUCCESS) {
           return rc_cpy;
         }
       }
@@ -585,9 +580,9 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strcat_s(char *dest,
     }
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
     {
-      errno_t rc_cpy =
-          memcpy_s(dest + destlen, destsz - destlen, src, srclen + 1);
-      if (rc_cpy != 0) {
+      errno_t rc_cpy;
+      rc_cpy = memcpy_s(dest + destlen, destsz - destlen, src, srclen + 1);
+      if (rc_cpy != (errno_t)C89STRINGUTILS_SUCCESS) {
         return rc_cpy;
       }
     }
@@ -683,7 +678,7 @@ C89STRINGUTILS_EXPORT int
 c89stringutils_vsnprintf(char *s, size_t n, const char *format, va_list arg) {
 #if defined(C89STRINGUTILS_HAVE__VSNPRINTF) &&                                 \
     !defined(C89STRINGUTILS_HAVE_VSNPRINTF)
-  int rc;
+  int rc = -1;
 #endif
 #if defined(_WIN32)
   if (s == NULL || n == 0) {
@@ -707,7 +702,7 @@ c89stringutils_vsnprintf(char *s, size_t n, const char *format, va_list arg) {
 #if !defined(C89STRINGUTILS_HAVE_SNPRINTF_S) || defined(_WIN32)
 C89STRINGUTILS_EXPORT int c89stringutils_snprintf_s(char *s, rsize_t n,
                                                     const char *format, ...) {
-  int rc;
+  int rc = -1;
   va_list args;
   va_start(args, format);
   rc = c89stringutils_vsnprintf_s(s, n, format, args);
@@ -718,7 +713,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_snprintf_s(char *s, rsize_t n,
 
 C89STRINGUTILS_EXPORT int c89stringutils_snprintf(char *s, size_t n,
                                                   const char *format, ...) {
-  int rc;
+  int rc = -1;
   va_list args;
   va_start(args, format);
   rc = c89stringutils_vsnprintf(s, n, format, args);
@@ -819,7 +814,7 @@ C89STRINGUTILS_EXPORT char *c89stringutils_strnstr(const char *buffer,
   size_t targetLength;
   const char *start;
   size_t remaining;
-  int rc;
+  int rc = -1;
   if (buffer == NULL || target == NULL) {
     LOG_DEBUG("buffer or target is NULL");
     return NULL;
@@ -940,7 +935,7 @@ C89STRINGUTILS_EXPORT size_t c89stringutils_strerrorlen_s(errno_t errnum) {
     return res ? strlen(res) : 0;
 #endif
 #else
-    int rc;
+    int rc = -1;
     errbuf[0] = '\0';
     rc = strerror_r(errnum, errbuf, sizeof(errbuf));
     errbuf[sizeof(errbuf) - 1] = '\0';
@@ -992,7 +987,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
   }
 #else
   {
-    int rc;
+    int rc = -1;
     va_list ap2;
     char *string, *newstr;
     size_t len;
@@ -1093,9 +1088,11 @@ C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
 #else
   {
     const char *errstr = strerror(errno);
-    (void)errstr;
-    LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc,
-              errstr ? errstr : "");
+    if (errstr != NULL) {
+      LOG_DEBUG("vasprintf failed with rc=%d, error=%s", rc, errstr);
+    } else {
+      LOG_DEBUG("vasprintf failed with rc=%d, error=(null)", rc);
+    }
   }
 #endif
     *str = NULL;
@@ -1115,7 +1112,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
  */
 C89STRINGUTILS_EXPORT int c89stringutils_asprintf(char **str, const char *fmt,
                                                   ...) {
-  int rc;
+  int rc = -1;
   va_list ap;
 
   if (str == NULL || fmt == NULL) {
@@ -1154,8 +1151,11 @@ C89STRINGUTILS_EXPORT int c89stringutils_asprintf(char **str, const char *fmt,
 #endif
 #else
     const char *errstr = strerror(errno);
-    (void)errstr;
-    LOG_DEBUG("asprintf failed with rc=%d, error=%s", rc, errstr ? errstr : "");
+    if (errstr != NULL) {
+      LOG_DEBUG("asprintf failed with rc=%d, error=%s", rc, errstr);
+    } else {
+      LOG_DEBUG("asprintf failed with rc=%d, error=(null)", rc);
+    }
 #endif
   }
 
@@ -1175,7 +1175,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
                                                    ...) {
   va_list args;
   char *new_part = NULL;
-  int rc;
+  int rc = -1;
 
   if (unto == NULL || fmt == NULL) {
     LOG_DEBUG("unto or fmt is NULL");
@@ -1218,9 +1218,10 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
 
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
     {
-      errno_t rc_cpy = memcpy_s(result + base_length, new_length + 1, new_part,
-                                new_length + 1);
-      if (rc_cpy != 0) {
+      errno_t rc_cpy;
+      rc_cpy = memcpy_s(result + base_length, new_length + 1, new_part,
+                        new_length + 1);
+      if (rc_cpy != (errno_t)C89STRINGUTILS_SUCCESS) {
         free(new_part);
         free(result);
         *unto = NULL;
@@ -1261,7 +1262,7 @@ C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap) {
  * @return The number of characters printed, or -1 on error.
  */
 C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
-  int rc;
+  int rc = -1;
   va_list args;
   va_start(args, fmt);
   rc = c89stringutils_vasprintf(str, fmt, args);
@@ -1281,7 +1282,7 @@ C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
 C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
   va_list args;
   char *new_part = NULL;
-  int rc;
+  int rc = -1;
 
   if (unto == NULL || fmt == NULL) {
     return -1;
@@ -1322,9 +1323,10 @@ C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
 
 #if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
     {
-      errno_t rc_cpy = memcpy_s(result + base_length, new_length + 1, new_part,
-                                new_length + 1);
-      if (rc_cpy != 0) {
+      errno_t rc_cpy;
+      rc_cpy = memcpy_s(result + base_length, new_length + 1, new_part,
+                        new_length + 1);
+      if (rc_cpy != (errno_t)C89STRINGUTILS_SUCCESS) {
         free(new_part);
         free(result);
         *unto = NULL;

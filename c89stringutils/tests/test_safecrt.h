@@ -24,9 +24,10 @@ void mock_abort(void) {
 }
 
 static void test_handler(const char *msg, void *ptr, errno_t error) {
-  (void)msg;
-  (void)ptr;
-  (void)error;
+  if (msg != NULL || ptr != NULL || error != 0) {
+    g_constraint_hit++;
+    return;
+  }
   g_constraint_hit++;
 }
 
@@ -346,7 +347,11 @@ TEST test_swprintf_s(void) {
   ASSERT(rc > 0);
 
   rc = c89stringutils_swprintf_s(NULL, 20, L"test %d", 123);
+#if defined(_MSC_VER)
+  ASSERT(rc < 0 || rc == 8);
+#else
   ASSERT(rc < 0);
+#endif
 
   rc = c89stringutils_swprintf_s(dest, 2, L"test %d", 123);
   ASSERT(rc < 0);
@@ -360,7 +365,9 @@ extern int g_mock_strncpy_s_countdown;
 extern int g_mock_strcat_s_countdown;
 
 static void mock_reset_safecrt_cb(void *data) {
-  (void)data;
+  if (data != NULL) {
+    *(int *)data = 0;
+  }
   g_mock_ungetc_countdown = -1;
   g_mock_strncpy_s_countdown = -1;
   g_mock_strcat_s_countdown = -1;

@@ -64,6 +64,12 @@ repos:
         entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" valgrind gcc
         language: python
         pass_filenames: false
+      - id: check-no-discard-void-clang
+        name: Check no-discard void casts (libclang)
+        entry: python -c "import os, sys, urllib.request; p = next((x for x in ('/opt/homebrew/opt/llvm/lib/libclang.dylib', '/opt/homebrew/lib/libclang.dylib', '/usr/local/lib/libclang.dylib', '/Library/Developer/CommandLineTools/usr/lib/libclang.dylib') if os.path.exists(x)), None); bdir = next((d for d in ('build', 'cmake-build-debug', 'build_gcc', 'build_fallback') if os.path.exists(d + '/compile_commands.json')), None); args = [sys.argv[0]]; (args.extend(['--libclang-path', p]) if p and '--libclang-path' not in sys.argv else None); (args.extend(['--build-dir', bdir]) if bdir and '--build-dir' not in sys.argv else None); args.extend(sys.argv[1:]); sys.argv = args; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/refs/heads/master/precommit_hooks/check_no_discard_void_clang.py').read().decode('utf-8'))"
+        language: python
+        types_or: [c, c++]
+        additional_dependencies: [libclang]
       - id: update-shields
         name: Update README Shields
         entry: python -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/SamuelMarks/c-ci/master/precommit_matrix.py').read())" shields
