@@ -312,6 +312,11 @@ int mock_fprintf_s(FILE *stream, const char *format, ...) {
   va_list ap;
   if (g_mock_log_debug_fail)
     return -1;
+  if (g_mock_fprintf_countdown >= 0) {
+    if (g_mock_fprintf_countdown == 0)
+      return -1;
+    g_mock_fprintf_countdown--;
+  }
   va_start(ap, format);
   ret = vfprintf_s(stream, format, ap);
   va_end(ap);

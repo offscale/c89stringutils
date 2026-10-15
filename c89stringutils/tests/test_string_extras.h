@@ -110,8 +110,15 @@ TEST x_jasprintf_should_succeed(void) {
  */
 TEST x_strcasecmp_should_succeed(void) {
   int out;
+  const char *same = "same";
+  out = c89stringutils_strcasecmp(same, same);
+  ASSERT_EQ(0, out);
   out = c89stringutils_strcasecmp("HeLlO", "hElLo");
   ASSERT_EQ(0, out);
+  out = c89stringutils_strcasecmp("HeLlO", "hElLo2");
+  ASSERT(out < 0);
+  out = c89stringutils_strcasecmp("HeLlO2", "hElLo");
+  ASSERT(out > 0);
   out = c89stringutils_strcasecmp("apple", "banana");
   ASSERT(out < 0);
   out = c89stringutils_strcasecmp("banana", "apple");
@@ -190,8 +197,13 @@ TEST x_strerror_s_should_succeed(void) {
   rc = c89stringutils_strerror_s(buf, 0, ENOMEM);
   ASSERT(rc != 0);
 
+  buf[0] = '\0';
   rc = c89stringutils_strerror_s(buf, sizeof(buf), 99999);
-  ASSERT(rc == 0 || rc != 0); /* Could succeed with 'Unknown error' or fail */
+  if (rc == 0) {
+    ASSERT(strlen(buf) > 0);
+  } else {
+    ASSERT_EQ(22, rc);
+  }
   PASS();
 }
 
@@ -238,11 +250,17 @@ TEST x_snprintf_s_should_succeed(void) {
   rc = c89stringutils_snprintf_s(NULL, 0, "test");
   ASSERT(rc < 0);
 
+  rc = c89stringutils_snprintf_s(buf, 0, "test");
+  ASSERT(rc < 0);
+
   rc = test_vsnprintf_s_wrapper(buf, sizeof(buf), "test %d", 123);
   ASSERT(rc == 8);
   ASSERT_STR_EQ("test 123", buf);
 
   rc = test_vsnprintf_s_wrapper(NULL, 0, "test");
+  ASSERT(rc < 0);
+
+  rc = test_vsnprintf_s_wrapper(buf, 0, "test");
   ASSERT(rc < 0);
   PASS();
 }
@@ -279,9 +297,11 @@ TEST x_strerrorlen_s_should_succeed(void) {
   out = c89stringutils_strerrorlen_s(ENOMEM);
   ASSERT(out > 0);
   out = c89stringutils_strerrorlen_s(400);
-  ASSERT(out == 8); /* 400 */
+  ASSERT_EQ(8u, out); /* 400: "null ptr" */
+  out = c89stringutils_strerrorlen_s(410);
+  ASSERT_EQ(10u, out); /* 410: "wrong size" */
   out = c89stringutils_strerrorlen_s(99999);
-  ASSERT(out > 0 || out == 0); /* Unknown error string */
+  ASSERT(out <= 256u);
   PASS();
 }
 
@@ -384,6 +404,7 @@ TEST x_log_debug_should_succeed(void) {
 
 /** @brief Mock state for log_debug failure */
 extern int g_mock_log_debug_fail;
+extern int g_mock_fprintf_countdown;
 
 /**
  * @brief Test case
@@ -398,6 +419,11 @@ TEST x_log_debug_should_fail(void) {
   rc = c89stringutils_log_debug("this should also fail gracefully");
   ASSERT_EQ(-1, rc);
   g_mock_log_debug_fail = 0;
+
+  g_mock_fprintf_countdown = 0;
+  rc = c89stringutils_log_debug("vfprintf succeeds, fprintf newline fails");
+  ASSERT_EQ(-1, rc);
+  g_mock_fprintf_countdown = -1;
 #endif
   PASS();
 }
@@ -617,13 +643,11 @@ extern int g_mock_vsnprintf_fail_on_large_size;
  */
 TEST x_mock_failures(void) {
   char *s = NULL;
+  int rc;
 #if !defined(C89STRINGUTILS_HAVE_STRERROR_S)
   size_t len;
 #endif
 
-#if !defined(C89STRINGUTILS_HAVE_VASPRINTF) ||                                 \
-    defined(C89STRINGUTILS_FORCE_FALLBACKS)
-  int rc;
   printf("Testing malloc fail\n");
   g_mock_malloc_fail = 1;
   ASSERT_EQ(-1, c89stringutils_asprintf(&s, "test"));
@@ -659,6 +683,17 @@ TEST x_mock_failures(void) {
   if (s)
     free(s);
   s = NULL;
+  g_mock_vsnprintf_fail = 0;
+  g_mock_vsnprintf_fail_call = 0;
+
+  /* Test rc >= current_sz after exponential loop */
+  g_mock_vsnprintf_call_count = 0;
+  g_mock_vsnprintf_fail_call = 2;
+  g_mock_vsnprintf_fail = 1;
+  g_mock_vsnprintf_ret = -1;
+  g_mock_vsnprintf_ret2 = 300;
+  rc = c89stringutils_asprintf(&s, "test");
+  ASSERT_EQ(-1, rc);
   g_mock_vsnprintf_fail = 0;
   g_mock_vsnprintf_fail_call = 0;
 
@@ -698,7 +733,7 @@ TEST x_mock_failures(void) {
 
     g_mock_vsnprintf_fail_on_large_size = 0;
   }
-#endif
+
   s = malloc(10);
   if (s) {
 #if defined(_MSC_VER)
@@ -736,8 +771,6 @@ TEST x_mock_failures(void) {
     ASSERT_EQ(NULL, c89stringutils_strnstr(NULL, "a", 1));
     ASSERT_EQ(NULL, c89stringutils_strnstr("a", NULL, 1));
 #endif
-#if !defined(C89STRINGUTILS_HAVE_VASPRINTF) ||                                 \
-    defined(C89STRINGUTILS_FORCE_FALLBACKS)
     {
       int (*vasprintf_fn)(char **, const char *, va_list) =
           c89stringutils_vasprintf;
@@ -751,7 +784,6 @@ TEST x_mock_failures(void) {
       ASSERT_EQ(-1, vrc);
       ASSERT_EQ(NULL, sptr);
     }
-#endif
   }
 
 #if !defined(C89STRINGUTILS_HAVE_STRERROR_S)
@@ -762,6 +794,9 @@ TEST x_mock_failures(void) {
     char err_s_buf[10];
     ASSERT_EQ(22, c89stringutils_strerror_s(err_s_buf, 10, 99999));
   }
+  g_mock_malloc_fail = 1;
+  ASSERT_EQ(-1, c89stringutils_asprintf(&s, "test"));
+  g_mock_malloc_fail = 0;
   g_mock_strerror_null = 0;
 #endif
 

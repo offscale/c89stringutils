@@ -29,7 +29,7 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
             "${PROJECT_NAME}_compiler_flags"
             INTERFACE
             "$<${gcc_like}:$<BUILD_INTERFACE:-Werror;-Wall;-Wextra;-Wpedantic;-Wshadow;-Wformat=2;-Wconversion;-Wcast-align;-Wstrict-prototypes;-Wold-style-definition;-Wmissing-prototypes;-Wmissing-declarations;-Wundef;-Wpointer-arith;-Wcast-qual;-Wwrite-strings>>"
-            "$<${msvc}:$<BUILD_INTERFACE:-W4;-WX;-Zi;$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,19.10>:-permissive->>>"
+            "$<${msvc}:$<BUILD_INTERFACE:-W4;-WX;$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,19.10>:-permissive->>>"
     )
     target_link_options(
             "${PROJECT_NAME}_compiler_flags"
@@ -291,8 +291,6 @@ configure_file(
         "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.h"
 )
 
-add_subdirectory("${PROJECT_NAME}")
-
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     option(BUILD_TESTING_${PROJECT_PREFIX} "Build the tests" ON)
 else()
@@ -327,6 +325,8 @@ if (${PROJECT_PREFIX}_LTO)
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
     endif()
 endif()
+
+add_subdirectory("${PROJECT_NAME}")
 
 if (BUILD_TESTING_${PROJECT_PREFIX})
     enable_testing()

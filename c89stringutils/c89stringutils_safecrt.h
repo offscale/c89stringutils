@@ -133,9 +133,6 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_tmpfile_s(FILE **pFile);
 
 /* Wide character support */
 #if defined(C89STRINGUTILS_HAVE_WCHAR_H)
-#if defined(C89STRINGUTILS_HAVE_WCSCPY_S)
-#define c89stringutils_wcscpy_s wcscpy_s
-#else
 /**
  * @brief Safe wcscpy wrapper.
  * @param dest The destination wide string.
@@ -146,11 +143,7 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_tmpfile_s(FILE **pFile);
 C89STRINGUTILS_EXPORT errno_t c89stringutils_wcscpy_s(wchar_t *dest,
                                                       rsize_t destsz,
                                                       const wchar_t *src);
-#endif
 
-#if defined(C89STRINGUTILS_HAVE_WCSNCPY_S)
-#define c89stringutils_wcsncpy_s wcsncpy_s
-#else
 /**
  * @brief Safe wcsncpy wrapper.
  * @param dest The destination wide string.
@@ -163,11 +156,7 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_wcsncpy_s(wchar_t *dest,
                                                        rsize_t destsz,
                                                        const wchar_t *src,
                                                        rsize_t count);
-#endif
 
-#if defined(C89STRINGUTILS_HAVE_SWPRINTF_S)
-#define c89stringutils_swprintf_s swprintf_s
-#else
 /**
  * @brief Safe swprintf wrapper.
  * @param buffer The destination buffer.
@@ -179,11 +168,7 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_wcsncpy_s(wchar_t *dest,
 C89STRINGUTILS_EXPORT int c89stringutils_swprintf_s(wchar_t *buffer,
                                                     rsize_t sizeOfBuffer,
                                                     const wchar_t *format, ...);
-#endif
 
-#if defined(C89STRINGUTILS_HAVE_VSWPRINTF_S)
-#define c89stringutils_vswprintf_s vswprintf_s
-#else
 /**
  * @brief Safe vswprintf wrapper.
  * @param buffer The destination buffer.
@@ -196,7 +181,6 @@ C89STRINGUTILS_EXPORT int c89stringutils_vswprintf_s(wchar_t *buffer,
                                                      rsize_t sizeOfBuffer,
                                                      const wchar_t *format,
                                                      va_list argptr);
-#endif
 #endif /* C89STRINGUTILS_HAVE_WCHAR_H */
 
 #ifdef __cplusplus

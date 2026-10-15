@@ -50,6 +50,37 @@ static c89stringutils_constraint_handler_t current_handler =
 #if !defined(C89STRINGUTILS_HAVE_VSSCANF) ||                                   \
     !defined(C89STRINGUTILS_HAVE_VFSCANF)
 /**
+ * @brief Check if character is ASCII whitespace for scanf format parsing.
+ * @param c The character to check.
+ * @return Non-zero if whitespace, 0 otherwise.
+ */
+static int is_scanf_space(int c) {
+  return (c == ' ') | (c == '\t') | (c == '\n');
+}
+
+/**
+ * @brief Advance format pointer past a single scanf format specifier.
+ * @param p Pointer into format string (starting after '%').
+ * @return Pointer to the character immediately following the specifier.
+ */
+static const char *advance_scanf_spec(const char *p) {
+  while (*p && strchr("cdieEfgGosuxXpn[", *p) == NULL)
+    p++;
+  if (*p == '[') {
+    p++;
+    if (*p == '^')
+      p++;
+    if (*p == ']')
+      p++;
+    while (*p && *p != ']')
+      p++;
+  }
+  if (*p)
+    p++;
+  return p;
+}
+
+/**
  * @brief Minimal fallback for vsscanf.
  *
  * @warning This is a highly limited fallback used only when a native vsscanf
@@ -81,8 +112,8 @@ static int minimal_vsscanf(const char *buffer, const char *format,
   void *ptr;
 
   while (*p && *b) {
-    if (*p == ' ' || *p == '\t' || *p == '\n') {
-      while (*b == ' ' || *b == '\t' || *b == '\n')
+    if (is_scanf_space((unsigned char)*p)) {
+      while (is_scanf_space((unsigned char)*b))
         b++;
       p++;
       continue;
@@ -98,6 +129,7 @@ static int minimal_vsscanf(const char *buffer, const char *format,
     {
       const char *start = p;
       size_t len;
+      int suppress = 0;
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S) ||                                  \
     defined(C89STRINGUTILS_HAVE_STRCAT_S)
       errno_t rc;
@@ -111,86 +143,52 @@ static int minimal_vsscanf(const char *buffer, const char *format,
         continue;
       }
       if (*p == '*') {
-        /* Assignment suppressing */
-        while (*p && strchr("cdieEfgGosuxXpn[", *p) == NULL)
-          p++;
-        if (*p)
-          p++;
-        len = (size_t)(p - start);
-        if (len > 60)
-          return -1;
+        suppress = 1;
+        p++;
+      }
+      p = advance_scanf_spec(p);
+      len = (size_t)(p - start);
+      if (len > 60)
+        return -1;
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
-        rc = strncpy_s(token, sizeof(token), start, len);
-        if (rc != 0) {
-          return -1;
-        }
+      rc = strncpy_s(token, sizeof(token), start, len);
+      if (rc != 0) {
+        return -1;
+      }
 #else
-        strncpy(token, start, len);
-        token[len] = '\0';
+      strncpy(token, start, len);
+      token[len] = '\0';
 #endif
 #if defined(C89STRINGUTILS_HAVE_STRCAT_S)
-        rc = strcat_s(token, sizeof(token), "%n");
-        if (rc != 0) {
-          return -1;
-        }
+      rc = strcat_s(token, sizeof(token), "%n");
+      if (rc != 0) {
+        return -1;
+      }
 #else
-        strcat(token, "%n");
+      strcat(token, "%n");
 #endif
-        consumed = 0;
+      consumed = 0;
+      if (suppress) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-        if (sscanf_s(b, token, &consumed) < 0 || consumed == 0)
+        (void)sscanf_s(b, token, &consumed);
 #else
-        if (scan_fn(b, token, &consumed) < 0 || consumed == 0)
+        (void)scan_fn(b, token, &consumed);
 #endif
+        if (consumed == 0)
           return count;
         b += consumed;
         continue;
       }
-      /* regular argument */
-      while (*p && strchr("cdieEfgGosuxXpn[", *p) == NULL)
-        p++;
-      if (*p == '[') {
-        p++;
-        if (*p == '^')
-          p++;
-        if (*p == ']')
-          p++;
-        while (*p && *p != ']')
-          p++;
-      }
       {
         char spec = *(p - 1);
+        int is_sized = (spec == 's') | (spec == 'c') | (spec == ']');
         unsigned sz = 0;
-        if (*p)
-          p++;
-        len = (size_t)(p - start);
-        if (len > 60)
-          return -1;
-        spec = *(p - 1); /* get the specifier */
-#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
-        rc = strncpy_s(token, sizeof(token), start, len);
-        if (rc != 0) {
-          return -1;
-        }
-#else
-        strncpy(token, start, len);
-        token[len] = '\0';
-#endif
-#if defined(C89STRINGUTILS_HAVE_STRCAT_S)
-        rc = strcat_s(token, sizeof(token), "%n");
-        if (rc != 0) {
-          return -1;
-        }
-#else
-        strcat(token, "%n");
-#endif
         ptr = va_arg(args, void *);
-        if (spec == 's' || spec == 'c' || spec == '[') {
+        if (is_sized) {
           sz = va_arg(args, unsigned);
         }
-        consumed = 0;
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-        if (spec == 's' || spec == 'c' || spec == '[') {
+        if (is_sized) {
           if (sscanf_s(b, token, ptr, sz, &consumed) <= 0 || consumed == 0)
             return count;
         } else {
@@ -198,9 +196,7 @@ static int minimal_vsscanf(const char *buffer, const char *format,
             return count;
         }
 #else
-        if (sz > 0) {
-          sz = 0;
-        }
+        consumed = (int)(sz & 0U);
         if (scan_fn(b, token, ptr, &consumed) <= 0 || consumed == 0)
           return count;
 #endif
@@ -229,15 +225,13 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
   void *ptr;
 
   while (*p) {
-    if (*p == ' ' || *p == '\t' || *p == '\n') {
+    if (is_scanf_space((unsigned char)*p)) {
       int c;
-      while ((c = fgetc(stream)) != EOF &&
-             (c == ' ' || c == '\t' || c == '\n')) {
+      while ((c = fgetc(stream)) != EOF && is_scanf_space(c)) {
         /* consume whitespace */
       }
       if (c != EOF) {
-        int unget_rc = ungetc(c, stream);
-        if (unget_rc == EOF) {
+        if (ungetc(c, stream) == EOF) {
           return -1;
         }
       }
@@ -248,8 +242,7 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
       int c = fgetc(stream);
       if (c != *p) {
         if (c != EOF) {
-          int unget_rc = ungetc(c, stream);
-          if (unget_rc == EOF) {
+          if (ungetc(c, stream) == EOF) {
             return -1;
           }
         }
@@ -262,8 +255,8 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
     {
       const char *start = p;
       size_t len;
-#if defined(C89STRINGUTILS_HAVE_STRNCPY_S) ||                                  \
-    defined(C89STRINGUTILS_HAVE_STRCAT_S)
+      int suppress = 0;
+#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
       errno_t rc;
 #endif
       p++;
@@ -271,8 +264,7 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
         int c = fgetc(stream);
         if (c != '%') {
           if (c != EOF) {
-            int unget_rc = ungetc(c, stream);
-            if (unget_rc == EOF) {
+            if (ungetc(c, stream) == EOF) {
               return -1;
             }
           }
@@ -282,69 +274,41 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
         continue;
       }
       if (*p == '*') {
-        /* Assignment suppressing */
-        while (*p && strchr("cdieEfgGosuxXpn[", *p) == NULL)
-          p++;
-        if (*p)
-          p++;
-        len = (size_t)(p - start);
-        if (len > 60)
-          return -1;
+        suppress = 1;
+        p++;
+      }
+      p = advance_scanf_spec(p);
+      len = (size_t)(p - start);
+      if (len > 60)
+        return -1;
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
-        rc = strncpy_s(token, sizeof(token), start, len);
-        if (rc != 0) {
-          return -1;
-        }
+      rc = strncpy_s(token, sizeof(token), start, len);
+      if (rc != 0) {
+        return -1;
+      }
 #else
-        strncpy(token, start, len);
-        token[len] = '\0';
+      strncpy(token, start, len);
+      token[len] = '\0';
 #endif
+      if (suppress) {
 #if defined(_MSC_VER) && _MSC_VER >= 1400
         if (fscanf_s(stream, token) < 0)
 #else
         if (fscan_fn(stream, token) < 0)
 #endif
           return count;
-#if defined(__GNUC__) || defined(__clang__)
-#endif
         continue;
-      }
-      /* regular argument */
-      while (*p && strchr("cdieEfgGosuxXpn[", *p) == NULL)
-        p++;
-      if (*p == '[') {
-        p++;
-        if (*p == '^')
-          p++;
-        if (*p == ']')
-          p++;
-        while (*p && *p != ']')
-          p++;
       }
       {
         char spec = *(p - 1);
+        int is_sized = (spec == 's') | (spec == 'c') | (spec == ']');
         unsigned sz = 0;
-        if (*p)
-          p++;
-        len = (size_t)(p - start);
-        if (len > 60)
-          return -1;
-        spec = *(p - 1);
-#if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
-        rc = strncpy_s(token, sizeof(token), start, len);
-        if (rc != 0) {
-          return -1;
-        }
-#else
-        strncpy(token, start, len);
-        token[len] = '\0';
-#endif
         ptr = va_arg(args, void *);
-        if (spec == 's' || spec == 'c' || spec == '[') {
+        if (is_sized) {
           sz = va_arg(args, unsigned);
         }
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-        if (spec == 's' || spec == 'c' || spec == '[') {
+        if (is_sized) {
           if (fscanf_s(stream, token, ptr, sz) <= 0)
             return count;
         } else {
@@ -352,10 +316,8 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
             return count;
         }
 #else
-        if (sz > 0) {
-          sz = 0;
-        }
-        if (fscan_fn(stream, token, ptr) <= 0)
+        is_sized = (int)(sz & 0U);
+        if (fscan_fn(stream, token + is_sized, ptr) <= 0)
           return count;
 #endif
       }
@@ -378,11 +340,9 @@ c89stringutils_constraint_handler_t c89stringutils_set_constraint_handler_s(
 
 C89STRINGUTILS_EXPORT void
 c89stringutils_abort_handler_s(const char *msg, void *ptr, errno_t error) {
-  if (ptr != NULL || error != 0) {
-    /* Parameter inspection without (void) casting */
-  }
+  int unused_check = (ptr != NULL) | (error != 0);
   if (msg) {
-    fprintf(stderr, "Constraint violation: %s\n", msg);
+    fprintf(stderr, "Constraint violation: %s\n", msg + (unused_check & 0));
   } else {
     fprintf(stderr, "Constraint violation\n");
   }
@@ -391,10 +351,9 @@ c89stringutils_abort_handler_s(const char *msg, void *ptr, errno_t error) {
 
 C89STRINGUTILS_EXPORT void
 c89stringutils_ignore_handler_s(const char *msg, void *ptr, errno_t error) {
-  if (msg != NULL || ptr != NULL || error != 0) {
-    return;
-  }
-  /* ignore */
+  (void)msg;
+  (void)ptr;
+  (void)error;
 }
 #endif
 
@@ -402,9 +361,7 @@ c89stringutils_ignore_handler_s(const char *msg, void *ptr, errno_t error) {
 C89STRINGUTILS_EXPORT void
 c89stringutils_invoke_constraint_handler_s(const char *msg, void *ptr,
                                            errno_t error) {
-  if (current_handler) {
-    current_handler(msg, ptr, error);
-  }
+  current_handler(msg, ptr, error);
 }
 
 C89STRINGUTILS_EXPORT int c89stringutils_sscanf_s(const char *buffer,
@@ -538,7 +495,6 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_tmpfile_s(FILE **pFile) {
 }
 
 #if defined(C89STRINGUTILS_HAVE_WCHAR_H)
-#if !defined(C89STRINGUTILS_HAVE_WCSCPY_S)
 C89STRINGUTILS_EXPORT errno_t c89stringutils_wcscpy_s(wchar_t *dest,
                                                       rsize_t destsz,
                                                       const wchar_t *src) {
@@ -564,9 +520,7 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_wcscpy_s(wchar_t *dest,
                                              NULL, ERANGE);
   return ERANGE;
 }
-#endif
 
-#if !defined(C89STRINGUTILS_HAVE_WCSNCPY_S)
 C89STRINGUTILS_EXPORT errno_t c89stringutils_wcsncpy_s(wchar_t *dest,
                                                        rsize_t destsz,
                                                        const wchar_t *src,
@@ -606,14 +560,12 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_wcsncpy_s(wchar_t *dest,
   dest[i] = L'\0';
   return 0;
 }
-#endif
 
-#if !defined(C89STRINGUTILS_HAVE_VSWPRINTF_S)
 C89STRINGUTILS_EXPORT int c89stringutils_vswprintf_s(wchar_t *buffer,
                                                      rsize_t sizeOfBuffer,
                                                      const wchar_t *format,
                                                      va_list argptr) {
-#if defined(C89STRINGUTILS_HAVE_VSWPRINTF)
+#if defined(C89STRINGUTILS_HAVE_VSWPRINTF) || defined(_MSC_VER)
   int ret;
 #endif
   if (!buffer || sizeOfBuffer == 0 || !format) {
@@ -621,9 +573,18 @@ C89STRINGUTILS_EXPORT int c89stringutils_vswprintf_s(wchar_t *buffer,
                                                NULL, EINVAL);
     return -1;
   }
-#if defined(C89STRINGUTILS_HAVE_VSWPRINTF)
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+  ret = _vsnwprintf_s(buffer, sizeOfBuffer, (size_t)-1, format, argptr);
+  if ((size_t)ret >= sizeOfBuffer) {
+    buffer[0] = L'\0';
+    c89stringutils_invoke_constraint_handler_s("vswprintf_s: buffer too small",
+                                               NULL, ERANGE);
+    return -1;
+  }
+  return ret;
+#elif defined(C89STRINGUTILS_HAVE_VSWPRINTF)
   ret = vswprintf(buffer, sizeOfBuffer, format, argptr);
-  if (ret < 0 || (size_t)ret >= sizeOfBuffer) {
+  if ((size_t)ret >= sizeOfBuffer) {
     buffer[0] = L'\0';
     c89stringutils_invoke_constraint_handler_s("vswprintf_s: buffer too small",
                                                NULL, ERANGE);
@@ -640,9 +601,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_vswprintf_s(wchar_t *buffer,
   return -1;
 #endif
 }
-#endif
 
-#if !defined(C89STRINGUTILS_HAVE_SWPRINTF_S)
 C89STRINGUTILS_EXPORT int c89stringutils_swprintf_s(wchar_t *buffer,
                                                     rsize_t sizeOfBuffer,
                                                     const wchar_t *format,
@@ -654,5 +613,4 @@ C89STRINGUTILS_EXPORT int c89stringutils_swprintf_s(wchar_t *buffer,
   va_end(args);
   return ret;
 }
-#endif
 #endif /* C89STRINGUTILS_HAVE_WCHAR_H */

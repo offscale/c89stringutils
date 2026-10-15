@@ -273,6 +273,9 @@ TEST test_wcscpy_s(void) {
   rc = c89stringutils_wcscpy_s(NULL, 10, L"test");
   ASSERT(rc != 0);
 
+  rc = c89stringutils_wcscpy_s(dest, 0, L"test");
+  ASSERT(rc != 0);
+
   rc = c89stringutils_wcscpy_s(dest, 10, NULL);
   ASSERT(rc != 0);
 
@@ -303,6 +306,9 @@ TEST test_wcsncpy_s(void) {
   ASSERT_EQ(80, rc);
 
   rc = c89stringutils_wcsncpy_s(NULL, 10, L"test", 4);
+  ASSERT(rc != 0);
+
+  rc = c89stringutils_wcsncpy_s(dest, 0, L"test", 4);
   ASSERT(rc != 0);
 
   rc = c89stringutils_wcsncpy_s(dest, 10, NULL, 4);
@@ -353,8 +359,17 @@ TEST test_swprintf_s(void) {
   ASSERT(rc < 0);
 #endif
 
+  rc = c89stringutils_swprintf_s(dest, 0, L"test %d", 123);
+  ASSERT(rc < 0);
+
+  rc = c89stringutils_swprintf_s(dest, 20, NULL, 123);
+  ASSERT(rc < 0);
+
   rc = c89stringutils_swprintf_s(dest, 2, L"test %d", 123);
   ASSERT(rc < 0);
+
+  rc = c89stringutils_swprintf_s(dest, 20, L"%ls", L"");
+  ASSERT_EQ(0, rc);
 
   c89stringutils_set_constraint_handler_s(old);
   PASS();
@@ -375,12 +390,61 @@ static void mock_reset_safecrt_cb(void *data) {
 
 #if defined(C89STRINGUTILS_FORCE_FALLBACKS)
 TEST test_mock_sscanf_s_failures(void) {
+  int (*sscanf_s_fn)(const char *, const char *, ...) = c89stringutils_sscanf_s;
+  int val = 0;
+  int rc;
+  char sbuf[16];
+  const char *long_fmt =
+      "%0000000000000000000000000000000000000000000000000000000000000d";
+
   c89stringutils_set_constraint_handler_s(c89stringutils_ignore_handler_s);
+
+  /* Whitespace in format & buffer, literal match/mismatch, %% match/mismatch */
+  rc = c89stringutils_sscanf_s(" \t\n 42", " %d", &val);
+  ASSERT_EQ(1, rc);
+  ASSERT_EQ(42, val);
+
+  rc = c89stringutils_sscanf_s("abc", "abd");
+  ASSERT_EQ(0, rc);
+
+  rc = c89stringutils_sscanf_s("%42", "%%%d", &val);
+  ASSERT_EQ(1, rc);
+
+  rc = c89stringutils_sscanf_s("x42", "%%%d", &val);
+  ASSERT_EQ(0, rc);
+
+  /* Suppressing assignment %*d success and failure */
+  rc = c89stringutils_sscanf_s("10 20", "%*d %d", &val);
+  ASSERT_EQ(1, rc);
+  ASSERT_EQ(20, val);
+
+  rc = c89stringutils_sscanf_s("abc", "%*d %d", &val);
+  ASSERT_EQ(0, rc);
+
+  /* Long format specifier > 60 chars */
+  rc = sscanf_s_fn("123", long_fmt, &val);
+  ASSERT_EQ(-1, rc);
+
+  /* Scanf brackets: %[^]a], %[]a], unclosed %[abc, unclosed %l */
+  memset(sbuf, 0, sizeof(sbuf));
+  rc = sscanf_s_fn("xyz]a", "%3[^]a]", sbuf, (unsigned)sizeof(sbuf));
+  ASSERT_EQ(1, rc);
+
+  rc = sscanf_s_fn("]a", "%2[]a]", sbuf, (unsigned)sizeof(sbuf));
+  ASSERT_EQ(1, rc);
+
+  rc = sscanf_s_fn("abc", "%[abc", sbuf, (unsigned)sizeof(sbuf));
+  ASSERT_EQ(0, rc);
+
+  rc = sscanf_s_fn("123", "%l", &val);
+  ASSERT_EQ(0, rc);
+
+  /* Regular %d failure (mismatch / EOF) */
+  rc = c89stringutils_sscanf_s("xyz", "%d", &val);
+  ASSERT_EQ(0, rc);
 
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
   {
-    int rc;
-    int val;
     g_mock_strncpy_s_countdown = 0;
     rc = c89stringutils_sscanf_s("123", "%d", &val);
     ASSERT_EQ(-1, rc);
@@ -389,8 +453,6 @@ TEST test_mock_sscanf_s_failures(void) {
 
 #if defined(C89STRINGUTILS_HAVE_STRCAT_S)
   {
-    int val;
-    int rc;
     g_mock_strcat_s_countdown = 0;
     rc = c89stringutils_sscanf_s("123", "%*d %d", &val);
     ASSERT_EQ(-1, rc);
@@ -402,13 +464,18 @@ TEST test_mock_sscanf_s_failures(void) {
 }
 
 TEST test_mock_fscanf_s_failures(void) {
+  int (*fscanf_s_fn)(FILE *, const char *, ...) = c89stringutils_fscanf_s;
   int rc;
-  int val;
-  FILE *f;
+  int val = 0;
+  char sbuf[16];
+  FILE *f = NULL;
+  const char *long_fmt =
+      "%0000000000000000000000000000000000000000000000000000000000000d";
 
   c89stringutils_set_constraint_handler_s(c89stringutils_ignore_handler_s);
 
   c89stringutils_fopen_s(&f, "test_fscanf_mock.txt", "w+");
+  ASSERT(f != NULL);
   fprintf(f, " 123");
   rewind(f);
 
@@ -417,8 +484,69 @@ TEST test_mock_fscanf_s_failures(void) {
   ASSERT_EQ(-1, rc);
 
   rewind(f);
-  g_mock_ungetc_countdown = 1;
-  rc = c89stringutils_fscanf_s(f, "12%d", &val);
+  g_mock_ungetc_countdown = 0;
+  rc = c89stringutils_fscanf_s(f, "x%d", &val);
+  ASSERT_EQ(-1, rc);
+
+  rewind(f);
+  g_mock_ungetc_countdown = 0;
+  rc = c89stringutils_fscanf_s(f, "%%%d", &val);
+  ASSERT_EQ(-1, rc);
+
+  g_mock_ungetc_countdown = -1;
+
+  /* Test whitespace reaching EOF, literal reaching EOF, %% reaching EOF */
+  fclose(f);
+  c89stringutils_fopen_s(&f, "test_fscanf_mock.txt", "w+");
+  fprintf(f, "   ");
+  rewind(f);
+  rc = c89stringutils_fscanf_s(f, " %d", &val);
+  ASSERT_EQ(0, rc);
+
+  rewind(f);
+  fseek(f, 0, SEEK_END);
+  rc = c89stringutils_fscanf_s(f, "x");
+  ASSERT_EQ(0, rc);
+
+  rewind(f);
+  fseek(f, 0, SEEK_END);
+  rc = c89stringutils_fscanf_s(f, "%%");
+  ASSERT_EQ(0, rc);
+
+  /* Test literal match, %% match, %% mismatch non-EOF */
+  fclose(f);
+  c89stringutils_fopen_s(&f, "test_fscanf_mock.txt", "w+");
+  fprintf(f, "x%% 10 20 xyz");
+  rewind(f);
+  rc = c89stringutils_fscanf_s(f, "x%% %*d %d", &val);
+  ASSERT_EQ(1, rc);
+  ASSERT_EQ(20, val);
+
+  rewind(f);
+  rc = c89stringutils_fscanf_s(f, "%%");
+  ASSERT_EQ(0, rc);
+
+  rewind(f);
+  rc = c89stringutils_fscanf_s(f, "z");
+  ASSERT_EQ(0, rc);
+
+  /* Test suppress failure at EOF, regular failure, sized %s, long format */
+  fseek(f, 0, SEEK_END);
+  rc = c89stringutils_fscanf_s(f, "%*d");
+  ASSERT_EQ(0, rc);
+
+  rewind(f);
+  rc = c89stringutils_fscanf_s(f, "%d", &val);
+  ASSERT_EQ(0, rc);
+
+  rewind(f);
+  memset(sbuf, 0, sizeof(sbuf));
+  rc = fscanf_s_fn(f, "%3s", sbuf, (unsigned)sizeof(sbuf));
+  ASSERT_EQ(1, rc);
+
+  rewind(f);
+  rc = fscanf_s_fn(f, long_fmt, &val);
+  ASSERT_EQ(-1, rc);
 
   fclose(f);
   remove("test_fscanf_mock.txt");

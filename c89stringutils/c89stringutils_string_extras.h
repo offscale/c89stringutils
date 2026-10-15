@@ -15,8 +15,10 @@ extern "C" {
 #ifdef C89STRINGUTILS_NO_CMAKE_CONFIG
 #ifndef C89STRINGUTILS_EXPORT
 #if defined(_WIN32)
+/** @brief Export macro when building or using the shared library on Windows */
 #define C89STRINGUTILS_EXPORT __declspec(dllexport)
 #else
+/** @brief Export macro for default symbol visibility */
 #define C89STRINGUTILS_EXPORT __attribute__((visibility("default")))
 #endif
 #endif
