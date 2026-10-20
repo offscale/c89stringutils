@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.11...3.28)
-project(c89stringutils VERSION 0.0.2 LANGUAGES C)
+project(c89stringutils VERSION 0.0.3 LANGUAGES C)
 
 string(TOUPPER "${PROJECT_NAME}" PROJECT_PREFIX)
 string(REPLACE "-" "_" PROJECT_PREFIX "${PROJECT_PREFIX}")
@@ -303,12 +303,33 @@ set(${PROJECT_PREFIX}_MSVC_RTC "" CACHE STRING "MSVC Runtime Checks: RTC1, RTCs,
 set(${PROJECT_PREFIX}_LTO OFF CACHE BOOL "Enable Link-Time Optimization (LTO)")
 set(${PROJECT_PREFIX}_DEPS "System" CACHE STRING "Dependency resolution strategy")
 
-set(${PROJECT_PREFIX}_CRT_LINKAGE "Shared" CACHE STRING "MSVC CRT Linkage: Static or Shared")
+if ((DEFINED VCPKG_CRT_LINKAGE AND VCPKG_CRT_LINKAGE STREQUAL "static")
+        OR (DEFINED VCPKG_TARGET_TRIPLET AND VCPKG_TARGET_TRIPLET MATCHES "-static$" AND NOT DEFINED VCPKG_CRT_LINKAGE)
+        OR (DEFINED CMAKE_MSVC_RUNTIME_LIBRARY AND NOT CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "DLL"))
+    set(_default_crt_linkage "Static")
+else()
+    set(_default_crt_linkage "Shared")
+endif()
+set(${PROJECT_PREFIX}_CRT_LINKAGE "${_default_crt_linkage}" CACHE STRING "MSVC CRT Linkage: Static or Shared")
 if (MSVC)
     if (${PROJECT_PREFIX}_CRT_LINKAGE STREQUAL "Static")
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        foreach(flag_var
+                CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+                CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
+            if(${flag_var} MATCHES "/MD")
+                string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+            endif()
+        endforeach()
     else()
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+        foreach(flag_var
+                CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+                CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
+            if(${flag_var} MATCHES "/MT")
+                string(REGEX REPLACE "/MT" "/MD" ${flag_var} "${${flag_var}}")
+            endif()
+        endforeach()
     endif()
 endif()
 
