@@ -11,21 +11,27 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Da
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 endif ()
 
-project(c89stringutils VERSION 0.0.3 LANGUAGES C)
+project(c89stringutils VERSION 0.0.4 LANGUAGES C)
 
 string(TOUPPER "${PROJECT_NAME}" PROJECT_PREFIX)
 string(REPLACE "-" "_" PROJECT_PREFIX "${PROJECT_PREFIX}")
 
 # Consume optional shared CI variables to prevent unused-variable warnings
 set(_c89su_unused_ci_vars
+        "${CMAKE_BUILD_TYPE}"
+        "${FETCHCONTENT_SOURCE_DIR_AUTO-WIN-MSVC}"
+        "${FETCHCONTENT_SOURCE_DIR_AUTO_WIN_MSVC}"
         "${FETCHCONTENT_SOURCE_DIR_C-ABSTRACT-HTTP}"
         "${FETCHCONTENT_SOURCE_DIR_C_ABSTRACT_HTTP}"
+        "${FETCHCONTENT_SOURCE_DIR_CDD-C}"
+        "${FETCHCONTENT_SOURCE_DIR_CDD_C}"
         "${FETCHCONTENT_SOURCE_DIR_C-ORM}"
         "${FETCHCONTENT_SOURCE_DIR_C_ORM}"
         "${FETCHCONTENT_SOURCE_DIR_C-STR-SPAN}"
         "${FETCHCONTENT_SOURCE_DIR_C_STR_SPAN}"
         "${FETCHCONTENT_SOURCE_DIR_C89STRINGUTILS}"
         "${FETCHCONTENT_SOURCE_DIR_CFS}"
+        "${FETCHCONTENT_SOURCE_DIR_C_FS}"
         "${FETCHCONTENT_SOURCE_DIR_PARSON}")
 unset(_c89su_unused_ci_vars)
 
@@ -55,6 +61,12 @@ endif ()
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 set(CMAKE_C_STANDARD 90)
+if (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
+    set(CMAKE_C_EXTENSIONS OFF)
+    if (NOT DEFINED MSVC_VERSION OR MSVC_VERSION STRGREATER "1900")
+        set(CMAKE_C_STANDARD_REQUIRED ON)
+    endif ()
+endif ()
 
 add_library("${PROJECT_NAME}_compiler_flags" INTERFACE)
 if ((NOT DEFINED MSVC_VERSION OR MSVC_VERSION STRGREATER "1900")
@@ -107,6 +119,10 @@ check_include_file(strings.h C89STRINGUTILS_HAVE_STRINGS_H)
 check_include_file(sys/param.h C89STRINGUTILS_HAVE_SYS_PARAM_H)
 check_include_file(wchar.h C89STRINGUTILS_HAVE_WCHAR_H)
 
+if (NOT MSVC AND NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
+    set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE")
+endif ()
+
 check_symbol_exists(strncpy_s "string.h" C89STRINGUTILS_HAVE_STRNCPY_S)
 check_symbol_exists(strcpy_s "string.h" C89STRINGUTILS_HAVE_STRCPY_S)
 check_symbol_exists(strncat_s "string.h" C89STRINGUTILS_HAVE_STRNCAT_S)
@@ -149,24 +165,42 @@ check_symbol_exists(fprintf_s "stdio.h" C89STRINGUTILS_HAVE_FPRINTF_S)
 check_symbol_exists(_vscprintf "stdio.h;stdarg.h" C89STRINGUTILS_HAVE__VSCPRINTF)
 check_symbol_exists(snprintf "stdio.h" C89STRINGUTILS_HAVE_SNPRINTF)
 
+set(_saved_cmake_required_flags "${CMAKE_REQUIRED_FLAGS}")
+if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Wformat -Werror")
+elseif (MSVC)
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} /W4 /WX")
+endif ()
+
 check_c_source_compiles("
     #include <stdio.h>
     #include <stddef.h>
     int main(void) {
         char buf[32];
         size_t s = 0;
-        sprintf(buf, \"%zu\", s);
-        return 0;
+        #if defined(_MSC_VER) && _MSC_VER >= 1400
+        return sprintf_s(buf, sizeof(buf), \"%zu\", s);
+        #else
+        return sprintf(buf, \"%zu\", s);
+        #endif
     }
 " C89STRINGUTILS_HAVE_PRINTF_ZU)
 
 check_c_source_compiles("
     #include <stdio.h>
+    #if defined(__GNUC__) || defined(__clang__)
+    __extension__ typedef long long test_ll_t;
+    #else
+    typedef long long test_ll_t;
+    #endif
     int main(void) {
         char buf[32];
-        long long s = 0;
-        sprintf(buf, \"%lld\", s);
-        return 0;
+        test_ll_t s = 0;
+        #if defined(_MSC_VER) && _MSC_VER >= 1400
+        return sprintf_s(buf, sizeof(buf), \"%lld\", s);
+        #else
+        return sprintf(buf, \"%lld\", s);
+        #endif
     }
 " C89STRINGUTILS_HAVE_PRINTF_LLD)
 
@@ -175,8 +209,11 @@ check_c_source_compiles("
     int main(void) {
         char buf[32];
         __int64 s = 0;
-        sprintf(buf, \"%I64d\", s);
-        return 0;
+        #if defined(_MSC_VER) && _MSC_VER >= 1400
+        return sprintf_s(buf, sizeof(buf), \"%I64d\", s);
+        #else
+        return sprintf(buf, \"%I64d\", s);
+        #endif
     }
 " C89STRINGUTILS_HAVE_PRINTF_I64D)
 
@@ -186,10 +223,15 @@ check_c_source_compiles("
     int main(void) {
         char buf[32];
         size_t s = 0;
-        sprintf(buf, \"%Iu\", s);
-        return 0;
+        #if defined(_MSC_VER) && _MSC_VER >= 1400
+        return sprintf_s(buf, sizeof(buf), \"%Iu\", s);
+        #else
+        return sprintf(buf, \"%Iu\", s);
+        #endif
     }
 " C89STRINGUTILS_HAVE_PRINTF_IU)
+
+set(CMAKE_REQUIRED_FLAGS "${_saved_cmake_required_flags}")
 
 check_c_source_compiles("
     #include <stdio.h>
@@ -217,10 +259,13 @@ check_symbol_exists(strcasestr "string.h" C89STRINGUTILS_HAVE_STRCASESTR)
 
 check_symbol_exists(vasprintf "stdio.h" C89STRINGUTILS_HAVE_VASPRINTF)
 check_symbol_exists(asprintf "stdio.h" C89STRINGUTILS_HAVE_ASPRINTF)
-set(CMAKE_REQUIRED_DEFINITIONS)
+if (MSVC OR CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
+    set(CMAKE_REQUIRED_DEFINITIONS)
+endif ()
 
 check_symbol_exists(strerror_s "string.h" C89STRINGUTILS_HAVE_STRERROR_S)
 check_symbol_exists(strerror_r "string.h" C89STRINGUTILS_HAVE_STRERROR_R)
+set(CMAKE_REQUIRED_DEFINITIONS)
 
 option(C89STRINGUTILS_FORCE_FALLBACKS "Force fallbacks for coverage testing" OFF)
 if(C89STRINGUTILS_FORCE_FALLBACKS)
@@ -276,8 +321,8 @@ if(C89STRINGUTILS_HAVE_STRERROR_R)
         #include <string.h>
         int main(void) {
             char buf[256];
-            char *res = strerror_r(0, buf, sizeof(buf));
-            return res != 0;
+            char c = *strerror_r(0, buf, sizeof(buf));
+            return (int)c;
         }
     " C89STRINGUTILS_STRERROR_R_CHAR_P)
     set(CMAKE_REQUIRED_DEFINITIONS)
@@ -347,17 +392,59 @@ else()
     option(${PROJECT_PREFIX}_BUILD_TESTING "Build the tests" OFF)
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "DOS")
+if (DEFINED CDD_CHARSET AND NOT CDD_CHARSET STREQUAL "")
+    set(_default_charset "${CDD_CHARSET}")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "DOS")
     set(_default_charset "ANSI")
 else ()
     set(_default_charset "Unicode")
 endif ()
 set(${PROJECT_PREFIX}_CHARSET "${_default_charset}" CACHE STRING "Charset to use: Unicode or ANSI")
-set(${PROJECT_PREFIX}_THREADING "Multi-threaded" CACHE STRING "Threading: Multi-threaded or Single-threaded")
-set(${PROJECT_PREFIX}_MSVC_RTC "" CACHE STRING "MSVC Runtime Checks: RTC1, RTCs, RTCu, OFF, or empty")
-set(${PROJECT_PREFIX}_LTO OFF CACHE BOOL "Enable Link-Time Optimization (LTO)")
-set(${PROJECT_PREFIX}_DEPS "System" CACHE STRING "Dependency resolution strategy")
-set(${PROJECT_PREFIX}_CRT_LINKAGE "" CACHE STRING "MSVC CRT Linkage: Static or Shared")
+
+if (DEFINED CDD_THREADING AND NOT CDD_THREADING STREQUAL "")
+    set(_default_threading "${CDD_THREADING}")
+else ()
+    set(_default_threading "Multi-threaded")
+endif ()
+set(${PROJECT_PREFIX}_THREADING "${_default_threading}" CACHE STRING "Threading: Multi-threaded or Single-threaded")
+
+if (DEFINED CDD_MSVC_RTC)
+    set(_default_msvc_rtc "${CDD_MSVC_RTC}")
+else ()
+    set(_default_msvc_rtc "")
+endif ()
+set(${PROJECT_PREFIX}_MSVC_RTC "${_default_msvc_rtc}" CACHE STRING "MSVC Runtime Checks: RTC1, RTCs, RTCu, OFF, or empty")
+
+if (DEFINED CDD_LTO)
+    set(_default_lto "${CDD_LTO}")
+else ()
+    set(_default_lto OFF)
+endif ()
+set(${PROJECT_PREFIX}_LTO "${_default_lto}" CACHE BOOL "Enable Link-Time Optimization (LTO)")
+
+if (DEFINED CDD_DEPS AND NOT CDD_DEPS STREQUAL "")
+    set(_default_deps "${CDD_DEPS}")
+else ()
+    set(_default_deps "System")
+endif ()
+set(${PROJECT_PREFIX}_DEPS "${_default_deps}" CACHE STRING "Dependency resolution strategy")
+
+if (DEFINED CDD_CRT_LINKAGE)
+    set(_default_crt_linkage "${CDD_CRT_LINKAGE}")
+else ()
+    set(_default_crt_linkage "")
+endif ()
+set(${PROJECT_PREFIX}_CRT_LINKAGE "${_default_crt_linkage}" CACHE STRING "MSVC CRT Linkage: Static or Shared")
+
+set(_effective_crt_linkage "${${PROJECT_PREFIX}_CRT_LINKAGE}")
+if (_effective_crt_linkage STREQUAL "" AND DEFINED CDD_CRT_LINKAGE)
+    set(_effective_crt_linkage "${CDD_CRT_LINKAGE}")
+endif ()
+
+set(_effective_msvc_rtc "${${PROJECT_PREFIX}_MSVC_RTC}")
+if (_effective_msvc_rtc STREQUAL "" AND DEFINED CDD_MSVC_RTC)
+    set(_effective_msvc_rtc "${CDD_MSVC_RTC}")
+endif ()
 
 if (MSVC)
     foreach(flag_var
@@ -366,7 +453,7 @@ if (MSVC)
         string(REGEX REPLACE "[/-]M[TD]d?" "" ${flag_var} "${${flag_var}}")
     endforeach()
 
-    string(TOUPPER "${${PROJECT_PREFIX}_CRT_LINKAGE}" _crt_linkage_upper)
+    string(TOUPPER "${_effective_crt_linkage}" _crt_linkage_upper)
     if (_crt_linkage_upper STREQUAL "STATIC")
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     elseif (_crt_linkage_upper STREQUAL "SHARED")
@@ -380,20 +467,20 @@ if (MSVC)
         endif ()
     endif ()
 
-    string(TOUPPER "${${PROJECT_PREFIX}_MSVC_RTC}" _msvc_rtc_upper)
+    string(TOUPPER "${_effective_msvc_rtc}" _msvc_rtc_upper)
     if (_msvc_rtc_upper STREQUAL "OFF" OR _msvc_rtc_upper STREQUAL "NONE")
         foreach(flag_var
                 CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
                 CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
             string(REGEX REPLACE "[/-]RTC[1su]+" "" ${flag_var} "${${flag_var}}")
         endforeach()
-    elseif (${PROJECT_PREFIX}_MSVC_RTC MATCHES "^RTC(1|s|u|su|us)$")
+    elseif (_effective_msvc_rtc MATCHES "^RTC(1|s|u|su|us)$")
         foreach(flag_var
                 CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
                 CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
             string(REGEX REPLACE "[/-]RTC[1su]+" "" ${flag_var} "${${flag_var}}")
         endforeach()
-        add_compile_options("$<$<CONFIG:Debug>:/${${PROJECT_PREFIX}_MSVC_RTC}>")
+        add_compile_options("$<$<CONFIG:Debug>:/${_effective_msvc_rtc}>")
     endif ()
 endif ()
 
@@ -413,7 +500,7 @@ else ()
     add_compile_definitions(C89STRINGUTILS_MULTI_THREADED=1)
 endif ()
 
-if (CMAKE_INTERPROCEDURAL_OPTIMIZATION OR ${PROJECT_PREFIX}_LTO)
+if (CMAKE_INTERPROCEDURAL_OPTIMIZATION OR ${PROJECT_PREFIX}_LTO OR CDD_LTO)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT ipo_supported)
     if (ipo_supported)

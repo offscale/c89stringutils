@@ -1046,7 +1046,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          }
          /* convert to string */
          for (;;) {
-            *--s = h[n64 & ((1 << (l >> 8)) - 1)];
+            *--s = h[n64 & (stbsp__uint64)((1U << (l >> 8)) - 1U)];
             n64 >>= (l >> 8);
             if (!((n64) || ((stbsp__int32)((num + STBSP__NUMSZ) - s) < pr)))
                break;
@@ -1345,7 +1345,8 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          s = num + STBSP__NUMSZ - 1;
          *s = f[0];
          l = 1;
-         fw = fl = 0;
+         fl = 0;
+         fw = 0;
          lead[0] = 0;
          tail[0] = 0;
          pr = 0;

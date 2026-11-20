@@ -559,6 +559,10 @@ TEST x_strncat_s_should_succeed(void) {
   ASSERT_EQ(0, rc);
   ASSERT_STR_EQ("hello world", buf);
 
+  rc = c89stringutils_strncat_s(buf, sizeof(buf), "!", 5);
+  ASSERT_EQ(0, rc);
+  ASSERT_STR_EQ("hello world!", buf);
+
   {
     errno_t cpy_rc = c89stringutils_strcpy_s(buf, sizeof(buf), "hello");
     ASSERT_EQ(0, cpy_rc);
@@ -971,6 +975,21 @@ TEST x_mock_jasprintf_memcpy_failure(void) {
 }
 #endif
 
+/**
+ * @brief Test case for c89stringutils_free
+ * @return enum test result
+ */
+TEST x_free_should_succeed(void) {
+  char *s = NULL;
+  int rc;
+  rc = c89stringutils_asprintf(&s, "free_%d", 1);
+  ASSERT_EQ(0, rc);
+  ASSERT_STR_EQ("free_1", s);
+  c89stringutils_free(s);
+  c89stringutils_free(NULL);
+  PASS();
+}
+
 SUITE(strnstr_suite) {
   SET_SETUP(mock_reset_cb, NULL);
   RUN_TEST(x_strnstr_should_succeed);
@@ -982,6 +1001,7 @@ SUITE(strnstr_suite) {
   RUN_TEST(x_jasprintf_realloc_path);
   RUN_TEST(x_mock_failures);
   RUN_TEST(x_jasprintf_alias_should_succeed);
+  RUN_TEST(x_free_should_succeed);
   RUN_TEST(x_strcasecmp_should_succeed);
   RUN_TEST(x_strncasecmp_should_succeed);
   RUN_TEST(x_strcasestr_should_succeed);

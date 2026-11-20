@@ -3,6 +3,10 @@
  * @brief Implementations of safe CRT functions.
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 /* clang-format off */
 #include "c89stringutils_safecrt.h"
 #include "c89stringutils_log.h"
@@ -175,7 +179,7 @@ static int minimal_vsscanf(const char *buffer, const char *format,
         return -1;
       }
 #else
-      strncpy(token, start, len);
+      (strncpy)(token, start, len);
       token[len] = '\0';
 #endif
 #if defined(C89STRINGUTILS_HAVE_STRCAT_S)
@@ -184,7 +188,7 @@ static int minimal_vsscanf(const char *buffer, const char *format,
         return -1;
       }
 #else
-      strcat(token, "%n");
+      (strcat)(token, "%n");
 #endif
       consumed = 0;
       if (suppress) {
@@ -306,7 +310,7 @@ static int minimal_vfscanf(FILE *stream, const char *format, va_list args) {
         return -1;
       }
 #else
-      strncpy(token, start, len);
+      (strncpy)(token, start, len);
       token[len] = '\0';
 #endif
       if (suppress) {

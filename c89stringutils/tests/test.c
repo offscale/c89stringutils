@@ -43,7 +43,9 @@ int g_mock_fprintf_countdown = -1;
 void *mock_malloc(size_t size);
 void *mock_realloc(void *ptr, size_t size);
 void *mock_reallocarray(void *ptr, size_t nmemb, size_t size);
+#if defined(C89STRINGUTILS_HAVE_STRERROR_S)
 int mock_strerror_s(char *buffer, size_t sizeInBytes, int errnum);
+#endif
 char *mock_strerror(int errnum);
 #if defined(C89STRINGUTILS_HAVE_STRERROR_R)
 #if defined(C89STRINGUTILS_STRERROR_R_CHAR_P)
@@ -158,10 +160,14 @@ int mock_vfprintf(FILE *stream, const char *format, va_list ap)
     C89STRINGUTILS_FORMAT_PRINTF(2, 0);
 int mock_fprintf(FILE *stream, const char *format, ...)
     C89STRINGUTILS_FORMAT_PRINTF(2, 3);
+#if defined(C89STRINGUTILS_HAVE_VFPRINTF_S)
 int mock_vfprintf_s(FILE *stream, const char *format, va_list ap)
     C89STRINGUTILS_FORMAT_PRINTF(2, 0);
+#endif
+#if defined(C89STRINGUTILS_HAVE_FPRINTF_S)
 int mock_fprintf_s(FILE *stream, const char *format, ...)
     C89STRINGUTILS_FORMAT_PRINTF(2, 3);
+#endif
 
 #undef vsnprintf
 #undef vsprintf
@@ -254,10 +260,13 @@ int mock_vscprintf(const char *format, va_list ap) {
 int mock_vsnprintf_s(char *buffer, size_t sizeOfBuffer, size_t count,
                      const char *format, va_list ap) {
   int ret = -1;
-#ifdef _MSC_VER
+#if defined(C89STRINGUTILS_HAVE__VSNPRINTF_S)
   ret = _vsnprintf_s(buffer, sizeOfBuffer, count, format, ap);
 #else
-  ret = vsnprintf(buffer, count, format, ap);
+  {
+    size_t max_len = (count < sizeOfBuffer) ? (count + 1) : sizeOfBuffer;
+    ret = vsnprintf(buffer, max_len, format, ap);
+  }
 #endif
   return do_mock_vsnprintf(sizeOfBuffer, ret);
 }
@@ -318,7 +327,7 @@ int mock_fprintf(FILE *stream, const char *format, ...) {
   return ret;
 }
 
-#ifdef _WIN32
+#if defined(C89STRINGUTILS_HAVE_VFPRINTF_S)
 /**
  * @brief Mock vfprintf_s
  * @param stream the stream
@@ -331,7 +340,9 @@ int mock_vfprintf_s(FILE *stream, const char *format, va_list ap) {
     return -1;
   return vfprintf_s(stream, format, ap);
 }
+#endif
 
+#if defined(C89STRINGUTILS_HAVE_FPRINTF_S)
 /**
  * @brief Mock fprintf_s
  * @param stream the stream
@@ -354,7 +365,9 @@ int mock_fprintf_s(FILE *stream, const char *format, ...) {
   va_end(ap);
   return ret;
 }
+#endif
 
+#if defined(C89STRINGUTILS_HAVE_STRERROR_S)
 /**
  * @brief Mock strerror_s
  * @param buffer the buffer
@@ -546,6 +559,7 @@ GREATEST_MAIN_DEFS();
  */
 
 #if defined(_MSC_VER)
+#if defined(_DEBUG)
 #if defined(_WIN32) || defined(_WIN64)
 extern __declspec(dllimport) void *__stdcall GetModuleHandleA(const char *);
 extern
@@ -559,17 +573,33 @@ static int is_running_on_wine(void) {
   return 0;
 #endif
 }
+#endif /* defined(_DEBUG) */
 
 int g_mock_CrtSetReportMode_fail = 0;
 int mock_CrtSetReportMode(int reportType, int reportMode) {
-  int rc;
   if (g_mock_CrtSetReportMode_fail)
     return -1;
-  rc = _CrtSetReportMode(reportType, reportMode);
-  if (rc == -1 && is_running_on_wine())
-    return 0;
-  return rc;
+#if defined(_DEBUG)
+  {
+    int rc;
+#if defined(_DLL)
+    if (is_running_on_wine())
+      return 0;
+#endif
+    rc = _CrtSetReportMode(reportType, reportMode);
+    if (rc == -1 && is_running_on_wine())
+      return 0;
+    return rc;
+  }
+#else
+  (void)reportType;
+  (void)reportMode;
+  return 0;
+#endif
 }
+#ifdef _CrtSetReportMode
+#undef _CrtSetReportMode
+#endif
 #define _CrtSetReportMode mock_CrtSetReportMode
 #endif
 

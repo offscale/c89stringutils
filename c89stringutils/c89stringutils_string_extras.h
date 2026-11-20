@@ -147,7 +147,10 @@
 #elif defined(__GNUC__) || defined(__clang__)
 #define C89STRINGUTILS_HAVE_VSNPRINTF 1
 #define C89STRINGUTILS_HAVE_SNPRINTF 1
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || !defined(__STRICT_ANSI__)
 #define C89STRINGUTILS_HAVE_VA_COPY 1
+#endif
+#define C89STRINGUTILS_HAVE___VA_COPY 1
 #define C89STRINGUTILS_HAVE_ATTR_FORMAT 1
 #define C89STRINGUTILS_HAVE_ATTR_NONNULL 1
 #define C89STRINGUTILS_HAVE_TYPEOF 1
@@ -723,6 +726,14 @@ extern C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...)
  */
 extern C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...)
     C89STRINGUTILS_FORMAT_PRINTF(2, 3);
+
+/**
+ * @brief Free heap memory allocated by c89stringutils dynamic string functions
+ * (such as c89stringutils_asprintf, c89stringutils_vasprintf, and
+ * c89stringutils_jasprintf) using the library's own C runtime heap.
+ * @param ptr Pointer to the allocated buffer to free, or NULL.
+ */
+extern C89STRINGUTILS_EXPORT void c89stringutils_free(void *ptr);
 
 #ifdef __cplusplus
 }

@@ -208,24 +208,21 @@ extern int mock_memcpy_s(void *dest, size_t destsz, const void *src,
 #if defined(__WATCOMC__)
 /** @brief Safely copy va_list on OpenWatcom without dereferencing dest */
 #define VA_COPY(dest, src) memcpy(&(dest), &(src), sizeof(va_list))
-#elif defined(C89STRINGUTILS_HAVE_VA_COPY)
+#elif defined(va_copy)
 /** @brief Safely copy va_list */
 #define VA_COPY(dest, src) va_copy(dest, src)
-#elif defined(C89STRINGUTILS_HAVE___VA_COPY)
+#elif defined(__va_copy)
 /** @brief Safely copy va_list using __va_copy */
 #define VA_COPY(dest, src) __va_copy(dest, src)
-#else
-/** @brief Safely copy va_list using direct assignment or memcpy conditionally
- */
-#if defined(__GNUC__) || defined(__clang__) ||                                 \
-    (defined(__SUNPRO_C) && defined(__sparcv9))
-/* va_list is often an array type on these platforms/architectures */
-#define VA_COPY(dest, src) memcpy(&(dest), &(src), sizeof(va_list))
+#elif defined(__GNUC__) || defined(__clang__)
+/** @brief Safely copy va_list using compiler builtin */
+#define VA_COPY(dest, src) __builtin_va_copy(dest, src)
 #elif defined(_MSC_VER) || defined(__INTEL_COMPILER) || defined(__TINYC__)
-#define VA_COPY(dest, src) (dest = src)
+/** @brief Safely copy va_list using direct assignment */
+#define VA_COPY(dest, src) ((dest) = (src))
 #else
+/** @brief Safely copy va_list using memcpy */
 #define VA_COPY(dest, src) memcpy(&(dest), &(src), sizeof(va_list))
-#endif
 #endif
 #endif /* ! VA_COPY */
 
@@ -399,7 +396,7 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strerror_s(char *s,
         }
       }
 #else
-      strncpy(s, errstr, maxsize);
+      (strncpy)(s, errstr, maxsize);
       s[maxsize - 1] = '\0';
 #endif
       return (errno_t)C89STRINGUTILS_SUCCESS;
@@ -459,7 +456,7 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strcpy_s(char *dest,
       }
     }
 #elif defined(C89STRINGUTILS_HAVE_STRLCPY)
-    strlcpy(dest, src, destsz);
+    (strlcpy)(dest, src, destsz);
 #else
     memcpy(dest, src, srclen + 1);
 #endif
@@ -624,7 +621,7 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_strcat_s(char *dest,
       }
     }
 #elif defined(C89STRINGUTILS_HAVE_STRLCAT)
-    strlcat(dest, src, destsz);
+    (strlcat)(dest, src, destsz);
 #else
     memcpy(dest + destlen, src, srclen + 1);
 #endif
@@ -1183,6 +1180,9 @@ static int c89stringutils_vjasprintf(char **unto, const char *fmt, va_list args)
 static int c89stringutils_vjasprintf(char **unto, const char *fmt,
                                      va_list args) {
   char *new_part = NULL;
+  char *result;
+  size_t base_length;
+  size_t new_length;
   int rc = -1;
 
   rc = c89stringutils_vasprintf(&new_part, fmt, args);
@@ -1196,46 +1196,42 @@ static int c89stringutils_vjasprintf(char **unto, const char *fmt,
     return 0;
   }
 
-  {
 #if defined(C89STRINGUTILS_HAVE_STRNLEN_S)
-    size_t base_length = strnlen_s(*unto, RSIZE_MAX);
-    size_t new_length = strnlen_s(new_part, RSIZE_MAX);
+  base_length = strnlen_s(*unto, RSIZE_MAX);
+  new_length = strnlen_s(new_part, RSIZE_MAX);
 #else
-    size_t base_length = strlen(*unto);
-    size_t new_length = strlen(new_part);
+  base_length = strlen(*unto);
+  new_length = strlen(new_part);
 #endif
-    char *result;
 
 #if defined(C89STRINGUTILS_HAVE_REALLOCARRAY)
-    result = (char *)reallocarray(*unto, 1, base_length + new_length + 1);
+  result = (char *)reallocarray(*unto, 1, base_length + new_length + 1);
 #else
-    result = (char *)realloc(*unto, base_length + new_length + 1);
+  result = (char *)realloc(*unto, base_length + new_length + 1);
 #endif
-    if (result == NULL) {
-      LOG_DEBUG("realloc failed with rc=-1");
-      free(new_part);
-      return -1;
-    }
-
-#if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
-    {
-      errno_t rc_cpy;
-      rc_cpy = memcpy_s(result + base_length, new_length + 1, new_part,
-                        new_length + 1);
-      if (rc_cpy != (errno_t)C89STRINGUTILS_SUCCESS) {
-        free(new_part);
-        free(result);
-        *unto = NULL;
-        return -1;
-      }
-    }
-#else
-    memcpy(result + base_length, new_part, new_length + 1);
-#endif
+  if (result == NULL) {
+    LOG_DEBUG("realloc failed with rc=-1");
     free(new_part);
-    *unto = result;
+    return -1;
   }
 
+#if defined(C89STRINGUTILS_HAVE_MEMCPY_S)
+  {
+    errno_t rc_cpy;
+    rc_cpy = memcpy_s(result + base_length, new_length + 1, new_part,
+                      new_length + 1);
+    if (rc_cpy != (errno_t)C89STRINGUTILS_SUCCESS) {
+      free(new_part);
+      free(result);
+      *unto = NULL;
+      return -1;
+    }
+  }
+#else
+  memcpy(result + base_length, new_part, new_length + 1);
+#endif
+  free(new_part);
+  *unto = result;
   return 0;
 }
 
@@ -1320,6 +1316,12 @@ C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
 
   return rc;
 }
+
+/**
+ * @brief Free heap memory allocated by c89stringutils dynamic string functions.
+ * @param ptr Pointer to the allocated buffer to free, or NULL.
+ */
+C89STRINGUTILS_EXPORT void c89stringutils_free(void *ptr) { free(ptr); }
 
 /* Prevent macro leakage in amalgamation builds */
 #ifdef snprintf

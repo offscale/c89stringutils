@@ -70,11 +70,16 @@ TEST test_ignore_handler(void) {
 
 TEST test_sscanf_s(void) {
   int val = 0;
+  int val2 = 0;
   int rc;
   c89stringutils_constraint_handler_t old =
       c89stringutils_set_constraint_handler_s(c89stringutils_ignore_handler_s);
 
   rc = c89stringutils_sscanf_s("123", "%d", &val);
+  ASSERT_EQ(1, rc);
+  ASSERT_EQ(123, val);
+
+  rc = c89stringutils_sscanf_s("123", "%d %d", &val, &val2);
   ASSERT_EQ(1, rc);
   ASSERT_EQ(123, val);
 
