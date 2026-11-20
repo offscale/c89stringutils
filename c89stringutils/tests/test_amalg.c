@@ -1,3 +1,7 @@
+/**
+ * @file test_amalg.c
+ * @brief Standalone test for the STB-style single-header amalgamation.
+ */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -9,8 +13,10 @@
 #include <stdarg.h>
 /* clang-format on */
 
-int g_mock_printf_fail = 0;
-int mock_printf(const char *format, ...) {
+static int g_mock_printf_fail = 0;
+static int mock_printf(const char *format, ...)
+    C89STRINGUTILS_FORMAT_PRINTF(1, 2);
+static int mock_printf(const char *format, ...) {
   if (g_mock_printf_fail)
     return -1;
   {
@@ -24,8 +30,10 @@ int mock_printf(const char *format, ...) {
 }
 #define printf mock_printf
 
-int g_mock_fprintf_fail = 0;
-int mock_fprintf(FILE *stream, const char *format, ...) {
+static int g_mock_fprintf_fail = 0;
+static int mock_fprintf(FILE *stream, const char *format, ...)
+    C89STRINGUTILS_FORMAT_PRINTF(2, 3);
+static int mock_fprintf(FILE *stream, const char *format, ...) {
   if (g_mock_fprintf_fail)
     return -1;
   {
@@ -39,7 +47,7 @@ int mock_fprintf(FILE *stream, const char *format, ...) {
 }
 #define fprintf mock_fprintf
 
-int test_amalg(int force_asprintf_fail) {
+static int test_amalg(int force_asprintf_fail) {
   char *x = NULL;
   int rc;
   if (force_asprintf_fail) {

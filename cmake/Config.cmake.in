@@ -1,4 +1,12 @@
 
 @PACKAGE_INIT@
 
-include ( "${CMAKE_CURRENT_LIST_DIR}/c89stringutilsTargets.cmake" )
+if (NOT TARGET c89stringutils::c89stringutils)
+    include("${CMAKE_CURRENT_LIST_DIR}/c89stringutilsTargets.cmake")
+endif ()
+
+if (NOT TARGET c89stringutils AND TARGET c89stringutils::c89stringutils)
+    add_library(c89stringutils INTERFACE IMPORTED)
+    set_target_properties(c89stringutils PROPERTIES
+            INTERFACE_LINK_LIBRARIES "c89stringutils::c89stringutils")
+endif ()

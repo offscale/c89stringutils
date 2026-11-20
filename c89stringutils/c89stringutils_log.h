@@ -5,18 +5,18 @@
 #ifndef C89STRINGUTILS_LOG_H
 #define C89STRINGUTILS_LOG_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 /* clang-format off */
 #include "c89stringutils_export.h"
 #include "c89stringutilsConfig.h"
 /* clang-format on */
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #if defined(C89STRINGUTILS_HAVE_ATTR_FORMAT)
 #define C89STRINGUTILS_LOG_FORMAT_PRINTF(fmt_idx, arg_idx)                     \
-  __attribute__((format(printf, fmt_idx, arg_idx)))
+  __attribute__((__format__(__printf__, fmt_idx, arg_idx)))
 #else
 #define C89STRINGUTILS_LOG_FORMAT_PRINTF(fmt_idx, arg_idx)
 #endif

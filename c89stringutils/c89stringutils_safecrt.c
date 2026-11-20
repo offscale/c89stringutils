@@ -5,6 +5,7 @@
 
 /* clang-format off */
 #include "c89stringutils_safecrt.h"
+#include "c89stringutils_log.h"
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,8 +23,14 @@ extern FILE *mock_fopen(const char *filename, const char *mode);
 extern FILE *mock_freopen(const char *filename, const char *mode, FILE *stream);
 extern FILE *mock_tmpfile(void);
 extern int mock_ungetc(int c, FILE *stream);
+#ifdef ungetc
+#undef ungetc
+#endif
 #define ungetc mock_ungetc
 extern int mock_fprintf(FILE *stream, const char *format, ...);
+#ifdef fprintf
+#undef fprintf
+#endif
 #define fprintf mock_fprintf
 #if defined(C89STRINGUTILS_HAVE_STRNCPY_S)
 extern int mock_strncpy_s(char *dest, size_t destsz, const char *src,
@@ -34,9 +41,21 @@ extern int mock_strncpy_s(char *dest, size_t destsz, const char *src,
 extern int mock_strcat_s(char *dest, size_t destsz, const char *src);
 #define strcat_s mock_strcat_s
 #endif
+#ifdef abort
+#undef abort
+#endif
 #define abort mock_abort
+#ifdef fopen
+#undef fopen
+#endif
 #define fopen mock_fopen
+#ifdef freopen
+#undef freopen
+#endif
 #define freopen mock_freopen
+#ifdef tmpfile
+#undef tmpfile
+#endif
 #define tmpfile mock_tmpfile
 #endif
 
@@ -476,7 +495,7 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_tmpfile_s(FILE **pFile) {
     if (rc == 0 && *pFile == NULL) {
       *pFile = tmpfile();
       if (*pFile == NULL)
-        return errno ? errno : 5; /* EIO fallback */
+        return errno ? errno : (errno_t)C89STRINGUTILS_EIO;
     }
 #endif
     return rc;
@@ -543,13 +562,13 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_wcsncpy_s(wchar_t *dest,
     }
     dest[i] = L'\0';
     if (src[i] != L'\0')
-      return 80; /* STRUNCATE / ERANGE */
-    return 0;
+      return (errno_t)C89STRINGUTILS_STRUNCATE;
+    return (errno_t)C89STRINGUTILS_SUCCESS;
   }
   for (i = 0; i < count && i < destsz; i++) {
     dest[i] = src[i];
     if (src[i] == L'\0')
-      return 0;
+      return (errno_t)C89STRINGUTILS_SUCCESS;
   }
   if (i == destsz) {
     dest[0] = L'\0';
@@ -558,7 +577,7 @@ C89STRINGUTILS_EXPORT errno_t c89stringutils_wcsncpy_s(wchar_t *dest,
     return ERANGE;
   }
   dest[i] = L'\0';
-  return 0;
+  return (errno_t)C89STRINGUTILS_SUCCESS;
 }
 
 C89STRINGUTILS_EXPORT int c89stringutils_vswprintf_s(wchar_t *buffer,
@@ -582,6 +601,25 @@ C89STRINGUTILS_EXPORT int c89stringutils_vswprintf_s(wchar_t *buffer,
     return -1;
   }
   return ret;
+#elif defined(__WATCOMC__) && defined(C89STRINGUTILS_HAVE_VSWPRINTF)
+  {
+    wchar_t tmp[256];
+    va_list ap_copy;
+    memcpy(&ap_copy, &argptr, sizeof(va_list));
+    ret = vswprintf(tmp, 256, format, ap_copy);
+    va_end(ap_copy);
+    if (ret < 0 || (size_t)ret >= sizeOfBuffer) {
+      buffer[0] = L'\0';
+      c89stringutils_invoke_constraint_handler_s(
+          "vswprintf_s: buffer too small", NULL, ERANGE);
+      return -1;
+    }
+    if (sizeOfBuffer < 256) {
+      memcpy(buffer, tmp, ((size_t)ret + 1) * sizeof(wchar_t));
+      return ret;
+    }
+    return vswprintf(buffer, sizeOfBuffer, format, argptr);
+  }
 #elif defined(C89STRINGUTILS_HAVE_VSWPRINTF)
   ret = vswprintf(buffer, sizeOfBuffer, format, argptr);
   if ((size_t)ret >= sizeOfBuffer) {
@@ -597,7 +635,8 @@ C89STRINGUTILS_EXPORT int c89stringutils_vswprintf_s(wchar_t *buffer,
   }
   /* Fallback for missing vswprintf */
   c89stringutils_invoke_constraint_handler_s("vswprintf not supported natively",
-                                             NULL, 129);
+                                             NULL,
+                                             (errno_t)C89STRINGUTILS_ENOTSUP);
   return -1;
 #endif
 }

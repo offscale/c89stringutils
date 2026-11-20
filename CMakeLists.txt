@@ -1,21 +1,69 @@
 cmake_minimum_required(VERSION 3.11...3.28)
+if (POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
+endif ()
+
+if ((CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "DOS")
+        AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    set(CMAKE_OSX_ARCHITECTURES "")
+endif ()
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+endif ()
+
 project(c89stringutils VERSION 0.0.3 LANGUAGES C)
 
 string(TOUPPER "${PROJECT_NAME}" PROJECT_PREFIX)
 string(REPLACE "-" "_" PROJECT_PREFIX "${PROJECT_PREFIX}")
+
+# Consume optional shared CI variables to prevent unused-variable warnings
+set(_c89su_unused_ci_vars
+        "${FETCHCONTENT_SOURCE_DIR_C-ABSTRACT-HTTP}"
+        "${FETCHCONTENT_SOURCE_DIR_C_ABSTRACT_HTTP}"
+        "${FETCHCONTENT_SOURCE_DIR_C-ORM}"
+        "${FETCHCONTENT_SOURCE_DIR_C_ORM}"
+        "${FETCHCONTENT_SOURCE_DIR_C-STR-SPAN}"
+        "${FETCHCONTENT_SOURCE_DIR_C_STR_SPAN}"
+        "${FETCHCONTENT_SOURCE_DIR_C89STRINGUTILS}"
+        "${FETCHCONTENT_SOURCE_DIR_CFS}"
+        "${FETCHCONTENT_SOURCE_DIR_PARSON}")
+unset(_c89su_unused_ci_vars)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "DOS")
+    if (NOT DEFINED CMAKE_INSTALL_LIBDIR)
+        set(CMAKE_INSTALL_LIBDIR "lib" CACHE PATH "Object code libraries")
+    endif ()
+endif ()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "DOS" AND CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
+    get_filename_component(_ow_cc_name "${CMAKE_C_COMPILER}" NAME)
+    if (_ow_cc_name MATCHES "^wcl(\\.exe)?$")
+        if (NOT CMAKE_C_FLAGS MATCHES "(^| )-m[smlchf]( |$)")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mm -zm -zc -zt=128")
+        endif ()
+        if (NOT CMAKE_EXE_LINKER_FLAGS MATCHES "stack=")
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} option stack=16384")
+        endif ()
+    endif ()
+endif ()
+
+if (MSVC)
+    string(REGEX REPLACE "/W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    string(REGEX REPLACE "-W[0-4]" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+endif ()
 
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 set(CMAKE_C_STANDARD 90)
 
 add_library("${PROJECT_NAME}_compiler_flags" INTERFACE)
-if (NOT DEFINED MSVC_VERSION
-        OR MSVC_VERSION STRGREATER "1900" # 2015
-        OR NOT (CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom"))
+if ((NOT DEFINED MSVC_VERSION OR MSVC_VERSION STRGREATER "1900")
+        AND NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
     target_compile_features("${PROJECT_NAME}_compiler_flags" INTERFACE "c_std_${CMAKE_C_STANDARD}")
-elseif ((MSVC_VERSION STRLESS_EQUAL "1900"
-         OR CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom"
-         OR CYGWIN)
+endif ()
+if (((DEFINED MSVC_VERSION AND MSVC_VERSION STRLESS_EQUAL "1900")
+        OR CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom"
+        OR CYGWIN)
         AND NOT EXISTS "${PROJECT_BINARY_DIR}/c89stringutils_export.h")
     file(COPY "${PROJECT_SOURCE_DIR}/c89stringutils/c89stringutils_export_pregen.h"
             DESTINATION "${PROJECT_BINARY_DIR}")
@@ -293,67 +341,95 @@ configure_file(
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     option(BUILD_TESTING_${PROJECT_PREFIX} "Build the tests" ON)
+    option(${PROJECT_PREFIX}_BUILD_TESTING "Build the tests" ON)
 else()
     option(BUILD_TESTING_${PROJECT_PREFIX} "Build the tests" OFF)
+    option(${PROJECT_PREFIX}_BUILD_TESTING "Build the tests" OFF)
 endif()
 
-set(${PROJECT_PREFIX}_CHARSET "Unicode" CACHE STRING "Charset to use: Unicode or ANSI")
+if (CMAKE_SYSTEM_NAME STREQUAL "DOS")
+    set(_default_charset "ANSI")
+else ()
+    set(_default_charset "Unicode")
+endif ()
+set(${PROJECT_PREFIX}_CHARSET "${_default_charset}" CACHE STRING "Charset to use: Unicode or ANSI")
 set(${PROJECT_PREFIX}_THREADING "Multi-threaded" CACHE STRING "Threading: Multi-threaded or Single-threaded")
-set(${PROJECT_PREFIX}_MSVC_RTC "" CACHE STRING "MSVC Runtime Checks: RTC1, RTCs, RTCu, or empty")
+set(${PROJECT_PREFIX}_MSVC_RTC "" CACHE STRING "MSVC Runtime Checks: RTC1, RTCs, RTCu, OFF, or empty")
 set(${PROJECT_PREFIX}_LTO OFF CACHE BOOL "Enable Link-Time Optimization (LTO)")
 set(${PROJECT_PREFIX}_DEPS "System" CACHE STRING "Dependency resolution strategy")
+set(${PROJECT_PREFIX}_CRT_LINKAGE "" CACHE STRING "MSVC CRT Linkage: Static or Shared")
 
-if ((DEFINED VCPKG_CRT_LINKAGE AND VCPKG_CRT_LINKAGE STREQUAL "static")
-        OR (DEFINED VCPKG_TARGET_TRIPLET AND VCPKG_TARGET_TRIPLET MATCHES "-static$" AND NOT DEFINED VCPKG_CRT_LINKAGE)
-        OR (DEFINED CMAKE_MSVC_RUNTIME_LIBRARY AND NOT CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "DLL"))
-    set(_default_crt_linkage "Static")
-else()
-    set(_default_crt_linkage "Shared")
-endif()
-set(${PROJECT_PREFIX}_CRT_LINKAGE "${_default_crt_linkage}" CACHE STRING "MSVC CRT Linkage: Static or Shared")
 if (MSVC)
-    if (${PROJECT_PREFIX}_CRT_LINKAGE STREQUAL "Static")
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-        foreach(flag_var
-                CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-                CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
-            if(${flag_var} MATCHES "/MD")
-                string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-            endif()
-        endforeach()
-    else()
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-        foreach(flag_var
-                CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-                CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
-            if(${flag_var} MATCHES "/MT")
-                string(REGEX REPLACE "/MT" "/MD" ${flag_var} "${${flag_var}}")
-            endif()
-        endforeach()
-    endif()
-endif()
+    foreach(flag_var
+            CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+            CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
+        string(REGEX REPLACE "[/-]M[TD]d?" "" ${flag_var} "${${flag_var}}")
+    endforeach()
 
-if (${PROJECT_PREFIX}_CHARSET STREQUAL "Unicode")
+    string(TOUPPER "${${PROJECT_PREFIX}_CRT_LINKAGE}" _crt_linkage_upper)
+    if (_crt_linkage_upper STREQUAL "STATIC")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    elseif (_crt_linkage_upper STREQUAL "SHARED")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    elseif (NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY OR CMAKE_MSVC_RUNTIME_LIBRARY STREQUAL "")
+        if ((DEFINED VCPKG_CRT_LINKAGE AND VCPKG_CRT_LINKAGE STREQUAL "static")
+                OR (DEFINED VCPKG_TARGET_TRIPLET AND VCPKG_TARGET_TRIPLET MATCHES "-static$" AND NOT DEFINED VCPKG_CRT_LINKAGE))
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        else ()
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+        endif ()
+    endif ()
+
+    string(TOUPPER "${${PROJECT_PREFIX}_MSVC_RTC}" _msvc_rtc_upper)
+    if (_msvc_rtc_upper STREQUAL "OFF" OR _msvc_rtc_upper STREQUAL "NONE")
+        foreach(flag_var
+                CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+                CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
+            string(REGEX REPLACE "[/-]RTC[1su]+" "" ${flag_var} "${${flag_var}}")
+        endforeach()
+    elseif (${PROJECT_PREFIX}_MSVC_RTC MATCHES "^RTC(1|s|u|su|us)$")
+        foreach(flag_var
+                CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+                CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
+            string(REGEX REPLACE "[/-]RTC[1su]+" "" ${flag_var} "${${flag_var}}")
+        endforeach()
+        add_compile_options("$<$<CONFIG:Debug>:/${${PROJECT_PREFIX}_MSVC_RTC}>")
+    endif ()
+endif ()
+
+string(TOUPPER "${${PROJECT_PREFIX}_CHARSET}" _charset_upper)
+if (_charset_upper STREQUAL "UNICODE")
     add_compile_definitions(UNICODE _UNICODE)
-endif()
-if (MSVC AND ${PROJECT_PREFIX}_MSVC_RTC)
-    add_compile_options("/${${PROJECT_PREFIX}_MSVC_RTC}")
-endif()
-if (${PROJECT_PREFIX}_LTO)
+endif ()
+
+string(TOUPPER "${${PROJECT_PREFIX}_THREADING}" _threading_upper)
+if (_threading_upper STREQUAL "SINGLE-THREADED"
+        OR _threading_upper STREQUAL "SINGLE"
+        OR _threading_upper STREQUAL "OFF"
+        OR _threading_upper STREQUAL "FALSE"
+        OR _threading_upper STREQUAL "0")
+    add_compile_definitions(C89STRINGUTILS_SINGLE_THREADED=1)
+else ()
+    add_compile_definitions(C89STRINGUTILS_MULTI_THREADED=1)
+endif ()
+
+if (CMAKE_INTERPROCEDURAL_OPTIMIZATION OR ${PROJECT_PREFIX}_LTO)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT ipo_supported)
-    if(ipo_supported)
+    if (ipo_supported)
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-    endif()
-endif()
+    else ()
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+    endif ()
+endif ()
 
 add_subdirectory("${PROJECT_NAME}")
 
-if (BUILD_TESTING_${PROJECT_PREFIX})
+if (BUILD_TESTING_${PROJECT_PREFIX} OR ${PROJECT_PREFIX}_BUILD_TESTING)
     enable_testing()
     include(CTest)
     file(WRITE "${PROJECT_BINARY_DIR}/CTestCustom.cmake"
-        "set(CTEST_CUSTOM_COVERAGE_EXCLUDE \".*tests/.*\" \".*test_.*\" \".*CMakeFiles.*\" \".*greatest.*\")\n"
+        "set(CTEST_CUSTOM_COVERAGE_EXCLUDE \".*tests/.*\" \".*test_.*\" \".*CMakeFiles.*\" \".*greatest.*\" \".*stb_sprintf\\\\.h\")\n"
     )
     if (BUILD_TESTING)
         add_subdirectory("${PROJECT_NAME}/tests")
@@ -404,8 +480,10 @@ configure_package_config_file(
 # generate the version file for the config file
 write_basic_package_version_file(
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-        VERSION "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}"
+        VERSION "${${PROJECT_NAME}_VERSION}"
         COMPATIBILITY AnyNewerVersion
 )
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}")

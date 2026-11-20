@@ -7,27 +7,29 @@ c89stringutils
 [![C89](https://img.shields.io/badge/C-89-blue)](https://en.wikipedia.org/wiki/C89_(C_version))
 
 C89 is missing some nice things. As is MSVC.
-This adds the string related functionality for:
+`c89stringutils` provides portable string, formatting, and C11 Annex K ("Safe CRT") functionality across:
 
 - **Windows**
     - MSVC 2005 through MSVC 2026+
     - MinGW
     - Cygwin
-    - Open Watcom 2.0 (including **DOS** target)
-- **SunOS**
+    - Open Watcom 2.0
+- **DOS**
+    - Open Watcom 2.0 — 16-bit real-mode (`I86`) and 32-bit protected-mode (`I386`) across MS-DOS 1.25, 2.00, 4.00, and FreeDOS 1.3+
+- **SunOS / Solaris**
 - **Linux**
-- ***BSD**
+- **\*BSD**
 - **macOS**
 
-Everything is hidden behind `ifdef`s so if the compiler/OS supports the function, that function will be used instead of
-the one provided by this library.
+All public symbols are namespaced under `c89stringutils_*` to prevent linkage collisions (with unprefixed `asprintf`, `vasprintf`, and `jasprintf` also provided when missing on the host). Feature detection via CMake (or `C89STRINGUTILS_NO_CMAKE_CONFIG` standalone mode) delegates to native OS/CRT routines whenever available and falls back to strict ISO C89 implementations otherwise.
 
 ### Architecture & Standards
 
-- **Strict C89 Compliance:** The entire codebase strictly conforms to ISO C90 (C89), preventing compilation issues on extremely old enterprise toolchains.
-- **Header Guards & C++ Interop:** Fully instrumented with `extern "C"` blocks and robust guards, playing nicely when directly `#include`d into C++ sources.
-- **Windows Security:** Eradicates the inclusion of heavy platform headers like `<windows.h>`, and actively defaults to MSVC "Safe CRT" variants (e.g., `vsprintf_s`, `_vscprintf`) implicitly when building on Microsoft compilers.
-- **Quality Metrics:** Maintains 100% Doxygen documentation and 100% test coverage locally.
+- **Strict C89 Compliance:** The entire codebase strictly conforms to ISO C90 (C89) (`-std=c89 -Wpedantic -Wall -Wextra -Werror` on GCC/Clang, `/W4 /WX /permissive-` on MSVC), with 16-bit-clean size and far-pointer handling for real-mode DOS.
+- **Header Guards & C++ Interop:** Public headers (`c89stringutils_string_extras.h`, `c89stringutils_safecrt.h`, `c89stringutils_log.h`, and `c89stringutils_amalgamation.h`) wrap declarations in `extern "C"` blocks placed cleanly after `#include` directives for direct C++98+ compatibility.
+- **Windows & Safe CRT Security:** Avoids `<windows.h>` altogether, defaults to MSVC Safe CRT routines (e.g., `_vsnprintf_s`, `_vscprintf`, `strcpy_s`) when available, and provides configurable C11 Annex K runtime-constraint handlers.
+- **Standalone (No-CMake) Mode:** Supports direct compilation without CMake by defining `C89STRINGUTILS_NO_CMAKE_CONFIG`, activating built-in feature detection for MSVC, GCC, Clang, Open Watcom, TinyCC, Oracle/SunPro, Intel, and Borland toolchains.
+- **Quality Metrics:** Maintains 100% Doxygen documentation coverage and 100% line and branch test coverage.
 
 ## Integration Examples
 
@@ -35,11 +37,11 @@ the one provided by this library.
 
 If you don't want to link against a built `static` or `shared` library, you can generate a drop-in, STB-style single-header amalgamation!
 
-When building the project via CMake, toggle `C89STRINGUTILS_BUILD_AMALGAMATION=ON`:
+When configuring the project via CMake, enable `C89STRINGUTILS_BUILD_AMALGAMATION=ON`:
 ```sh
-cmake -B build -DC89STRINGUTILS_BUILD_AMALGAMATION=ON
+cmake -S . -B build -DC89STRINGUTILS_BUILD_AMALGAMATION=ON
 ```
-This generates `build/c89stringutils/c89stringutils_amalgamation.h`.
+This generates `build/c89stringutils_amalgamation.h`.
 
 **To use the amalgamation in your project:**
 Drop it into your source tree and define `C89STRINGUTILS_IMPLEMENTATION` in **exactly one** `.c` or `.cpp` file before including the header:
@@ -47,11 +49,13 @@ Drop it into your source tree and define `C89STRINGUTILS_IMPLEMENTATION` in **ex
 ```c
 #define C89STRINGUTILS_IMPLEMENTATION
 #include "c89stringutils_amalgamation.h"
+#include <stdlib.h>
 
 int main(void) {
-    char* str = NULL;
-    asprintf(&str, "Hello %s", "World");
-    free(str);
+    char *str = NULL;
+    if (c89stringutils_asprintf(&str, "Hello %s", "World") == 0) {
+        free(str);
+    }
     return 0;
 }
 ```
@@ -70,8 +74,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(c89stringutils)
 
-# Link against the target
-target_link_libraries(your_target PRIVATE c89stringutils)
+# Link against the namespaced alias target (plain `c89stringutils` also works)
+target_link_libraries(your_target PRIVATE c89stringutils::c89stringutils)
 ```
 
 ### 3. vcpkg (Custom Registry)
@@ -115,40 +119,62 @@ find_package(c89stringutils CONFIG REQUIRED)
 target_link_libraries(your_target PRIVATE c89stringutils::c89stringutils)
 ```
 
-### String functions implemented
+## API Overview
 
-| Function                                                                | Citation                     |
-|-------------------------------------------------------------------------|------------------------------|
-| [`strcasestr`](https://www.freebsd.org/cgi/man.cgi?query=strcasestr)    | From MUSL                    |
-| [`strncasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strncasecmp)  | Alias for MSVC's `_strnicmp` |
-| [`strcasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strcasecmp)    | Alias for MSVC's `_stricmp`  |
-| [`snprintf`](https://www.freebsd.org/cgi/man.cgi?query=snprintf)        | Custom C89 polyfill          |
-| [`vsnprintf`](https://www.freebsd.org/cgi/man.cgi?query=vsnprintf)      | Custom C89 polyfill          |
-| [`strnstr`](https://www.freebsd.org/cgi/man.cgi?query=strnstr)          | Custom C89 polyfill          |
-| [`strerrorlen_s`](https://en.cppreference.com/w/c/string/byte/strerror) | From Safe C Library          |
-| [`asprintf`](https://www.freebsd.org/cgi/man.cgi?query=asprintf)        | From libressl-portable       |
+### String Extras (`c89stringutils_string_extras.h`)
 
-Additionally `jasprintf`, a version of `asprintf` that concatenates on successive calls.
+| Function | Origin / Behavior |
+|---|---|
+| [`c89stringutils_strcasestr`](https://www.freebsd.org/cgi/man.cgi?query=strcasestr) | Native `strcasestr` or MUSL C89 fallback (NULL-safe) |
+| [`c89stringutils_strncasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strncasecmp) | Delegates to `_strnicmp` / `strncasecmp` or C89 fallback (NULL-safe) |
+| [`c89stringutils_strcasecmp`](https://www.freebsd.org/cgi/man.cgi?query=strcasecmp) | Delegates to `_stricmp` / `strcasecmp` or C89 fallback (NULL-safe) |
+| [`c89stringutils_strnstr`](https://www.freebsd.org/cgi/man.cgi?query=strnstr) | Native `strnstr` or custom C89 polyfill (NULL-safe) |
+| [`c89stringutils_snprintf`](https://www.freebsd.org/cgi/man.cgi?query=snprintf) / [`c89stringutils_vsnprintf`](https://www.freebsd.org/cgi/man.cgi?query=vsnprintf) | C99-semantics bounded formatting (`stb_sprintf` / Safe CRT / C89 fallback) |
+| [`c89stringutils_asprintf`](https://www.freebsd.org/cgi/man.cgi?query=asprintf) / `c89stringutils_vasprintf` | Heap-allocating formatted output (`asprintf` / `vasprintf` also declared when missing on host) |
+| `c89stringutils_jasprintf` / `jasprintf` | Appending `asprintf` variant that concatenates onto an existing heap string on successive calls |
+| [`c89stringutils_strerrorlen_s`](https://en.cppreference.com/w/c/string/byte/strerror) | Length of the `strerror` description for an `errno_t` (from Safe C Library) |
+
+### Safe CRT & C11 Annex K (`c89stringutils_string_extras.h` & `c89stringutils_safecrt.h`)
+
+| Function | Behavior |
+|---|---|
+| `c89stringutils_strcpy_s` / `c89stringutils_strncpy_s` | Bounds-checked string copy (supports `_TRUNCATE`) |
+| `c89stringutils_strcat_s` / `c89stringutils_strncat_s` | Bounds-checked string concatenation (supports `_TRUNCATE`) |
+| `c89stringutils_snprintf_s` / `c89stringutils_vsnprintf_s` | Bounds-checked formatted string output |
+| `c89stringutils_strerror_s` | Bounds-checked error string lookup (`strerror_s` / `strerror_r` / `strerror` fallback) |
+| `c89stringutils_sscanf_s` / `c89stringutils_fscanf_s` | Safe formatted string and stream scanning with minimal C89 `vsscanf`/`vfscanf` fallbacks |
+| `c89stringutils_fopen_s` / `c89stringutils_freopen_s` / `c89stringutils_tmpfile_s` | Parameter-validated `FILE *` stream wrappers |
+| `c89stringutils_wcscpy_s` / `c89stringutils_wcsncpy_s` / `c89stringutils_swprintf_s` / `c89stringutils_vswprintf_s` | Bounds-checked wide-character copy and formatting (when `<wchar.h>` is available) |
+| `c89stringutils_set_constraint_handler_s` / `c89stringutils_invoke_constraint_handler_s` / `c89stringutils_abort_handler_s` / `c89stringutils_ignore_handler_s` | Configurable C11 Annex K runtime-constraint violation handlers |
+
+### Portable Format Specifiers, Error Codes & Logging (`c89stringutils_string_extras.h` & `c89stringutils_log.h`)
+
+- **Fixed/Pointer Width Types & Format Macros:** `c89stringutils_int64_t`, `c89stringutils_uint64_t`, `C89STRINGUTILS_INT64_C`, `C89STRINGUTILS_UINT64_C`, `C89STRINGUTILS_PRId64` / `PRIu64` / `PRIx64`, `C89STRINGUTILS_PRId32` / `PRIu32` / `PRIx32`, `NUM_FORMAT`, `UNUM_FORMAT`, `SIZE_T_FORMAT`, `SIZE_T_HEX_FORMAT`, `PTRDIFF_T_FORMAT`, `C89STRINGUTILS_PRI_PTR`, `C89STRINGUTILS_PRI_LDBL`.
+- **Error Enum & Types:** `c89stringutils_error_t` (`C89STRINGUTILS_SUCCESS`, `C89STRINGUTILS_EINVAL`, `C89STRINGUTILS_ERANGE`, `C89STRINGUTILS_STRUNCATE`, `C89STRINGUTILS_ENOMEM`, etc.), plus `errno_t` and `rsize_t` typedef fallbacks.
+- **Debug Logging:** `c89stringutils_log_debug` (`LOG_DEBUG` macro in `c89stringutils_log.h`).
 
 ### Dependencies
 
-- [CMake](https://cmake.org) (3.11 for MSVC 2005 or newer versions for other targets)
-- C compiler (any that work with CMake, and were released within the last 30 years)
+- [CMake](https://cmake.org) (3.11 for MSVC 2005 or newer versions for other targets; optional when using `C89STRINGUTILS_NO_CMAKE_CONFIG` or the amalgamation)
+- C89-compatible C compiler
 
 ### Configure, build, and test
 
 ```sh
 cmake -S . -B build -DBUILD_TESTING=ON
 cmake --build build
-ctest --test-dir build -C Debug
+ctest --test-dir build -C Debug --output-on-failure
 ```
 
-**Advanced CMake Toggles:**
-The build environment seamlessly supports several CDD-style switches out of the box:
-* `CDD_CHARSET`: `Unicode` or `ANSI` (Sets `UNICODE` and `_UNICODE` defines).
-* `CDD_THREADING`: `ON` or `OFF`.
-* `CDD_LTO`: `ON` or `OFF` (Validates and sets `CMAKE_INTERPROCEDURAL_OPTIMIZATION`).
-* `CDD_MSVC_RTC`: `RTC1`, `RTCu`, or `RTCs` (Automatically injects `/RTCx` flags on MSVC).
+**CMake Configuration Options:**
+* `C89STRINGUTILS_BUILD_TESTING` / `BUILD_TESTING_C89STRINGUTILS` / `BUILD_TESTING`: `ON` or `OFF` (defaults to `ON` when built as the top-level project).
+* `C89STRINGUTILS_BUILD_AMALGAMATION`: `ON` or `OFF` (generates `c89stringutils_amalgamation.h` in the build directory).
+* `C89STRINGUTILS_CHARSET`: `Unicode` (sets `UNICODE` and `_UNICODE`; default on non-DOS targets) or `ANSI` (default on DOS).
+* `C89STRINGUTILS_CRT_LINKAGE`: `Static` (`/MT`, `/MTd`) or `Shared` (`/MD`, `/MDd`) on MSVC; also respects `VCPKG_CRT_LINKAGE` and `*-static` triplets.
+* `C89STRINGUTILS_THREADING`: `Multi-threaded` (default) or `Single-threaded` (`OFF` / `FALSE` / `0`).
+* `C89STRINGUTILS_LTO`: `ON` or `OFF` (checks IPO support and configures `CMAKE_INTERPROCEDURAL_OPTIMIZATION`).
+* `C89STRINGUTILS_MSVC_RTC`: `RTC1`, `RTCs`, `RTCu`, `RTCsu`, `RTCus`, or `OFF` (configures `/RTC*` flags on Debug MSVC builds).
+* `C89STRINGUTILS_FORCE_FALLBACKS`: `ON` or `OFF` (forces pure C89 fallback implementations over native symbols for testing and coverage).
 
 ### Script to automatically build
 
@@ -158,7 +184,7 @@ Build, test, and package for:
 - MinGW (32-bit and 64-bit);
 - MSVC 2005 (32-bit and 64-bit);
 - MSVC 2022 / 2026 (32-bit and 64-bit);
-- OpenWatcom's DOS target (16-bit).
+- OpenWatcom's DOS targets (16-bit `I86` and 32-bit `I386`).
 
 …by running in Command Prompt: https://github.com/offscale/win-cmake-multi-build
 
@@ -193,12 +219,12 @@ With v2 from https://github.com/open-watcom/open-watcom-v2/releases installed:
 ```sh
 [path]\WATCOM\owsetenv.bat
 mkdir build_dos && cd build_dos
-cmake -G "Watcom WMake" -D CMAKE_SYSTEM_NAME "DOS" -D CMAKE_SYSTEM_PROCESSOR "I86" ..
+cmake -G "Watcom WMake" -DCMAKE_SYSTEM_NAME=DOS -DCMAKE_SYSTEM_PROCESSOR=I86 ..
 cmake --build .
 ctest -C Debug
 ```
 
-(that test phase might fail if you're running this on a non-DOS host)
+(use `-DCMAKE_SYSTEM_PROCESSOR=I386` for 32-bit DOS; `ctest` requires a DOS host or emulator)
 
 ---
 

@@ -60,8 +60,18 @@ target_include_directories(
 
 add_test(NAME "${EXEC_NAME}" COMMAND "${EXEC_NAME}")
 
+add_executable("test_lib" "${CMAKE_CURRENT_SOURCE_DIR}/test_lib.c")
+target_link_libraries("test_lib" PRIVATE "${PROJECT_NAME}::${PROJECT_NAME}")
+if (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
+    target_link_libraries("test_lib" PRIVATE "${PROJECT_NAME}_compiler_flags")
+endif ()
+add_test(NAME "test_lib" COMMAND "test_lib")
+
 if (${PROJECT_PREFIX}_BUILD_AMALGAMATION)
     add_executable("test_amalg" "${CMAKE_CURRENT_SOURCE_DIR}/test_amalg.c")
     target_include_directories("test_amalg" PRIVATE "${PROJECT_BINARY_DIR}")
+    if (NOT CMAKE_C_COMPILER_ID STREQUAL "OpenWatcom")
+        target_link_libraries("test_amalg" PRIVATE "${PROJECT_NAME}_compiler_flags")
+    endif ()
     add_test(NAME "test_amalg" COMMAND "test_amalg")
 endif()

@@ -1,17 +1,19 @@
 #ifndef TEST_SAFECRT_H
 #define TEST_SAFECRT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 /* clang-format off */
 #include <c89stringutils_safecrt.h>
 #include <errno.h>
 #include <greatest.h>
+#if defined(C89STRINGUTILS_HAVE_WCHAR_H)
 #include <wchar.h>
+#endif
 #include <setjmp.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 static int g_constraint_hit = 0;
 jmp_buf g_abort_env;
@@ -94,7 +96,7 @@ TEST test_fscanf_s(void) {
       c89stringutils_set_constraint_handler_s(c89stringutils_ignore_handler_s);
 
   {
-    errno_t open_rc = c89stringutils_fopen_s(&f, "test_fscanf.txt", "w+");
+    errno_t open_rc = c89stringutils_fopen_s(&f, "tfscanf.txt", "w+");
     int fprintf_rc;
     ASSERT_EQ(0, open_rc);
     fprintf_rc = fprintf(f, "456");
@@ -110,7 +112,7 @@ TEST test_fscanf_s(void) {
     int close_rc = fclose(f);
     int remove_rc;
     ASSERT_EQ(0, close_rc);
-    remove_rc = remove("test_fscanf.txt");
+    remove_rc = remove("tfscanf.txt");
     ASSERT_EQ(0, remove_rc);
   }
 
@@ -132,14 +134,14 @@ TEST test_fopen_s(void) {
   c89stringutils_constraint_handler_t old =
       c89stringutils_set_constraint_handler_s(c89stringutils_ignore_handler_s);
 
-  rc = c89stringutils_fopen_s(&f, "test_fopen.txt", "w");
+  rc = c89stringutils_fopen_s(&f, "tfopen.txt", "w");
   ASSERT_EQ(0, rc);
   ASSERT(f != NULL);
   {
     int close_rc = fclose(f);
     int remove_rc;
     ASSERT_EQ(0, close_rc);
-    remove_rc = remove("test_fopen.txt");
+    remove_rc = remove("tfopen.txt");
     ASSERT_EQ(0, remove_rc);
   }
 
@@ -152,8 +154,9 @@ TEST test_fopen_s(void) {
   ASSERT(rc != 0);
   ASSERT_EQ(NULL, f);
 
-  /* force fopen failure */
-  rc = c89stringutils_fopen_s(&f, "/does_not_exist/test.txt", "r");
+  /* force fopen failure using flat 8.3 filename for MS-DOS 1.25+ */
+  remove("noexist.txt");
+  rc = c89stringutils_fopen_s(&f, "noexist.txt", "r");
   ASSERT(rc != 0);
 
 #if !defined(C89STRINGUTILS_HAVE_FOPEN_S)
@@ -174,16 +177,16 @@ TEST test_freopen_s(void) {
   c89stringutils_constraint_handler_t old =
       c89stringutils_set_constraint_handler_s(c89stringutils_ignore_handler_s);
 
-  c89stringutils_fopen_s(&f, "test_freopen.txt", "w");
-  rc = c89stringutils_freopen_s(&f2, "test_freopen2.txt", "w", f);
+  c89stringutils_fopen_s(&f, "tfreop1.txt", "w");
+  rc = c89stringutils_freopen_s(&f2, "tfreop2.txt", "w", f);
   ASSERT_EQ(0, rc);
   ASSERT(f2 != NULL);
   {
     int close_rc = fclose(f2);
     int remove_rc1, remove_rc2;
     ASSERT_EQ(0, close_rc);
-    remove_rc1 = remove("test_freopen.txt");
-    remove_rc2 = remove("test_freopen2.txt");
+    remove_rc1 = remove("tfreop1.txt");
+    remove_rc2 = remove("tfreop2.txt");
     ASSERT_EQ(0, remove_rc1);
     ASSERT_EQ(0, remove_rc2);
   }
@@ -202,16 +205,13 @@ TEST test_freopen_s(void) {
 
 #if !defined(C89STRINGUTILS_HAVE_FREOPEN_S)
   g_mock_fopen_fail = 1;
-  c89stringutils_fopen_s(
-      &f, "test_freopen.txt",
-      "w"); /* Just need a valid FILE* on some systems, though it might fail
-               here. Actually, we just need freopen to fail. */
+  c89stringutils_fopen_s(&f, "tfreop1.txt", "w");
   if (!f) {
     g_mock_fopen_fail = 0;
-    c89stringutils_fopen_s(&f, "test_freopen.txt", "w");
+    c89stringutils_fopen_s(&f, "tfreop1.txt", "w");
     g_mock_fopen_fail = 1;
   }
-  rc = c89stringutils_freopen_s(&f2, "test_freopen2.txt", "w", f);
+  rc = c89stringutils_freopen_s(&f2, "tfreop2.txt", "w", f);
   ASSERT(rc != 0);
   if (f) {
     int close_rc;
@@ -219,7 +219,7 @@ TEST test_freopen_s(void) {
       close_rc = fclose(f);
       ASSERT_EQ(0, close_rc);
     }
-    remove("test_freopen.txt");
+    remove("tfreop1.txt");
   }
   g_mock_fopen_fail = 0;
 #endif
@@ -260,6 +260,7 @@ TEST test_tmpfile_s(void) {
   PASS();
 }
 
+#if defined(C89STRINGUTILS_HAVE_WCHAR_H)
 TEST test_wcscpy_s(void) {
   wchar_t dest[10];
   errno_t rc;
@@ -374,6 +375,7 @@ TEST test_swprintf_s(void) {
   c89stringutils_set_constraint_handler_s(old);
   PASS();
 }
+#endif /* C89STRINGUTILS_HAVE_WCHAR_H */
 
 extern int g_mock_ungetc_countdown;
 extern int g_mock_strncpy_s_countdown;
@@ -474,7 +476,7 @@ TEST test_mock_fscanf_s_failures(void) {
 
   c89stringutils_set_constraint_handler_s(c89stringutils_ignore_handler_s);
 
-  c89stringutils_fopen_s(&f, "test_fscanf_mock.txt", "w+");
+  c89stringutils_fopen_s(&f, "tfscmock.txt", "w+");
   ASSERT(f != NULL);
   fprintf(f, " 123");
   rewind(f);
@@ -497,7 +499,7 @@ TEST test_mock_fscanf_s_failures(void) {
 
   /* Test whitespace reaching EOF, literal reaching EOF, %% reaching EOF */
   fclose(f);
-  c89stringutils_fopen_s(&f, "test_fscanf_mock.txt", "w+");
+  c89stringutils_fopen_s(&f, "tfscmock.txt", "w+");
   fprintf(f, "   ");
   rewind(f);
   rc = c89stringutils_fscanf_s(f, " %d", &val);
@@ -515,7 +517,7 @@ TEST test_mock_fscanf_s_failures(void) {
 
   /* Test literal match, %% match, %% mismatch non-EOF */
   fclose(f);
-  c89stringutils_fopen_s(&f, "test_fscanf_mock.txt", "w+");
+  c89stringutils_fopen_s(&f, "tfscmock.txt", "w+");
   fprintf(f, "x%% 10 20 xyz");
   rewind(f);
   rc = c89stringutils_fscanf_s(f, "x%% %*d %d", &val);
@@ -549,7 +551,7 @@ TEST test_mock_fscanf_s_failures(void) {
   ASSERT_EQ(-1, rc);
 
   fclose(f);
-  remove("test_fscanf_mock.txt");
+  remove("tfscmock.txt");
 
   c89stringutils_set_constraint_handler_s(test_handler);
   PASS();
@@ -565,9 +567,11 @@ SUITE(safecrt_suite) {
   RUN_TEST(test_fopen_s);
   RUN_TEST(test_freopen_s);
   RUN_TEST(test_tmpfile_s);
+#if defined(C89STRINGUTILS_HAVE_WCHAR_H)
   RUN_TEST(test_wcscpy_s);
   RUN_TEST(test_wcsncpy_s);
   RUN_TEST(test_swprintf_s);
+#endif
 #if defined(C89STRINGUTILS_FORCE_FALLBACKS)
   RUN_TEST(test_mock_sscanf_s_failures);
 #endif

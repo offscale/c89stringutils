@@ -93,7 +93,7 @@ def get_test_coverage():
         if not os.path.exists(ctest_custom):
             with open(ctest_custom, "w") as f:
                 f.write(
-                    "set(CTEST_CUSTOM_COVERAGE_EXCLUDE \".*tests/.*\" \".*test_.*\" \".*CMakeFiles.*\" \".*greatest.*\")\n"
+                    'set(CTEST_CUSTOM_COVERAGE_EXCLUDE ".*tests/.*" ".*test_.*" ".*CMakeFiles.*" ".*greatest.*" ".*stb_sprintf\\\\.h")\n'
                 )
 
         # Try ctest -T Coverage
@@ -125,6 +125,8 @@ def get_test_coverage():
                     ".*CMakeFiles.*",
                     "-e",
                     ".*greatest.*",
+                    "-e",
+                    ".*stb_sprintf\\.h",
                     build_dir,
                 ],
                 capture_output=True,
@@ -155,7 +157,7 @@ def get_doc_coverage():
             last_comment_start = text_before.rfind("/**", 0, last_comment_end)
             if last_comment_start != -1:
                 documented += 1
-    return f"{(documented/total)*100:.2f}%"
+    return f"{(documented / total) * 100:.2f}%"
 
 
 def update_readme():

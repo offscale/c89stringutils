@@ -170,27 +170,48 @@ int mock_fprintf_s(FILE *stream, const char *format, ...)
 
 int mock_vsnprintf(char *str, size_t size, const char *format, va_list ap) {
   int ret = -1;
-  if (str == NULL) {
-    /* Need a valid buffer for vsprintf if vsnprintf is missing, but cygwin has
-     * vsnprintf */
-#if defined(_WIN32)
-    ret = _vscprintf(format, ap);
-#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__)
-    ret = vsnprintf(NULL, 0, format, ap);
-#else
-    char dummy[1024];
-    ret = vsprintf(dummy, format, ap);
-#endif
-  } else {
 #if defined(_MSC_VER)
+  if (str == NULL || size == 0) {
+    ret = _vscprintf(format, ap);
+  } else {
     ret = _vsnprintf_s(str, size, (size_t)-1, format, ap);
-#elif defined(__CYGWIN__) || defined(__linux__) || defined(__APPLE__) ||       \
-    defined(_WIN32)
-    ret = vsnprintf(str, size, format, ap);
-#else
-    ret = vsprintf(str, format, ap);
-#endif
   }
+#elif defined(__WATCOMC__)
+  {
+    char scratch[1024];
+    ret = vsnprintf(scratch, sizeof(scratch), format, ap);
+    if (str != NULL && size > 0) {
+      size_t copy_len =
+          (ret >= 0 && (size_t)ret < size) ? (size_t)ret : (size - 1);
+      if (ret < 0) {
+        copy_len = 0;
+      }
+      memcpy(str, scratch, copy_len);
+      str[copy_len] = '\0';
+    }
+  }
+#elif defined(C89STRINGUTILS_HAVE_VSNPRINTF) || defined(__CYGWIN__) ||         \
+    defined(__linux__) || defined(__APPLE__) || defined(_WIN32)
+  if (str == NULL) {
+    ret = vsnprintf(NULL, 0, format, ap);
+  } else {
+    ret = vsnprintf(str, size, format, ap);
+  }
+#else
+  {
+    char scratch[1024];
+    ret = vsprintf(scratch, format, ap);
+    if (str != NULL && size > 0) {
+      size_t copy_len =
+          (ret >= 0 && (size_t)ret < size) ? (size_t)ret : (size - 1);
+      if (ret < 0) {
+        copy_len = 0;
+      }
+      memcpy(str, scratch, copy_len);
+      str[copy_len] = '\0';
+    }
+  }
+#endif
   return do_mock_vsnprintf(size, ret);
 }
 
@@ -204,8 +225,19 @@ int mock_vscprintf(const char *format, va_list ap) {
   int ret = -1;
 #if defined(_WIN32)
   ret = _vscprintf(format, ap);
-#else
+#elif defined(__WATCOMC__)
+  {
+    char scratch[1024];
+    ret = vsnprintf(scratch, sizeof(scratch), format, ap);
+  }
+#elif defined(C89STRINGUTILS_HAVE_VSNPRINTF) || defined(__CYGWIN__) ||         \
+    defined(__linux__) || defined(__APPLE__)
   ret = vsnprintf(NULL, 0, format, ap);
+#else
+  {
+    char scratch[1024];
+    ret = vsprintf(scratch, format, ap);
+  }
 #endif
   return do_mock_vsnprintf(0, ret);
 }
@@ -530,11 +562,13 @@ static int is_running_on_wine(void) {
 
 int g_mock_CrtSetReportMode_fail = 0;
 int mock_CrtSetReportMode(int reportType, int reportMode) {
+  int rc;
   if (g_mock_CrtSetReportMode_fail)
     return -1;
-  if (is_running_on_wine())
+  rc = _CrtSetReportMode(reportType, reportMode);
+  if (rc == -1 && is_running_on_wine())
     return 0;
-  return _CrtSetReportMode(reportType, reportMode);
+  return rc;
 }
 #define _CrtSetReportMode mock_CrtSetReportMode
 #endif

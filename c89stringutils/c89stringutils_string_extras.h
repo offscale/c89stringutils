@@ -7,19 +7,18 @@
 #ifndef C89STRINGUTILS_STRING_EXTRAS_H
 #define C89STRINGUTILS_STRING_EXTRAS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 /* clang-format off */
 #ifdef C89STRINGUTILS_NO_CMAKE_CONFIG
 #ifndef C89STRINGUTILS_EXPORT
 #if defined(_WIN32)
 /** @brief Export macro when building or using the shared library on Windows */
 #define C89STRINGUTILS_EXPORT __declspec(dllexport)
-#else
+#elif defined(__GNUC__) || defined(__clang__)
 /** @brief Export macro for default symbol visibility */
 #define C89STRINGUTILS_EXPORT __attribute__((visibility("default")))
+#else
+/** @brief Export macro fallback for compilers without visibility attributes */
+#define C89STRINGUTILS_EXPORT
 #endif
 #endif
 
@@ -84,7 +83,26 @@ extern "C" {
 # define C89STRINGUTILS_HAVE_WCHAR_H 1
 # define C89STRINGUTILS_HAVE_PRINTF_ZU 1
 # define C89STRINGUTILS_HAVE_PRINTF_LLD 1
-#elif defined(__WATCOMC__) || defined(__BORLANDC__)
+#elif defined(__WATCOMC__)
+# define C89STRINGUTILS_HAVE_VSNPRINTF 1
+# define C89STRINGUTILS_HAVE_SNPRINTF 1
+# define C89STRINGUTILS_HAVE_VSNPRINTF_NULL 1
+# define C89STRINGUTILS_HAVE_VSSCANF 1
+# define C89STRINGUTILS_HAVE_VFSCANF 1
+# define C89STRINGUTILS_HAVE_WCHAR_H 1
+# define C89STRINGUTILS_HAVE_WCSCPY 1
+# define C89STRINGUTILS_HAVE_WCSNCPY 1
+# define C89STRINGUTILS_HAVE_VSWPRINTF 1
+# define C89STRINGUTILS_HAVE_SWPRINTF 1
+# define C89STRINGUTILS_HAVE_PRINTF_ZU 1
+# define C89STRINGUTILS_HAVE_PRINTF_LLD 1
+# define C89STRINGUTILS_HAVE_LONG_LONG 1
+# define C89STRINGUTILS_HAVE_STRLCPY 1
+# define C89STRINGUTILS_HAVE_STRLCAT 1
+# define C89STRINGUTILS_HAVE_STRINGS_H 1
+# define C89STRINGUTILS_HAVE_STRNCASECMP 1
+# define C89STRINGUTILS_HAVE_STRCASECMP 1
+#elif defined(__BORLANDC__)
 /* Rely on fallbacks */
 #elif defined(_MSC_VER)
 #define C89STRINGUTILS_HAVE__VSNPRINTF 1
@@ -178,6 +196,7 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 #ifdef C89STRINGUTILS_HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -191,6 +210,10 @@ extern "C" {
 #include <strings.h>
 #endif
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 #if defined(C89STRINGUTILS_HAVE_LONG_LONG)
 #if defined(__GNUC__) || defined(__clang__)
@@ -230,9 +253,9 @@ typedef unsigned long c89stringutils_uint64_t;
 
 #if defined(C89STRINGUTILS_HAVE_ATTR_FORMAT)
 #define C89STRINGUTILS_FORMAT_PRINTF(fmt_idx, arg_idx)                         \
-  __attribute__((format(printf, fmt_idx, arg_idx)))
+  __attribute__((__format__(__printf__, fmt_idx, arg_idx)))
 #define C89STRINGUTILS_FORMAT_SCANF(fmt_idx, arg_idx)                          \
-  __attribute__((format(scanf, fmt_idx, arg_idx)))
+  __attribute__((__format__(__scanf__, fmt_idx, arg_idx)))
 #else
 #define C89STRINGUTILS_FORMAT_PRINTF(fmt_idx, arg_idx)
 #define C89STRINGUTILS_FORMAT_SCANF(fmt_idx, arg_idx)
@@ -290,6 +313,18 @@ typedef unsigned long c89stringutils_uint64_t;
 #endif
 /** @brief Standard long double format for MSVC */
 #define C89STRINGUTILS_PRI_LDBL "f"
+#elif defined(__I86__) || defined(_M_I86) ||                                   \
+    (defined(INT_MAX) && INT_MAX <= 32767)
+/** @brief 32-bit signed format string on 16-bit targets */
+#define C89STRINGUTILS_PRId32 "ld"
+/** @brief 32-bit unsigned format string on 16-bit targets */
+#define C89STRINGUTILS_PRIu32 "lu"
+/** @brief 32-bit hex format string on 16-bit targets */
+#define C89STRINGUTILS_PRIx32 "lx"
+/** @brief Standard pointer format */
+#define C89STRINGUTILS_PRI_PTR "p"
+/** @brief Standard long double format */
+#define C89STRINGUTILS_PRI_LDBL "Lf"
 #else
 #define C89STRINGUTILS_PRId32 "d"
 #define C89STRINGUTILS_PRIu32 "u"
@@ -298,6 +333,15 @@ typedef unsigned long c89stringutils_uint64_t;
 #define C89STRINGUTILS_PRI_PTR "p"
 /** @brief Standard long double format */
 #define C89STRINGUTILS_PRI_LDBL "Lf"
+#endif
+
+#if defined(__I86__) || defined(_M_I86) ||                                     \
+    (defined(UINT_MAX) && UINT_MAX <= 65535U)
+/** @brief Maximum exponential buffer cap for vasprintf on 16-bit targets */
+#define C89STRINGUTILS_VASPRINTF_MAX_SZ ((size_t)4096)
+#else
+/** @brief Maximum exponential buffer cap for vasprintf on 32/64-bit targets */
+#define C89STRINGUTILS_VASPRINTF_MAX_SZ ((size_t)1048576)
 #endif
 
 #if defined(C89STRINGUTILS_HAVE_PRINTF_ZU)
@@ -340,7 +384,11 @@ typedef enum c89stringutils_error {
   /** @brief Result out of range or destination buffer too small */
   C89STRINGUTILS_ERANGE = 34,
   /** @brief Function or feature not supported */
-  C89STRINGUTILS_ENOSYS = 38
+  C89STRINGUTILS_ENOSYS = 38,
+  /** @brief String copy or concatenation truncated (_TRUNCATE) */
+  C89STRINGUTILS_STRUNCATE = 80,
+  /** @brief Operation not supported on this platform */
+  C89STRINGUTILS_ENOTSUP = 129
 } c89stringutils_error_t;
 
 #ifndef C89STRINGUTILS_HAVE_ERRNO_T

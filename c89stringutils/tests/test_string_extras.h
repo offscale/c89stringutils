@@ -5,10 +5,6 @@
 #ifndef TEST_STRING_EXTRAS_H
 #define TEST_STRING_EXTRAS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 /* clang-format off */
 #include <greatest.h>
 
@@ -17,6 +13,10 @@ extern "C" {
 #include <stdlib.h>
 #include <errno.h>
 /* clang-format on */
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 /** @brief Test buffer */
 static const char *test_buffer = "hello world";
@@ -198,7 +198,7 @@ TEST x_strerror_s_should_succeed(void) {
   ASSERT(rc != 0);
 
   buf[0] = '\0';
-  rc = c89stringutils_strerror_s(buf, sizeof(buf), 99999);
+  rc = c89stringutils_strerror_s(buf, sizeof(buf), 9999);
   if (rc == 0) {
     ASSERT(strlen(buf) > 0);
   } else {
@@ -300,7 +300,7 @@ TEST x_strerrorlen_s_should_succeed(void) {
   ASSERT_EQ(8u, out); /* 400: "null ptr" */
   out = c89stringutils_strerrorlen_s(410);
   ASSERT_EQ(10u, out); /* 410: "wrong size" */
-  out = c89stringutils_strerrorlen_s(99999);
+  out = c89stringutils_strerrorlen_s(9999);
   ASSERT(out <= 256u);
   PASS();
 }
@@ -526,6 +526,11 @@ TEST x_strcat_s_should_succeed(void) {
   ASSERT_EQ(34, rc); /* ERANGE */
   ASSERT_EQ('\0', buf[0]);
 
+  rc = c89stringutils_strcpy_s(buf, sizeof(buf), "");
+  ASSERT_EQ(0, rc);
+  rc = c89stringutils_strcat_s(buf, 5, "123456");
+  ASSERT_EQ(34, rc); /* ERANGE when strlen(src) >= destsz */
+
   /* buffer not null terminated */
   memset(buf, 'A', sizeof(buf));
   rc = c89stringutils_strcat_s(buf, sizeof(buf), "!");
@@ -572,6 +577,14 @@ TEST x_strncat_s_should_succeed(void) {
                                 (rsize_t)-1); /* _TRUNCATE */
   ASSERT_EQ(80, rc);                          /* STRUNCATE */
   ASSERT_STR_EQ("1234567890123456789", buf);
+
+  {
+    errno_t cpy_rc = c89stringutils_strcpy_s(buf, sizeof(buf), "");
+    ASSERT_EQ(0, cpy_rc);
+  }
+  rc = c89stringutils_strncat_s(buf, 5, "123456", (rsize_t)-1);
+  ASSERT_EQ(80, rc); /* STRUNCATE when strlen(src) >= destsz */
+  ASSERT_STR_EQ("1234", buf);
 
   rc = c89stringutils_strncat_s(NULL, sizeof(buf), "!", 1);
   ASSERT_EQ(22, rc);
@@ -760,6 +773,18 @@ TEST x_mock_failures(void) {
     {
       int sn_rc = c89stringutils_snprintf(dummy, 10, "test");
       ASSERT(sn_rc >= 0);
+      sn_rc = c89stringutils_snprintf(NULL, 10, "test");
+      ASSERT(sn_rc >= 0);
+      sn_rc = c89stringutils_snprintf(dummy, 0, "test");
+      ASSERT(sn_rc >= 0);
+
+      g_mock_vsnprintf_fail = 1;
+      g_mock_vsnprintf_ret = -1;
+      sn_rc = c89stringutils_snprintf(NULL, 0, "test");
+      ASSERT_EQ(-1, sn_rc);
+      sn_rc = c89stringutils_snprintf(dummy, sizeof(dummy), "test");
+      ASSERT_EQ(-1, sn_rc);
+      g_mock_vsnprintf_fail = 0;
     }
 #if !defined(C89STRINGUTILS_HAVE_STRCASESTR) ||                                \
     defined(C89STRINGUTILS_FORCE_FALLBACKS)
@@ -788,11 +813,11 @@ TEST x_mock_failures(void) {
 
 #if !defined(C89STRINGUTILS_HAVE_STRERROR_S)
   g_mock_strerror_null = 1;
-  len = c89stringutils_strerrorlen_s(99999);
+  len = c89stringutils_strerrorlen_s(9999);
   ASSERT_EQ(0, len);
   {
     char err_s_buf[10];
-    ASSERT_EQ(22, c89stringutils_strerror_s(err_s_buf, 10, 99999));
+    ASSERT_EQ(22, c89stringutils_strerror_s(err_s_buf, 10, 9999));
   }
   g_mock_malloc_fail = 1;
   ASSERT_EQ(-1, c89stringutils_asprintf(&s, "test"));

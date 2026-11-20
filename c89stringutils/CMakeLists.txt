@@ -7,6 +7,9 @@ set(Source_Files "c89stringutils_string_extras.c" "c89stringutils_safecrt.c")
 source_group("Source Files" FILES "${Source_Files}")
 
 add_library("${LIBRARY_NAME}" "${Header_Files}" "${Source_Files}")
+if (NOT TARGET "${PROJECT_NAME}::${LIBRARY_NAME}")
+    add_library("${PROJECT_NAME}::${LIBRARY_NAME}" ALIAS "${LIBRARY_NAME}")
+endif ()
 
 target_link_libraries("${LIBRARY_NAME}" PRIVATE "${PROJECT_NAME}_compiler_flags")
 
@@ -55,7 +58,9 @@ install(TARGETS ${installable_libs}
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-install(EXPORT "${LIBRARY_NAME}Targets" DESTINATION "${CMAKE_INSTALL_DATADIR}/${LIBRARY_NAME}")
+install(EXPORT "${LIBRARY_NAME}Targets"
+        NAMESPACE "${PROJECT_NAME}::"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/${LIBRARY_NAME}")
 
 install(FILES ${Header_Files} "${_export_file}"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
@@ -91,8 +96,12 @@ if (C89STRINGUTILS_BUILD_AMALGAMATION)
     string(REPLACE "#include \"c89stringutils_string_extras.h\"" "" amalg_source "${amalg_source}")
     string(REPLACE "#include \"c89stringutils_safecrt.h\"" "" amalg_source "${amalg_source}")
     string(REPLACE "#include \"c89stringutils_log.h\"" "" amalg_source "${amalg_source}")
+    string(REPLACE "#ifdef __cplusplus\nextern \"C\" {\n#endif /* __cplusplus */" "" amalg_stb "${amalg_stb}")
+    string(REPLACE "#ifdef __cplusplus\n}\n#endif /* __cplusplus */" "" amalg_stb "${amalg_stb}")
     string(REPLACE "#include \"stb_sprintf.h\"" "${amalg_stb}" amalg_source "${amalg_source}")
 
+    string(REPLACE "#ifdef __cplusplus\nextern \"C\" {\n#endif /* __cplusplus */" "" amalg_export "${amalg_export}")
+    string(REPLACE "#ifdef __cplusplus\n}\n#endif /* __cplusplus */" "" amalg_export "${amalg_export}")
     string(REPLACE "#ifdef __cplusplus\nextern \"C\" {\n#endif /* __cplusplus */" "" amalg_log "${amalg_log}")
     string(REPLACE "#ifdef __cplusplus\n}\n#endif /* __cplusplus */" "" amalg_log "${amalg_log}")
     string(REPLACE "#ifdef __cplusplus\nextern \"C\" {\n#endif /* __cplusplus */" "" amalg_header "${amalg_header}")
@@ -102,17 +111,21 @@ if (C89STRINGUTILS_BUILD_AMALGAMATION)
 
     set(amalgamation "/* c89stringutils Amalgamation STB-style */\n\n")
     string(APPEND amalgamation "#ifndef C89STRINGUTILS_AMALGAMATION_H\n#define C89STRINGUTILS_AMALGAMATION_H\n\n")
+    string(APPEND amalgamation "#include <stdarg.h>\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <errno.h>\n#include <ctype.h>\n#include <limits.h>\n\n")
     string(APPEND amalgamation "${amalg_export}\n\n")
     string(APPEND amalgamation "${amalg_config}\n\n")
+    string(APPEND amalgamation "#if defined(C89STRINGUTILS_HAVE_WCHAR_H)\n#include <wchar.h>\n#endif\n")
+    string(APPEND amalgamation "#if defined(C89STRINGUTILS_HAVE_SYS_PARAM_H)\n#include <sys/param.h>\n#endif\n")
+    string(APPEND amalgamation "#if defined(C89STRINGUTILS_HAVE_STRINGS_H)\n#include <strings.h>\n#endif\n\n")
     string(APPEND amalgamation "#ifdef __cplusplus\nextern \"C\" {\n#endif /* __cplusplus */\n\n")
     string(APPEND amalgamation "${amalg_log}\n\n")
     string(APPEND amalgamation "${amalg_header}\n\n")
     string(APPEND amalgamation "${amalg_safecrt_header}\n\n")
-    string(APPEND amalgamation "#ifdef __cplusplus\n}\n#endif /* __cplusplus */\n\n")
     string(APPEND amalgamation "#ifdef C89STRINGUTILS_IMPLEMENTATION\n\n")
     string(APPEND amalgamation "${amalg_safecrt_source}\n\n")
     string(APPEND amalgamation "${amalg_source}\n\n")
     string(APPEND amalgamation "#endif /* C89STRINGUTILS_IMPLEMENTATION */\n\n")
+    string(APPEND amalgamation "#ifdef __cplusplus\n}\n#endif /* __cplusplus */\n\n")
     string(APPEND amalgamation "#endif /* C89STRINGUTILS_AMALGAMATION_H */\n")
 
     file(WRITE "${amalg_file}" "${amalgamation}")
