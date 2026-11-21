@@ -125,8 +125,6 @@
 #define C89STRINGUTILS_HAVE_FOPEN_S 1
 #define C89STRINGUTILS_HAVE_FREOPEN_S 1
 #define C89STRINGUTILS_HAVE_TMPFILE_S 1
-#define C89STRINGUTILS_HAVE_VSSCANF_S 1
-#define C89STRINGUTILS_HAVE_VFSCANF_S 1
 #define C89STRINGUTILS_HAVE_WCSCPY_S 1
 #define C89STRINGUTILS_HAVE_WCSNCPY_S 1
 #define C89STRINGUTILS_HAVE_VSWPRINTF_S 1
@@ -134,8 +132,13 @@
 #define C89STRINGUTILS_HAVE_VFPRINTF_S 1
 #define C89STRINGUTILS_HAVE_FPRINTF_S 1
 #endif
+#if _MSC_VER >= 1800 /* MSVC 2013+ */
 #define C89STRINGUTILS_HAVE_VSSCANF 1
 #define C89STRINGUTILS_HAVE_VFSCANF 1
+#define C89STRINGUTILS_HAVE_VSSCANF_S 1
+#define C89STRINGUTILS_HAVE_VFSCANF_S 1
+#endif
+#define C89STRINGUTILS_HAVE_WCHAR_H 1
 #define C89STRINGUTILS_HAVE_WCSCPY 1
 #define C89STRINGUTILS_HAVE_WCSNCPY 1
 #define C89STRINGUTILS_HAVE_VSWPRINTF 1
@@ -218,28 +221,75 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#if defined(C89STRINGUTILS_HAVE_LONG_LONG)
 #if defined(__GNUC__) || defined(__clang__)
+/** @brief Extension keyword suppressing GNU/Clang C89 pedantic diagnostics */
+#define C89STRINGUTILS_EXTENSION __extension__
+#else
+/** @brief Extension keyword fallback on non-GNU compilers */
+#define C89STRINGUTILS_EXTENSION
+#endif
+
+#if defined(__LP64__) || defined(_LP64)
+/** @brief 64-bit signed integer type on LP64 targets */
+typedef long c89stringutils_int64_t;
+/** @brief 64-bit unsigned integer type on LP64 targets */
+typedef unsigned long c89stringutils_uint64_t;
+/**
+ * @brief 64-bit signed integer literal macro.
+ * @param c Integer constant token.
+ */
+#define C89STRINGUTILS_INT64_C(c) c##L
+/**
+ * @brief 64-bit unsigned integer literal macro.
+ * @param c Integer constant token.
+ */
+#define C89STRINGUTILS_UINT64_C(c) c##UL
+#elif defined(C89STRINGUTILS_HAVE_LONG_LONG)
+#if defined(__GNUC__) || defined(__clang__)
+/** @brief 64-bit signed integer type */
 __extension__ typedef long long c89stringutils_int64_t;
+/** @brief 64-bit unsigned integer type */
 __extension__ typedef unsigned long long c89stringutils_uint64_t;
+/**
+ * @brief 64-bit signed integer literal macro.
+ * @param c Integer constant token.
+ */
+#define C89STRINGUTILS_INT64_C(c) (__extension__(c##LL))
+/**
+ * @brief 64-bit unsigned integer literal macro.
+ * @param c Integer constant token.
+ */
+#define C89STRINGUTILS_UINT64_C(c) (__extension__(c##ULL))
 #else
 /** @brief 64-bit signed integer type */
 typedef long long c89stringutils_int64_t;
 /** @brief 64-bit unsigned integer type */
 typedef unsigned long long c89stringutils_uint64_t;
-#endif
-/** @brief 64-bit integer literal macro */
+/**
+ * @brief 64-bit signed integer literal macro.
+ * @param c Integer constant token.
+ */
 #define C89STRINGUTILS_INT64_C(c) c##LL
-/** @brief 64-bit unsigned integer literal macro */
+/**
+ * @brief 64-bit unsigned integer literal macro.
+ * @param c Integer constant token.
+ */
 #define C89STRINGUTILS_UINT64_C(c) c##ULL
+#endif
 #elif defined(C89STRINGUTILS_HAVE___INT64)
 /** @brief 64-bit signed integer type */
 typedef __int64 c89stringutils_int64_t;
 /** @brief 64-bit unsigned integer type */
 typedef unsigned __int64 c89stringutils_uint64_t;
-/** @brief 64-bit integer literal macro */
+/**
+ * @brief 64-bit signed integer literal macro.
+ * @param c Integer constant token.
+ */
 #define C89STRINGUTILS_INT64_C(c) c##i64
-/** @brief 64-bit unsigned integer literal macro */
+/**
+ * @brief 64-bit unsigned integer literal macro.
+ * @param c Integer constant token.
+ */
 #define C89STRINGUTILS_UINT64_C(c) c##ui64
 #else
 /** @brief 64-bit fallback signed integer type (aliased to 32-bit long to
@@ -248,64 +298,151 @@ typedef long c89stringutils_int64_t;
 /** @brief 64-bit fallback unsigned integer type (aliased to 32-bit unsigned
  * long) */
 typedef unsigned long c89stringutils_uint64_t;
-/** @brief 32-bit fallback integer literal macro */
+/**
+ * @brief 32-bit fallback signed integer literal macro.
+ * @param c Integer constant token.
+ */
 #define C89STRINGUTILS_INT64_C(c) c##L
-/** @brief 32-bit fallback unsigned integer literal macro */
+/**
+ * @brief 32-bit fallback unsigned integer literal macro.
+ * @param c Integer constant token.
+ */
 #define C89STRINGUTILS_UINT64_C(c) c##UL
 #endif
 
 #if defined(C89STRINGUTILS_HAVE_ATTR_FORMAT)
+#if defined(__MINGW_PRINTF_FORMAT)
+/**
+ * @brief Printf format-checking attribute macro.
+ * @param fmt_idx 1-based index of the format string parameter.
+ * @param arg_idx 1-based index of the first variadic argument, or 0 for
+ * va_list.
+ */
+#define C89STRINGUTILS_FORMAT_PRINTF(fmt_idx, arg_idx)                         \
+  __attribute__((__format__(__MINGW_PRINTF_FORMAT, fmt_idx, arg_idx)))
+#else
+/**
+ * @brief Printf format-checking attribute macro.
+ * @param fmt_idx 1-based index of the format string parameter.
+ * @param arg_idx 1-based index of the first variadic argument, or 0 for
+ * va_list.
+ */
 #define C89STRINGUTILS_FORMAT_PRINTF(fmt_idx, arg_idx)                         \
   __attribute__((__format__(__printf__, fmt_idx, arg_idx)))
+#endif
+#if defined(__MINGW_SCANF_FORMAT)
+/**
+ * @brief Scanf format-checking attribute macro.
+ * @param fmt_idx 1-based index of the format string parameter.
+ * @param arg_idx 1-based index of the first variadic argument, or 0 for
+ * va_list.
+ */
+#define C89STRINGUTILS_FORMAT_SCANF(fmt_idx, arg_idx)                          \
+  __attribute__((__format__(__MINGW_SCANF_FORMAT, fmt_idx, arg_idx)))
+#else
+/**
+ * @brief Scanf format-checking attribute macro.
+ * @param fmt_idx 1-based index of the format string parameter.
+ * @param arg_idx 1-based index of the first variadic argument, or 0 for
+ * va_list.
+ */
 #define C89STRINGUTILS_FORMAT_SCANF(fmt_idx, arg_idx)                          \
   __attribute__((__format__(__scanf__, fmt_idx, arg_idx)))
+#endif
 #else
+/**
+ * @brief Printf format-checking attribute macro fallback.
+ * @param fmt_idx 1-based index of the format string parameter.
+ * @param arg_idx 1-based index of the first variadic argument, or 0 for
+ * va_list.
+ */
 #define C89STRINGUTILS_FORMAT_PRINTF(fmt_idx, arg_idx)
+/**
+ * @brief Scanf format-checking attribute macro fallback.
+ * @param fmt_idx 1-based index of the format string parameter.
+ * @param arg_idx 1-based index of the first variadic argument, or 0 for
+ * va_list.
+ */
 #define C89STRINGUTILS_FORMAT_SCANF(fmt_idx, arg_idx)
 #endif
 
 #if defined(C89STRINGUTILS_HAVE_ATTR_NONNULL)
+/**
+ * @brief Non-null pointer parameter attribute macro.
+ * @param args Parenthesized list of 1-based parameter indices.
+ */
 #define C89STRINGUTILS_NONNULL(args) __attribute__((nonnull args))
 #else
+/**
+ * @brief Non-null pointer parameter attribute macro fallback.
+ * @param args Parenthesized list of 1-based parameter indices.
+ */
 #define C89STRINGUTILS_NONNULL(args)
 #endif
 
-#if defined(C89STRINGUTILS_HAVE_PRINTF_I64D) && defined(_WIN32)
+#if defined(__LP64__) || defined(_LP64)
+/** @brief Standard 64-bit signed format string on LP64 targets */
+#define NUM_FORMAT "%ld"
+/** @brief Standard 64-bit unsigned format string on LP64 targets */
+#define UNUM_FORMAT "%lu"
+/** @brief 64-bit signed decimal format conversion specifier */
+#define C89STRINGUTILS_PRId64 "ld"
+/** @brief 64-bit unsigned decimal format conversion specifier */
+#define C89STRINGUTILS_PRIu64 "lu"
+/** @brief 64-bit unsigned hexadecimal format conversion specifier */
+#define C89STRINGUTILS_PRIx64 "lx"
+#elif defined(C89STRINGUTILS_HAVE_PRINTF_I64D) && defined(_WIN32)
 /** @brief MSVC 64-bit format string */
 #define NUM_FORMAT "%I64d"
 /** @brief MSVC unsigned 64-bit format string */
 #define UNUM_FORMAT "%I64u"
+/** @brief 64-bit signed decimal format conversion specifier */
 #define C89STRINGUTILS_PRId64 "I64d"
+/** @brief 64-bit unsigned decimal format conversion specifier */
 #define C89STRINGUTILS_PRIu64 "I64u"
+/** @brief 64-bit unsigned hexadecimal format conversion specifier */
 #define C89STRINGUTILS_PRIx64 "I64x"
 #elif defined(C89STRINGUTILS_HAVE_PRINTF_LLD)
 /** @brief Standard 64-bit format string for non-MSVC */
 #define NUM_FORMAT "%lld"
 /** @brief Standard unsigned 64-bit format string for non-MSVC */
 #define UNUM_FORMAT "%llu"
+/** @brief 64-bit signed decimal format conversion specifier */
 #define C89STRINGUTILS_PRId64 "lld"
+/** @brief 64-bit unsigned decimal format conversion specifier */
 #define C89STRINGUTILS_PRIu64 "llu"
+/** @brief 64-bit unsigned hexadecimal format conversion specifier */
 #define C89STRINGUTILS_PRIx64 "llx"
 #elif defined(C89STRINGUTILS_HAVE_LONG_LONG) && !defined(_WIN32)
 /** @brief Fallback 64-bit format string */
 #define NUM_FORMAT "%lld"
+/** @brief Fallback unsigned 64-bit format string */
 #define UNUM_FORMAT "%llu"
+/** @brief 64-bit signed decimal format conversion specifier */
 #define C89STRINGUTILS_PRId64 "lld"
+/** @brief 64-bit unsigned decimal format conversion specifier */
 #define C89STRINGUTILS_PRIu64 "llu"
+/** @brief 64-bit unsigned hexadecimal format conversion specifier */
 #define C89STRINGUTILS_PRIx64 "llx"
 #else
 /** @brief Fallback format string for 32-bit targets */
 #define NUM_FORMAT "%ld"
 /** @brief Fallback unsigned format string for 32-bit targets */
 #define UNUM_FORMAT "%lu"
+/** @brief 64-bit fallback signed decimal format conversion specifier */
 #define C89STRINGUTILS_PRId64 "ld"
+/** @brief 64-bit fallback unsigned decimal format conversion specifier */
 #define C89STRINGUTILS_PRIu64 "lu"
+/** @brief 64-bit fallback unsigned hexadecimal format conversion specifier */
 #define C89STRINGUTILS_PRIx64 "lx"
 #endif
 
-#if defined(_WIN32)
+#if defined(C89STRINGUTILS_HAVE_PRINTF_I64D) && defined(_WIN32)
+/** @brief 32-bit signed decimal format conversion specifier */
 #define C89STRINGUTILS_PRId32 "I32d"
+/** @brief 32-bit unsigned decimal format conversion specifier */
 #define C89STRINGUTILS_PRIu32 "I32u"
+/** @brief 32-bit unsigned hexadecimal format conversion specifier */
 #define C89STRINGUTILS_PRIx32 "I32x"
 #if defined(_MSC_VER) && _MSC_VER < 1400
 /** @brief Fallback pointer format for older MSVC */
@@ -329,8 +466,11 @@ typedef unsigned long c89stringutils_uint64_t;
 /** @brief Standard long double format */
 #define C89STRINGUTILS_PRI_LDBL "Lf"
 #else
+/** @brief 32-bit signed decimal format conversion specifier */
 #define C89STRINGUTILS_PRId32 "d"
+/** @brief 32-bit unsigned decimal format conversion specifier */
 #define C89STRINGUTILS_PRIu32 "u"
+/** @brief 32-bit unsigned hexadecimal format conversion specifier */
 #define C89STRINGUTILS_PRIx32 "x"
 /** @brief Standard pointer format */
 #define C89STRINGUTILS_PRI_PTR "p"
@@ -347,7 +487,14 @@ typedef unsigned long c89stringutils_uint64_t;
 #define C89STRINGUTILS_VASPRINTF_MAX_SZ ((size_t)1048576)
 #endif
 
-#if defined(C89STRINGUTILS_HAVE_PRINTF_ZU)
+#if defined(__LP64__) || defined(_LP64)
+/** @brief Standard C89 size_t format string on LP64 targets */
+#define SIZE_T_FORMAT "%lu"
+/** @brief Standard C89 size_t hex format string on LP64 targets */
+#define SIZE_T_HEX_FORMAT "%lx"
+/** @brief Standard C89 ptrdiff_t format string on LP64 targets */
+#define PTRDIFF_T_FORMAT "%ld"
+#elif defined(C89STRINGUTILS_HAVE_PRINTF_ZU)
 /** @brief Standard size_t format string */
 #define SIZE_T_FORMAT "%zu"
 /** @brief Standard size_t hex format string */
@@ -406,18 +553,24 @@ typedef size_t rsize_t;
 
 #ifndef C89STRINGUTILS_INLINE
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+/** @brief Portable inline function specifier */
 #define C89STRINGUTILS_INLINE inline
 #elif defined(__GNUC__) || defined(__clang__) || defined(__TINYC__)
+/** @brief Portable inline function specifier */
 #define C89STRINGUTILS_INLINE __inline__
 #elif defined(_MSC_VER) || defined(__INTEL_COMPILER)
+/** @brief Portable inline function specifier */
 #define C89STRINGUTILS_INLINE __inline
 #elif defined(__SUNPRO_C)
 #if __SUNPRO_C < 0x590
+/** @brief Portable inline function specifier fallback */
 #define C89STRINGUTILS_INLINE
 #else
+/** @brief Portable inline function specifier */
 #define C89STRINGUTILS_INLINE inline
 #endif
 #else
+/** @brief Portable inline function specifier fallback */
 #define C89STRINGUTILS_INLINE
 #endif
 #endif
@@ -616,10 +769,10 @@ extern C89STRINGUTILS_EXPORT int c89stringutils_strcasecmp(const char *s1,
  * found.
  */
 #if defined(C89STRINGUTILS_HAVE_STRNSTR)
-#define c89stringutils_strnstr(b, t, l)                                        \
-  ((((const void *)(b)) == NULL || ((const void *)(t)) == NULL)                \
+#define c89stringutils_strnstr(buffer, target, bufferLength)                   \
+  ((((const void *)(buffer)) == NULL || ((const void *)(target)) == NULL)      \
        ? NULL                                                                  \
-       : strnstr((b), (t), (l)))
+       : strnstr((buffer), (target), (bufferLength)))
 #else
 extern C89STRINGUTILS_EXPORT char *c89stringutils_strnstr(const char *buffer,
                                                           const char *target,

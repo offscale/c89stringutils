@@ -4,6 +4,7 @@
  */
 
 #ifndef _GNU_SOURCE
+/** @brief Enable GNU and POSIX extensions where available */
 #define _GNU_SOURCE
 #endif
 
@@ -403,11 +404,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_sscanf_s(const char *buffer,
   /* Fallback isn't fully safe without a parser, but wraps the unsafe version.
    */
 #if defined(C89STRINGUTILS_HAVE_VSSCANF)
-#if defined(__clang__) || defined(__GNUC__)
-#endif
   ret = vsscanf(buffer, format, args);
-#if defined(__clang__) || defined(__GNUC__)
-#endif
 #else
   ret = minimal_vsscanf(buffer, format, args);
 #endif
@@ -430,11 +427,7 @@ C89STRINGUTILS_EXPORT int c89stringutils_fscanf_s(FILE *stream,
   ret = vfscanf_s(stream, format, args);
 #else
 #if defined(C89STRINGUTILS_HAVE_VFSCANF)
-#if defined(__clang__) || defined(__GNUC__)
-#endif
   ret = vfscanf(stream, format, args);
-#if defined(__clang__) || defined(__GNUC__)
-#endif
 #else
   ret = minimal_vfscanf(stream, format, args);
 #endif

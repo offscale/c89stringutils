@@ -12,6 +12,7 @@ jobs:
     with:
       cmake_configure_flags: '-DC89STRINGUTILS_BUILD_AMALGAMATION=ON'
       project_name: 'c89stringutils'
+      msdos_testing: true
 
   test-amalg:
     name: Test Amalgamation

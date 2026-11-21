@@ -1,11 +1,11 @@
-#ifndef C89STRINGUTILS_SAFECRT_H
-#define C89STRINGUTILS_SAFECRT_H
-
 /**
  * @file c89stringutils_safecrt.h
  * @brief Implementations of C11 Annex K safe CRT functions and constraint
  * handlers.
  */
+
+#ifndef C89STRINGUTILS_SAFECRT_H
+#define C89STRINGUTILS_SAFECRT_H
 
 /* clang-format off */
 #include "c89stringutils_string_extras.h"

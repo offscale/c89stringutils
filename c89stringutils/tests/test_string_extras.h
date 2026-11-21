@@ -990,10 +990,67 @@ TEST x_free_should_succeed(void) {
   PASS();
 }
 
+/**
+ * @brief Test portable printf format specifier and 64-bit literal macros.
+ * @return enum test result
+ */
+TEST x_format_specifiers_should_succeed(void) {
+  char buf[128];
+  int rc;
+  c89stringutils_int64_t i64_val = C89STRINGUTILS_INT64_C(-123456789);
+  c89stringutils_uint64_t u64_val = C89STRINGUTILS_UINT64_C(987654321);
+  size_t sz_val = (size_t)255;
+  ptrdiff_t pd_val = (ptrdiff_t)-42;
+#if defined(__I86__) || defined(_M_I86) ||                                     \
+    (defined(INT_MAX) && INT_MAX <= 32767)
+  long i32_val = -32000L;
+  unsigned long u32_val = 64000UL;
+#else
+  int i32_val = -32000;
+  unsigned int u32_val = 64000U;
+#endif
+
+  rc = C89STRINGUTILS_EXTENSION c89stringutils_snprintf(
+      buf, sizeof(buf),
+      NUM_FORMAT " " UNUM_FORMAT " %" C89STRINGUTILS_PRId64
+                 " %" C89STRINGUTILS_PRIu64 " %" C89STRINGUTILS_PRIx64,
+      i64_val, u64_val, i64_val, u64_val,
+      (c89stringutils_uint64_t)C89STRINGUTILS_UINT64_C(0xbeef));
+  ASSERT(rc > 0);
+  ASSERT_STR_EQ("-123456789 987654321 -123456789 987654321 beef", buf);
+
+  rc = C89STRINGUTILS_EXTENSION c89stringutils_snprintf(
+      buf, sizeof(buf),
+      SIZE_T_FORMAT " " SIZE_T_HEX_FORMAT " " PTRDIFF_T_FORMAT, sz_val, sz_val,
+      pd_val);
+  ASSERT(rc > 0);
+  ASSERT_STR_EQ("255 ff -42", buf);
+
+  rc = c89stringutils_snprintf(buf, sizeof(buf),
+                               "%" C89STRINGUTILS_PRId32
+                               " %" C89STRINGUTILS_PRIu32
+                               " %" C89STRINGUTILS_PRIx32,
+                               i32_val, u32_val, u32_val);
+  ASSERT(rc > 0);
+  ASSERT_STR_EQ("-32000 64000 fa00", buf);
+
+  {
+    char *dyn = NULL;
+    rc = C89STRINGUTILS_EXTENSION c89stringutils_asprintf(
+        &dyn, SIZE_T_FORMAT ":" NUM_FORMAT, sz_val, i64_val);
+    ASSERT_EQ(0, rc);
+    ASSERT_STR_EQ("255:-123456789", dyn);
+    c89stringutils_free(dyn);
+  }
+
+  PASS();
+}
+
 SUITE(strnstr_suite) {
   SET_SETUP(mock_reset_cb, NULL);
   RUN_TEST(x_strnstr_should_succeed);
   RUN_TEST(x_strnstr_should_fail);
+  RUN_TEST(x_format_specifiers_should_succeed);
   RUN_TEST(x_asprintf_should_succeed);
   RUN_TEST(x_asprintf_should_fail);
   RUN_TEST(x_asprintf_realloc_path);

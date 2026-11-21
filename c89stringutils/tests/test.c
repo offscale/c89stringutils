@@ -229,7 +229,11 @@ int mock_vsnprintf(char *str, size_t size, const char *format, va_list ap) {
  */
 int mock_vscprintf(const char *format, va_list ap) {
   int ret = -1;
-#if defined(_WIN32)
+#if defined(_MSC_VER) ||                                                       \
+    (defined(_WIN32) &&                                                        \
+     (!defined(__MINGW32__) ||                                                 \
+      (!defined(_UCRT) &&                                                      \
+       (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO))))
   ret = _vscprintf(format, ap);
 #elif defined(__WATCOMC__)
   {
@@ -237,7 +241,7 @@ int mock_vscprintf(const char *format, va_list ap) {
     ret = vsnprintf(scratch, sizeof(scratch), format, ap);
   }
 #elif defined(C89STRINGUTILS_HAVE_VSNPRINTF) || defined(__CYGWIN__) ||         \
-    defined(__linux__) || defined(__APPLE__)
+    defined(__linux__) || defined(__APPLE__) || defined(_WIN32)
   ret = vsnprintf(NULL, 0, format, ap);
 #else
   {
@@ -260,7 +264,10 @@ int mock_vscprintf(const char *format, va_list ap) {
 int mock_vsnprintf_s(char *buffer, size_t sizeOfBuffer, size_t count,
                      const char *format, va_list ap) {
   int ret = -1;
-#if defined(C89STRINGUTILS_HAVE__VSNPRINTF_S)
+#if defined(C89STRINGUTILS_HAVE__VSNPRINTF_S) &&                               \
+    (!defined(__MINGW32__) ||                                                  \
+     (!defined(_UCRT) &&                                                       \
+      (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)))
   ret = _vsnprintf_s(buffer, sizeOfBuffer, count, format, ap);
 #else
   {

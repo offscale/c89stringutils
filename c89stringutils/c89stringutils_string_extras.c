@@ -5,6 +5,7 @@
  */
 
 #ifndef _GNU_SOURCE
+/** @brief Enable GNU and POSIX extensions where available */
 #define _GNU_SOURCE
 #endif
 
@@ -38,15 +39,23 @@
     !defined(C89STRINGUTILS_HAVE_PRINTF_LLD) ||                                \
     !defined(C89STRINGUTILS_HAVE_VSNPRINTF_NULL) ||                            \
     !defined(C89STRINGUTILS_HAVE_VSNPRINTF)
+/** @brief Enable stb_sprintf implementation */
 #define STB_SPRINTF_IMPLEMENTATION
+/**
+ * @brief Namespace prefix decorator for stb_sprintf symbols.
+ * @param name Base symbol name.
+ */
 #define STB_SPRINTF_DECORATE(name) c89stringutils_stbsp_##name
+/** @brief Disable floating-point formatting in stb_sprintf fallback */
 #define STB_SPRINTF_NOFLOAT
 #include "stb_sprintf.h"
+/** @brief Flag indicating stb_sprintf fallback is active */
 #define C89STRINGUTILS_USE_STB_SPRINTF 1
 #endif
 /* clang-format on */
 
 #ifndef RSIZE_MAX
+/** @brief Maximum valid rsize_t buffer size */
 #define RSIZE_MAX ((size_t) - 1 >> 1)
 #endif
 
@@ -226,11 +235,6 @@ extern int mock_memcpy_s(void *dest, size_t destsz, const void *src,
 #endif
 #endif /* ! VA_COPY */
 
-/**
- * @brief Log debug message
- * @param fmt The format string.
- * @param ... The arguments.
- */
 C89STRINGUTILS_EXPORT int c89stringutils_log_debug(const char *fmt, ...) {
   int rc = -1;
   int newline_rc = -1;
@@ -288,7 +292,10 @@ static int fallback_vsnprintf(char *buffer, size_t count, const char *format,
 #else
   int rc = -1;
   if (buffer == NULL || count == 0) {
-#if defined(C89STRINGUTILS_HAVE__VSCPRINTF)
+#if defined(C89STRINGUTILS_HAVE__VSCPRINTF) &&                                 \
+    (!defined(__MINGW32__) ||                                                  \
+     (!defined(_UCRT) &&                                                       \
+      (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)))
     rc = _vscprintf(format, args);
 #elif defined(__WATCOMC__)
     {
@@ -308,7 +315,10 @@ static int fallback_vsnprintf(char *buffer, size_t count, const char *format,
     return rc;
   }
 
-#if defined(C89STRINGUTILS_HAVE__VSNPRINTF_S)
+#if defined(C89STRINGUTILS_HAVE__VSNPRINTF_S) &&                               \
+    (!defined(__MINGW32__) ||                                                  \
+     (!defined(_UCRT) &&                                                       \
+      (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)))
   {
     va_list args_copy;
     VA_COPY(args_copy, args);
@@ -699,11 +709,17 @@ C89STRINGUTILS_EXPORT int c89stringutils_vsnprintf_s(char *s, rsize_t n,
                                                      va_list arg) {
   if (s == NULL || n == 0)
     return -1;
-#if defined(_WIN32) && defined(C89STRINGUTILS_HAVE_VSNPRINTF_S)
+#if defined(_WIN32) && defined(C89STRINGUTILS_HAVE_VSNPRINTF_S) &&             \
+    (!defined(__MINGW32__) ||                                                  \
+     (!defined(_UCRT) &&                                                       \
+      (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)))
   return vsnprintf_s(s, n, (size_t)-1, format, arg);
-#elif defined(C89STRINGUTILS_HAVE_VSNPRINTF_S)
+#elif defined(C89STRINGUTILS_HAVE_VSNPRINTF_S) && !defined(_WIN32)
   return vsnprintf_s(s, n, format, arg);
-#elif defined(C89STRINGUTILS_HAVE__VSNPRINTF_S)
+#elif defined(C89STRINGUTILS_HAVE__VSNPRINTF_S) &&                             \
+    (!defined(__MINGW32__) ||                                                  \
+     (!defined(_UCRT) &&                                                       \
+      (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)))
   return _vsnprintf_s(s, n, (size_t)-1, format, arg);
 #else
   return fallback_vsnprintf(s, n, format, arg);
@@ -815,10 +831,17 @@ C89STRINGUTILS_EXPORT int c89stringutils_strcasecmp(const char *s1,
 /* Helper to remove const without triggering -Wcast-qual or truncating 16-bit
  * DOS far pointers */
 #if defined(__COMPACT__) || defined(__LARGE__) || defined(__HUGE__)
+/** @brief Integer type wide enough to hold a data pointer */
 #define C89STRINGUTILS_UINTPTR_T unsigned long
 #else
+/** @brief Integer type wide enough to hold a data pointer */
 #define C89STRINGUTILS_UINTPTR_T size_t
 #endif
+/**
+ * @brief Cast away constness without triggering -Wcast-qual warnings.
+ * @param type Target non-const pointer type.
+ * @param ptr Const pointer expression.
+ */
 #define C89STRINGUTILS_UNCONST(type, ptr)                                      \
   ((type)(C89STRINGUTILS_UINTPTR_T)(const void *)(ptr))
 
@@ -899,27 +922,22 @@ C89STRINGUTILS_EXPORT char *c89stringutils_strcasestr(const char *h,
 }
 #endif
 
-/**
- * @brief Get the length of a string describing an error number.
- * @param errnum The error number.
- * @return The length of the string describing the error.
- */
-C89STRINGUTILS_EXPORT size_t c89stringutils_strerrorlen_s(errno_t errnum) {
-/** @brief Error code for null pointer */
 #ifndef ESNULLP
+/** @brief Error code for null pointer */
 #define ESNULLP (400) /* null ptr                    */
 #endif
 
-/** @brief Error code for wrong size */
 #ifndef ESLEWRNG
+/** @brief Error code for wrong size */
 #define ESLEWRNG (410) /* wrong size                */
 #endif
 
-/** @brief Last error code */
 #ifndef ESLAST
+/** @brief Last error code */
 #define ESLAST ESLEWRNG
 #endif
 
+C89STRINGUTILS_EXPORT size_t c89stringutils_strerrorlen_s(errno_t errnum) {
   static const int len_errmsgs_s[] = {
       sizeof "null ptr",                 /* ESNULLP */
       sizeof "length is zero",           /* ESZEROL */
@@ -988,15 +1006,6 @@ C89STRINGUTILS_EXPORT size_t c89stringutils_strerrorlen_s(errno_t errnum) {
 #define INIT_SZ 128
 #endif
 
-/**
- * @brief Write formatted output to a dynamically allocated string using a
- * va_list.
- * @param str A pointer to a string pointer where the allocated string will be
- * stored.
- * @param fmt The format string.
- * @param ap The va_list of arguments.
- * @return The number of characters printed, or -1 on error.
- */
 C89STRINGUTILS_EXPORT int c89stringutils_vasprintf(char **str, const char *fmt,
                                                    va_list ap) {
   int rc = -1;
@@ -1115,14 +1124,6 @@ fail:
   return -1;
 }
 
-/**
- * @brief Write formatted output to a dynamically allocated string.
- * @param str A pointer to a string pointer where the allocated string will be
- * stored.
- * @param fmt The format string.
- * @param ... The arguments.
- * @return The number of characters printed, or -1 on error.
- */
 C89STRINGUTILS_EXPORT int c89stringutils_asprintf(char **str, const char *fmt,
                                                   ...) {
   int rc = -1;
@@ -1175,6 +1176,15 @@ C89STRINGUTILS_EXPORT int c89stringutils_asprintf(char **str, const char *fmt,
   return rc;
 }
 
+/**
+ * @brief Internal va_list helper for appending formatted strings onto a heap
+ * buffer.
+ * @param unto Pointer to the destination heap string pointer (NULL or
+ * malloc'd).
+ * @param fmt Printf-style format string.
+ * @param args Variadic argument list.
+ * @return 0 on success, or -1 on error.
+ */
 static int c89stringutils_vjasprintf(char **unto, const char *fmt, va_list args)
     C89STRINGUTILS_FORMAT_PRINTF(2, 0);
 static int c89stringutils_vjasprintf(char **unto, const char *fmt,
@@ -1235,15 +1245,6 @@ static int c89stringutils_vjasprintf(char **unto, const char *fmt,
   return 0;
 }
 
-/**
- * @brief `jasprintf`, a version of `asprintf` that concatenates on successive
- * calls: char *s = NULL; c89stringutils_jasprintf(&s, "foo%s", "bar");
- * c89stringutils_jasprintf(&s, "can%s", "haz"); free(s);
- * @param unto The string to append to.
- * @param fmt The format string.
- * @param ... The arguments.
- * @return 0 on success, or -1 on error.
- */
 C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
                                                    ...) {
   va_list args;
@@ -1263,27 +1264,10 @@ C89STRINGUTILS_EXPORT int c89stringutils_jasprintf(char **unto, const char *fmt,
 
 #if !defined(C89STRINGUTILS_HAVE_VASPRINTF) ||                                 \
     !defined(C89STRINGUTILS_HAVE_ASPRINTF)
-/**
- * @brief Write formatted output to a dynamically allocated string using a
- * va_list.
- * @param str A pointer to a string pointer where the allocated string will be
- * stored.
- * @param fmt The format string.
- * @param ap The va_list of arguments.
- * @return The number of characters printed, or -1 on error.
- */
 C89STRINGUTILS_EXPORT int vasprintf(char **str, const char *fmt, va_list ap) {
   return c89stringutils_vasprintf(str, fmt, ap);
 }
 
-/**
- * @brief Write formatted output to a dynamically allocated string.
- * @param str A pointer to a string pointer where the allocated string will be
- * stored.
- * @param fmt The format string.
- * @param ... The arguments.
- * @return The number of characters printed, or -1 on error.
- */
 C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
   int rc = -1;
   va_list args;
@@ -1294,14 +1278,6 @@ C89STRINGUTILS_EXPORT int asprintf(char **str, const char *fmt, ...) {
 }
 #endif
 
-/**
- * @brief `jasprintf`, a version of `asprintf` that concatenates on successive
- * calls.
- * @param unto The string to append to.
- * @param fmt The format string.
- * @param ... The arguments.
- * @return 0 on success, or -1 on error.
- */
 C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
   va_list args;
   int rc = -1;
@@ -1317,10 +1293,6 @@ C89STRINGUTILS_EXPORT int jasprintf(char **unto, const char *fmt, ...) {
   return rc;
 }
 
-/**
- * @brief Free heap memory allocated by c89stringutils dynamic string functions.
- * @param ptr Pointer to the allocated buffer to free, or NULL.
- */
 C89STRINGUTILS_EXPORT void c89stringutils_free(void *ptr) { free(ptr); }
 
 /* Prevent macro leakage in amalgamation builds */
